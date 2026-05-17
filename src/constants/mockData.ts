@@ -12,8 +12,10 @@ const driverNames = [
 export const MOCK_DRIVERS: DriverState[] = driverNames.map((name, i) => {
     const routeIdx = i % 4
     const route = DAMASCUS_ROUTES[routeIdx]
-    const stagger = Math.floor(i / 4) * 3
-    const ptIdx = Math.min(stagger, route.length - 1)
+    const driversOnRoute = Math.ceil(15 / 4)
+    const posInGroup = Math.floor(i / 4)
+    const segment = Math.floor(route.length / (driversOnRoute + 1))
+    const ptIdx = Math.min(segment * (posInGroup + 1), route.length - 1)
     const [lat, lng] = route[ptIdx]
     return {
         id: `driver-${i + 1}`,

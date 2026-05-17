@@ -6,10 +6,13 @@ import ConnectionStatus from '@/components/map/ConnectionStatus'
 import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
+import { useFocusMode } from './useFocusMode'
 
 export default function LiveOpsPage() {
     const mapRef = useRef<L.Map | null>(null)
     const setHexGeoJSON = useMapStore((s) => s.setHexGeoJSON)
+
+    useFocusMode(mapRef)
 
     useEffect(() => {
         fetch('/h3-damascus.geojson')

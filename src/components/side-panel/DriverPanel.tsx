@@ -4,16 +4,26 @@ import { Badge } from '@/components/ui/badge'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
+import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 
 export default function DriverPanel() {
     const driverId = useMapStore((s) => s.selectedDriverId)
     const setMode = useMapStore((s) => s.setSidePanelMode)
     const driver = useLiveStore((s) => s.drivers[driverId ?? ''])
-    const enterFocus = useFocusStore((s) => s.enterFocusMode)
 
     if (!driver) return null
 
     const statusColor = driver.status === 'in-transit' ? 'default' : driver.status === 'available' ? 'secondary' : 'outline'
+
+    const handleFollow = () => {
+        const deliveries = Object.values(useLiveStore.getState().deliveries)
+        const delivery = deliveries.find((d) => d.assignedDriverId === driver.id && d.status === 'InTransit')
+        if (!delivery) return
+        const routeIdx = (driver as any).routeIndex ?? 0
+        const polyline = DAMASCUS_ROUTES[routeIdx] ?? []
+        useFocusStore.getState().enterFocusMode(delivery.id, driver.id, polyline, delivery.etaSeconds ?? 420)
+        setMode('focus')
+    }
 
     return (
         <div className="p-4">
@@ -25,24 +35,18 @@ export default function DriverPanel() {
             </div>
             <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Status</span>
+                    <span className="text-gray-400">Status</span>
                     <Badge variant={statusColor}>{driver.status}</Badge>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">ID</span>
+                    <span className="text-gray-400">ID</span>
                     <span>{driver.id}</span>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">Position</span>
+                    <span className="text-gray-400">Position</span>
                     <span>{driver.lat.toFixed(4)}, {driver.lng.toFixed(4)}</span>
                 </div>
-                <Button
-                    className="w-full mt-4"
-                    onClick={() => {
-                        enterFocus('del-1', driver.id, [], 420)
-                        setMode('focus')
-                    }}
-                >
+                <Button className="w-full mt-4" onClick={handleFollow}>
                     Follow Driver
                 </Button>
             </div>

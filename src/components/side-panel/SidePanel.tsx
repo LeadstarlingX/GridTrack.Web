@@ -1,6 +1,7 @@
 import { useMapStore } from '@/store/mapStore'
 import DistrictPanel from './DistrictPanel'
 import DriverPanel from './DriverPanel'
+import FocusModePanel from './FocusModePanel'
 
 export default function SidePanel() {
     const mode = useMapStore((s) => s.sidePanelMode)
@@ -8,10 +9,10 @@ export default function SidePanel() {
     if (mode === 'idle') return null
 
     return (
-        <div className="absolute top-0 right-0 bottom-0 w-80 z-[1000] bg-card border-l border-border shadow-lg overflow-y-auto">
+        <div className="absolute top-0 right-0 bottom-0 w-80 z-[1000] bg-gray-950/85 backdrop-blur-sm border-l border-white/10 shadow-lg overflow-y-auto text-white">
             {mode === 'district' && <DistrictPanel />}
             {mode === 'driver' && <DriverPanel />}
-            {mode === 'focus' && <div className="p-4 text-sm text-muted-foreground">Focus mode — Phase 3</div>}
+            {mode === 'focus' && <FocusModePanel />}
         </div>
     )
 }

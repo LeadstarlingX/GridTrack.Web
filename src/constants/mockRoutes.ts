@@ -1,4 +1,18 @@
-export const DAMASCUS_ROUTES: [number, number][][] = [
+function interpolate(points: [number, number][], steps: number): [number, number][] {
+    const result: [number, number][] = [points[0]]
+    for (let i = 1; i < points.length; i++) {
+        for (let s = 1; s <= steps; s++) {
+            const t = s / steps
+            result.push([
+                points[i - 1][0] + (points[i][0] - points[i - 1][0]) * t,
+                points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t,
+            ])
+        }
+    }
+    return result
+}
+
+const RAW_ROUTES: [number, number][][] = [
     // Route A: Mezzeh → Umayyad Square
     [
         [33.503, 36.238],[33.504, 36.242],[33.505, 36.248],[33.506, 36.253],
@@ -24,3 +38,5 @@ export const DAMASCUS_ROUTES: [number, number][][] = [
         [33.508, 36.246],[33.507, 36.242],
     ],
 ]
+
+export const DAMASCUS_ROUTES: [number, number][][] = RAW_ROUTES.map((r) => interpolate(r, 5))
