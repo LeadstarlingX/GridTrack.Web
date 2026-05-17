@@ -2,11 +2,33 @@ import type { DriverState } from '@/types/driver'
 import type { DeliveryStatus } from '@/types/delivery'
 import type { AnomalyAlert, AnomalyType } from '@/types/hub'
 import { useLiveStore } from '@/store/liveStore'
+import { useFocusStore } from '@/store/focusStore'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 
 function pick<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)]
 }
+
+function distanceBetween(a: [number, number], b: [number, number]): number {
+    const R = 6371000
+    const toRad = (d: number) => (d * Math.PI) / 180
+    const dLat = toRad(b[0] - a[0])
+    const dLng = toRad(b[1] - a[1])
+    const x = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a[0])) * Math.cos(toRad(b[0])) * Math.sin(dLng / 2) ** 2
+    return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x))
+}
+
+function routeRemainingDistance(routeIdx: number, pointIndex: number): number {
+    const route = DAMASCUS_ROUTES[routeIdx]
+    if (!route || pointIndex >= route.length) return 0
+    let dist = 0
+    for (let i = pointIndex; i < route.length - 1; i++) {
+        dist += distanceBetween(route[i], route[i + 1])
+    }
+    return dist
+}
+
+const AVG_SPEED_MPS = 8.3 // ~30 km/h Damascus city driving
 
 export function startMockEmitter(): () => void {
     const driverIds = Object.keys(useLiveStore.getState().drivers)
@@ -25,8 +47,6 @@ export function startMockEmitter(): () => void {
             const nextIdx = (d.pointIndex + 1) % route.length
             const [lat, lng] = route[nextIdx]
             useLiveStore.getState().updateDriverPosition(id, lat, lng, d.districtId)
-
-            // Also update pointIndex locally (not in store type, use direct patch)
             useLiveStore.setState((s) => ({
                 drivers: {
                     ...s.drivers,
@@ -35,6 +55,26 @@ export function startMockEmitter(): () => void {
             }))
         }
     }, 1000)
+
+    // ETA recalculation — every 2s based on remaining route distance
+    const etaInterval = setInterval(() => {
+        const { drivers } = useLiveStore.getState()
+        const focusId = useFocusStore.getState().focusedDeliveryId
+
+        for (const [delId, del] of Object.entries(useLiveStore.getState().deliveries)) {
+            if (del.status !== 'InTransit' || !del.assignedDriverId) continue
+            const driver = drivers[del.assignedDriverId] as DriverState | undefined
+            if (!driver) continue
+
+            const remaining = routeRemainingDistance(driver.routeIndex, driver.pointIndex)
+            const eta = Math.round(remaining / AVG_SPEED_MPS)
+
+            if (delId === focusId) {
+                useFocusStore.getState().setEta(eta)
+            }
+            useLiveStore.getState().patchDelivery(delId, { etaSeconds: eta })
+        }
+    }, 2000)
 
     // Delivery patch — every 10s
     const delInterval = setInterval(() => {
@@ -64,6 +104,7 @@ export function startMockEmitter(): () => void {
 
     return () => {
         clearInterval(posInterval)
+        clearInterval(etaInterval)
         clearInterval(delInterval)
         clearInterval(anomInterval)
     }

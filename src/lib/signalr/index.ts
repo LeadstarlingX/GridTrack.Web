@@ -1,0 +1,1 @@
+export { startMockEmitter } from './mockEmitter'
