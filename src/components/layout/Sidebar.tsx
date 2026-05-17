@@ -1,19 +1,28 @@
 import { NavLink } from 'react-router-dom'
-import { Radio, BarChart3, Package, Bell, Users } from 'lucide-react'
+import { Radio, BarChart3, Package, Bell, Users, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useLiveStore } from '@/store/liveStore'
 
 const navItems = [
     { to: '/', label: 'Live Ops', icon: Radio },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/deliveries', label: 'Deliveries', icon: Package },
-    { to: '/alerts', label: 'Alerts', icon: Bell, badge: 0 },
+    { to: '/alerts', label: 'Alerts', icon: Bell },
     { to: '/drivers', label: 'Drivers', icon: Users, adminOnly: true },
+    { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+    isOpen: boolean
+    onToggle: () => void
+}
+
+export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+    const anomalyCount = useLiveStore((s) => s.anomalyQueue.length)
+
     return (
-        <aside className="w-56 border-r border-border bg-card flex flex-col">
+        <aside className="relative w-56 border-r border-border bg-card flex flex-col">
             <div className="h-14 flex items-center px-4 border-b border-border">
                 <span className="font-bold text-lg">GridTrack</span>
             </div>
@@ -34,14 +43,22 @@ export default function Sidebar() {
                     >
                         <item.icon className="h-4 w-4" />
                         {item.label}
-                        {item.badge !== undefined && item.badge > 0 && (
+                        {item.label === 'Alerts' && anomalyCount > 0 && (
                             <Badge variant="destructive" className="ml-auto text-xs">
-                                {item.badge}
+                                {anomalyCount}
                             </Badge>
                         )}
                     </NavLink>
                 ))}
             </nav>
+            <button
+                type="button"
+                onClick={onToggle}
+                aria-label={isOpen ? 'Collapse navigation' : 'Expand navigation'}
+                className="absolute top-1/2 -right-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow"
+            >
+                {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
         </aside>
     )
 }

@@ -34,12 +34,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          zIndex: 500,
         } as React.CSSProperties
       }
       toastOptions={{
         classNames: {
           toast: "cn-toast",
         },
+        closeButton: true,
       }}
       {...props}
     />

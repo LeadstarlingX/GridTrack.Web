@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react'
 import L from 'leaflet'
 import LiveMap from '@/components/map/LiveMap'
-import MapControls from '@/components/map/MapControls'
 import ConnectionStatus from '@/components/map/ConnectionStatus'
 import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
+import { setMapRef } from '@/lib/mapRef'
+import DevDisabled from '@/components/shared/DevDisabled'
+import { isPageEnabled } from '@/config/devPages'
 import { useFocusMode } from './useFocusMode'
 
 export default function LiveOpsPage() {
@@ -26,11 +28,17 @@ export default function LiveOpsPage() {
         return cleanup
     }, [])
 
+    if (!isPageEnabled('liveOps')) {
+        return <DevDisabled title="Live Ops" />
+    }
+
     return (
         <div className="relative h-full">
-            <LiveMap onMapReady={(m) => { mapRef.current = m }} />
+            <LiveMap onMapReady={(m) => {
+                mapRef.current = m
+                setMapRef(m)
+            }} />
             <ConnectionStatus />
-            <MapControls />
             <SidePanel />
         </div>
     )

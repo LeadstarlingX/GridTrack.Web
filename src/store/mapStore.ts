@@ -14,6 +14,7 @@ interface MapStore {
     toggleHeatmap: () => void
     selectDistrict: (id: string | null) => void
     selectDriver: (id: string | null) => void
+    toggleDriverPanel: (id: string) => void
     setSidePanelMode: (mode: SidePanelMode) => void
     setHexGeoJSON: (data: GeoJSON.FeatureCollection) => void
 }
@@ -30,6 +31,14 @@ export const useMapStore = create<MapStore>()((set) => ({
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     selectDistrict: (id) => set({ selectedDistrictId: id }),
     selectDriver: (id) => set({ selectedDriverId: id }),
+    toggleDriverPanel: (id) =>
+        set((s) => {
+            if (s.sidePanelMode === 'focus') return s
+            if (s.sidePanelMode === 'driver' && s.selectedDriverId === id) {
+                return { selectedDriverId: null, sidePanelMode: 'idle' }
+            }
+            return { selectedDriverId: id, sidePanelMode: 'driver' }
+        }),
     setSidePanelMode: (mode) => set({ sidePanelMode: mode }),
     setHexGeoJSON: (data) => set({ hexGeoJSON: data }),
 }))

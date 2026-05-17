@@ -55,6 +55,7 @@ export default function LiveMap({ onMapReady }: Props) {
             preferCanvas={true}
             className="h-full w-full z-0"
             zoomControl={false}
+            attributionControl={false}
         >
             <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

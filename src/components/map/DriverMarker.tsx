@@ -7,8 +7,7 @@ import { useMapStore } from '@/store/mapStore'
 export default function DriverMarkers() {
     const drivers = useLiveStore((s) => s.drivers)
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
-    const selectDriver = useMapStore((s) => s.selectDriver)
-    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+    const toggleDriverPanel = useMapStore((s) => s.toggleDriverPanel)
 
     return (
         <>
@@ -40,8 +39,7 @@ export default function DriverMarkers() {
                         zIndexOffset={isFocused ? 1000 : 0}
                         eventHandlers={{
                             click: () => {
-                                selectDriver(d.id)
-                                setSidePanelMode('driver')
+                                toggleDriverPanel(d.id)
                             },
                         }}
                     />

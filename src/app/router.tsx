@@ -5,6 +5,7 @@ import AnalyticsPage from '@/features/analytics/AnalyticsPage'
 import DeliveriesPage from '@/features/deliveries/DeliveriesPage'
 import AlertsPage from '@/features/alerts/AlertsPage'
 import DriversPage from '@/features/drivers/DriversPage'
+import SettingsPage from '@/features/settings/SettingsPage'
 
 export const router = createBrowserRouter([
     {
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
             { path: 'deliveries', element: <DeliveriesPage /> },
             { path: 'alerts', element: <AlertsPage /> },
             { path: 'drivers', element: <DriversPage /> },
+            { path: 'settings', element: <SettingsPage /> },
         ],
     },
 ])

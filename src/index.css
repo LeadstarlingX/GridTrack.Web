@@ -1,3 +1,25 @@
 @import "tailwindcss";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+
+
+.cn-toast {
+	background-color: color-mix(in srgb, var(--popover) 65%, transparent);
+	font-size: 1rem;
+}
+
+.toaster {
+	pointer-events: none;
+	z-index: 500 !important;
+}
+
+.toaster [data-sonner-toast] {
+	pointer-events: auto;
+}
+
+.toaster [data-sonner-close-button] {
+	height: 34px;
+	width: 34px;
+	min-height: 34px;
+	min-width: 34px;
+}

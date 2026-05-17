@@ -2,6 +2,10 @@ import { create } from 'zustand'
 import type { DriverState } from '@/types/driver'
 import type { DeliveryState } from '@/types/delivery'
 import type { AnomalyAlert } from '@/types/hub'
+import { toast } from '@/components/ui'
+import { getMapRef } from '@/lib/mapRef'
+import { useMapStore } from '@/store/mapStore'
+import { useSettingsStore } from '@/store/settingsStore'
 import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
 interface LiveStore {
@@ -36,7 +40,29 @@ export const useLiveStore = create<LiveStore>()((set) => ({
         })),
 
     pushAnomaly: (alert) =>
-        set((s) => ({
-            anomalyQueue: [alert, ...s.anomalyQueue].slice(0, 50),
-        })),
+        set((s) => {
+            if (s.anomalyQueue.some((item) => item.id === alert.id)) {
+                return s
+            }
+
+            if (useSettingsStore.getState().toastsEnabled) {
+                toast.error(`x ${alert.reason}`, {
+                    duration: 8000,
+                    action: {
+                        label: 'View',
+                        onClick: () => {
+                            const map = getMapRef()
+                            map?.flyTo([alert.lat, alert.lng], 15)
+                            const mapState = useMapStore.getState()
+                            mapState.selectDriver(alert.driverId)
+                            mapState.setSidePanelMode('driver')
+                        },
+                    },
+                })
+            }
+
+            return {
+                anomalyQueue: [alert, ...s.anomalyQueue].slice(0, 50),
+            }
+        }),
 }))

@@ -15,13 +15,15 @@ export default function DriverPanel() {
 
     const statusColor = driver.status === 'in-transit' ? 'default' : driver.status === 'available' ? 'secondary' : 'outline'
 
+    const deliveries = Object.values(useLiveStore.getState().deliveries)
+    const activeDelivery = deliveries.find((d) => d.assignedDriverId === driver.id && d.status === 'InTransit')
+    const canFollow = Boolean(activeDelivery)
+
     const handleFollow = () => {
-        const deliveries = Object.values(useLiveStore.getState().deliveries)
-        const delivery = deliveries.find((d) => d.assignedDriverId === driver.id && d.status === 'InTransit')
-        if (!delivery) return
+        if (!activeDelivery) return
         const routeIdx = (driver as any).routeIndex ?? 0
         const polyline = DAMASCUS_ROUTES[routeIdx] ?? []
-        useFocusStore.getState().enterFocusMode(delivery.id, driver.id, polyline, delivery.etaSeconds ?? 420)
+        useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, polyline, activeDelivery.etaSeconds ?? 420)
         setMode('focus')
     }
 
@@ -46,8 +48,8 @@ export default function DriverPanel() {
                     <span className="text-gray-400">Position</span>
                     <span>{driver.lat.toFixed(4)}, {driver.lng.toFixed(4)}</span>
                 </div>
-                <Button className="w-full mt-4" onClick={handleFollow}>
-                    Follow Driver
+                <Button className="w-full mt-4" onClick={handleFollow} disabled={!canFollow}>
+                    {canFollow ? 'Follow Driver' : 'No Active Delivery'}
                 </Button>
             </div>
         </div>
