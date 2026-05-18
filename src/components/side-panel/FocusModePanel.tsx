@@ -35,15 +35,15 @@ export default function FocusModePanel() {
             </div>
             <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                    <span className="text-gray-400">Order</span>
+                    <span className="text-muted-foreground">Order</span>
                     <Badge>{focusedDeliveryId}</Badge>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-gray-400">Driver</span>
+                    <span className="text-muted-foreground">Driver</span>
                     <span>{driver.name}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                    <span className="text-gray-400">ETA</span>
+                    <span className="text-muted-foreground">ETA</span>
                     <span className="text-xl font-bold text-amber-500">{eta}</span>
                 </div>
                 <Button

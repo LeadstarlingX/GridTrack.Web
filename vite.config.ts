@@ -10,4 +10,18 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('@clerk'))          return 'vendor-clerk'
+          if (id.includes('@microsoft/signalr')) return 'vendor-signalr'
+          if (id.includes('leaflet'))         return 'vendor-map'
+          if (id.includes('recharts'))        return 'vendor-charts'
+          if (id.includes('react'))           return 'vendor-react'
+        },
+      },
+    },
+  },
 })

@@ -37,15 +37,15 @@ export default function DriverPanel() {
             </div>
             <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                    <span className="text-gray-400">Status</span>
+                    <span className="text-muted-foreground">Status</span>
                     <Badge variant={statusColor}>{driver.status}</Badge>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-gray-400">ID</span>
+                    <span className="text-muted-foreground">ID</span>
                     <span>{driver.id}</span>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-gray-400">Position</span>
+                    <span className="text-muted-foreground">Position</span>
                     <span>{driver.lat.toFixed(4)}, {driver.lng.toFixed(4)}</span>
                 </div>
                 <Button className="w-full mt-4" onClick={handleFollow} disabled={!canFollow}>
