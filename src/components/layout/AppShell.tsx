@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Sidebar from './Sidebar'
-import { cn } from '@/lib/utils'
+// import { cn } from '@/lib/utils'
 import { useAnomalyToasts } from '@/hooks/useAnomalyToasts'
 
 export default function AppShell() {
@@ -17,7 +17,7 @@ export default function AppShell() {
                 onClick={() => setNavOpen((v) => !v)}
                 aria-label="Toggle navigation"
                 aria-expanded={navOpen}
-                className="fixed left-0 top-1/2 -translate-y-1/2 z-20 flex h-8 w-5 items-center justify-center bg-[hsl(var(--surface))] border border-[hsl(var(--border))] border-l-0 rounded-r-md shadow-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] transition-colors duration-150 pointer-events-auto"
+                className="fixed left-0 top-1/2 -translate-y-1/2 z-20 flex h-10 w-7 items-center justify-center bg-[hsl(var(--surface))] border border-[hsl(var(--border))] border-l-0 rounded-r-md shadow-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] transition-colors duration-150 pointer-events-auto"
             >
                 {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
             </button>
