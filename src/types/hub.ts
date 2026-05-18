@@ -1,4 +1,4 @@
-import type { DeliveryStatus } from './delivery'
+// import type { DeliveryStatus } from './delivery'
 
 export type AnomalyType = 'Stall' | 'RouteDeviation' | 'Delay'
 
