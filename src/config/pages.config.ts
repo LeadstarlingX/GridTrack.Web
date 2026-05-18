@@ -1,6 +1,10 @@
 export const PAGE_CONFIG = {
     liveOps: true,
-    analytics: false,
+    analytics: true,
+    analyticsChatbot: {
+        enabled: true,
+        disabledMessage: 'Comming soon',
+    },
     deliveries: false,
     alerts: false,
     drivers: false,

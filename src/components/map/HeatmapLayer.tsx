@@ -1,5 +1,6 @@
 import { GeoJSON } from 'react-leaflet'
 import { useMapStore } from '@/store/mapStore'
+import { MOCK_DELIVERIES, getDistrictForCoords } from '@/constants/mockData'
 
 function getColor(value: number): string {
     if (value > 8) return '#ef4444'
@@ -9,18 +10,28 @@ function getColor(value: number): string {
 }
 
 export default function HeatmapLayer() {
-    const hexGeoJSON = useMapStore((s) => s.hexGeoJSON)
+    const heatmapGeoJSON = useMapStore((s) => s.heatmapGeoJSON)
     const enabled = useMapStore((s) => s.heatmapEnabled)
 
-    if (!enabled || !hexGeoJSON) return null
+    if (!enabled || !heatmapGeoJSON) return null
+
+    const deliveryCounts = MOCK_DELIVERIES.reduce<Record<string, number>>((acc, delivery) => {
+        acc[delivery.districtId] = (acc[delivery.districtId] ?? 0) + 1
+        return acc
+    }, {})
 
     const colored = {
-        ...hexGeoJSON,
-        features: hexGeoJSON.features.map((f) => ({
+        ...heatmapGeoJSON,
+        features: heatmapGeoJSON.features.map((f) => ({
             ...f,
             properties: {
                 ...f.properties,
-                intensity: Math.floor(Math.random() * 12),
+                intensity: (() => {
+                    if (f.geometry.type !== 'Polygon') return 0
+                    const coords = f.geometry.coordinates[0][0]
+                    const district = getDistrictForCoords(coords[1], coords[0])
+                    return deliveryCounts[district.id] ?? 0
+                })(),
             },
         })),
     }
@@ -34,7 +45,7 @@ export default function HeatmapLayer() {
                     color: 'transparent',
                     weight: 0,
                     fillColor: getColor(v),
-                    fillOpacity: 0.4,
+                    fillOpacity: 0.55,
                 }
             }}
             interactive={false}

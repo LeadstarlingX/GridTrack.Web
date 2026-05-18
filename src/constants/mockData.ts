@@ -62,3 +62,23 @@ export const MOCK_ANALYTICS = {
     activeDrivers: 12,
     anomalyRate: 0.038,
 }
+
+export const MOCK_ANALYTICS_TRENDS = [
+    { bucket: '06:00', deliveries: 8, anomalies: 1 },
+    { bucket: '07:00', deliveries: 14, anomalies: 1 },
+    { bucket: '08:00', deliveries: 22, anomalies: 2 },
+    { bucket: '09:00', deliveries: 28, anomalies: 3 },
+    { bucket: '10:00', deliveries: 34, anomalies: 4 },
+    { bucket: '11:00', deliveries: 30, anomalies: 2 },
+    { bucket: '12:00', deliveries: 26, anomalies: 3 },
+    { bucket: '13:00', deliveries: 24, anomalies: 2 },
+    { bucket: '14:00', deliveries: 31, anomalies: 4 },
+    { bucket: '15:00', deliveries: 27, anomalies: 3 },
+    { bucket: '16:00', deliveries: 20, anomalies: 2 },
+    { bucket: '17:00', deliveries: 15, anomalies: 1 },
+]
+
+export const MOCK_DISTRICT_VOLUME = MOCK_DISTRICTS.map((district) => ({
+    district: district.name,
+    deliveries: district.completedToday + district.activeDeliveries,
+}))

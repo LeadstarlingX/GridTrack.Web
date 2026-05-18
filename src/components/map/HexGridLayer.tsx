@@ -14,10 +14,10 @@ export default function HexGridLayer() {
         <GeoJSON
             data={hexGeoJSON}
             style={{
-                color: '#64748b',
-                weight: 1,
+                color: '#475569',
+                weight: 1.25,
                 fillColor: '#3b82f6',
-                fillOpacity: 0.08,
+                fillOpacity: 0.1,
             }}
             onEachFeature={(feature, layer) => {
                 layer.on('click', () => {
