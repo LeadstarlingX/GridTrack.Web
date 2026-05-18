@@ -4,8 +4,12 @@
 
 
 .cn-toast {
-	background-color: color-mix(in srgb, var(--popover) 65%, transparent);
-	font-size: 1rem;
+	background-color: hsl(var(--map-overlay));
+	backdrop-filter: blur(4px);
+	border: 1px solid hsl(var(--border));
+	color: hsl(var(--foreground));
+	font-size: 0.875rem;
+	opacity: 0.95;
 }
 
 .toaster {
@@ -22,4 +26,51 @@
 	width: 34px;
 	min-height: 34px;
 	min-width: 34px;
+}
+
+:root {
+	--background: 0 0% 98%;
+	--surface: 0 0% 100%;
+	--surface-raised: 0 0% 96%;
+	--border: 220 13% 90%;
+	--border-strong: 220 13% 80%;
+	--foreground: 222 22% 10%;
+	--foreground-muted: 222 12% 45%;
+	--foreground-subtle: 222 10% 65%;
+	--primary: 222 89% 55%;
+	--primary-hover: 222 89% 48%;
+	--primary-foreground: 0 0% 100%;
+	--destructive: 0 72% 51%;
+	--destructive-foreground: 0 0% 100%;
+	--success: 142 71% 42%;
+	--warning: 38 92% 50%;
+	--map-overlay: 0 0% 100% / 0.88;
+	--map-overlay-dark: 222 22% 8% / 0.88;
+	--toggle-on: 142 71% 42%;
+	--toggle-off: 0 72% 56%;
+	--toggle-thumb-shadow: 0 2px 4px 0 rgba(0,0,0,0.25), inset 0 1px 2px 0 rgba(255,255,255,0.6);
+	--toggle-track-shadow-off: inset 0 2px 4px 0 rgba(0,0,0,0.15);
+	--toggle-track-shadow-on: inset 0 2px 4px 0 rgba(0,0,0,0.12);
+}
+
+.dark {
+	--background: 222 25% 8%;
+	--surface: 222 23% 11%;
+	--surface-raised: 222 20% 14%;
+	--border: 222 15% 18%;
+	--border-strong: 222 15% 26%;
+	--foreground: 210 20% 96%;
+	--foreground-muted: 216 12% 60%;
+	--foreground-subtle: 216 10% 42%;
+	--primary: 217 91% 62%;
+	--primary-hover: 217 91% 68%;
+	--primary-foreground: 0 0% 100%;
+	--destructive: 0 63% 56%;
+	--destructive-foreground: 0 0% 100%;
+	--success: 142 65% 48%;
+	--warning: 38 88% 55%;
+	--map-overlay: 222 22% 8% / 0.9;
+	--map-overlay-dark: 222 22% 8% / 0.9;
+	--toggle-on: 142 65% 48%;
+	--toggle-off: 0 63% 56%;
 }

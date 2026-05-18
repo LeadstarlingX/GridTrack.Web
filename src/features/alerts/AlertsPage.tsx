@@ -1,10 +1,8 @@
-import DevDisabled from '@/components/shared/DevDisabled'
-import { isPageEnabled } from '@/config/devPages'
-
 export default function AlertsPage() {
-    if (!isPageEnabled('alerts')) {
-        return <DevDisabled title="Alerts" />
-    }
-
-    return <h1 className="p-6 text-2xl font-semibold">Alerts</h1>
+    return (
+        <div className="p-6">
+            <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Alerts</h1>
+            <p className="text-xs text-[hsl(var(--foreground-muted))]">Review anomalies and incidents.</p>
+        </div>
+    )
 }

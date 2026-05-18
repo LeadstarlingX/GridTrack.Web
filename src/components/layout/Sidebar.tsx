@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Radio, BarChart3, Package, Bell, Users, Settings, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Radio, BarChart3, Package, Bell, Users, Settings } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useLiveStore } from '@/store/liveStore'
@@ -10,23 +10,29 @@ const navItems = [
     { to: '/deliveries', label: 'Deliveries', icon: Package },
     { to: '/alerts', label: 'Alerts', icon: Bell },
     { to: '/drivers', label: 'Drivers', icon: Users, adminOnly: true },
-    { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 interface SidebarProps {
     isOpen: boolean
-    onToggle: () => void
 }
 
-export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
+export default function Sidebar({ isOpen }: SidebarProps) {
     const anomalyCount = useLiveStore((s) => s.anomalyQueue.length)
 
     return (
-        <aside className="relative w-56 border-r border-border bg-card flex flex-col">
-            <div className="h-14 flex items-center px-4 border-b border-border">
-                <span className="font-bold text-lg">GridTrack</span>
+        <aside
+            className={cn(
+                'fixed left-0 top-0 h-screen z-10 w-[240px]',
+                'bg-[hsl(var(--map-overlay))] dark:bg-[hsl(var(--map-overlay-dark))]',
+                'backdrop-blur-sm border-r border-[hsl(var(--border))] flex flex-col',
+                'transition-transform duration-200 ease-out pointer-events-auto',
+                isOpen ? 'translate-x-0' : '-translate-x-full'
+            )}
+        >
+            <div className="flex items-center gap-2 px-4 h-14 border-b border-[hsl(var(--border))] shrink-0">
+                <span className="text-sm font-semibold tracking-tight text-[hsl(var(--foreground))]">GridTrack</span>
             </div>
-            <nav className="flex-1 p-2 space-y-1">
+            <nav className="flex-1 overflow-y-auto py-3 px-2 flex flex-col gap-0.5">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -34,14 +40,14 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                         end={item.to === '/'}
                         className={({ isActive }) =>
                             cn(
-                                'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                                'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors duration-100 w-full',
                                 isActive
-                                    ? 'bg-accent text-accent-foreground'
-                                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                                    ? 'bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground))]'
+                                    : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]'
                             )
                         }
                     >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon size={16} className="shrink-0" />
                         {item.label}
                         {item.label === 'Alerts' && anomalyCount > 0 && (
                             <Badge variant="destructive" className="ml-auto text-xs">
@@ -51,14 +57,22 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
                     </NavLink>
                 ))}
             </nav>
-            <button
-                type="button"
-                onClick={onToggle}
-                aria-label={isOpen ? 'Collapse navigation' : 'Expand navigation'}
-                className="absolute top-1/2 -right-3 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card shadow"
-            >
-                {isOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </button>
+            <div className="border-t border-[hsl(var(--border))] px-2 py-3">
+                <NavLink
+                    to="/settings"
+                    className={({ isActive }) =>
+                        cn(
+                            'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors duration-100 w-full',
+                            isActive
+                                ? 'bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground))]'
+                                : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]'
+                        )
+                    }
+                >
+                    <Settings size={16} className="shrink-0" />
+                    Settings
+                </NavLink>
+            </div>
         </aside>
     )
 }

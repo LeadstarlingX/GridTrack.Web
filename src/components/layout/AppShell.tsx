@@ -1,27 +1,27 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Sidebar from './Sidebar'
 import { cn } from '@/lib/utils'
+import { useAnomalyToasts } from '@/hooks/useAnomalyToasts'
 
 export default function AppShell() {
     const [navOpen, setNavOpen] = useState(true)
+    useAnomalyToasts()
 
     return (
-        <div className="relative h-screen overflow-hidden">
-            <div
-                className={cn(
-                    'fixed inset-y-0 left-0 z-[1500] w-56 border-r border-border bg-card transition-transform duration-200',
-                    navOpen ? 'translate-x-0' : '-translate-x-full'
-                )}
+        <div id="ui-shell" className="relative z-10 flex h-screen w-screen overflow-hidden pointer-events-none">
+            <Sidebar isOpen={navOpen} />
+            <button
+                type="button"
+                onClick={() => setNavOpen((v) => !v)}
+                aria-label="Toggle navigation"
+                aria-expanded={navOpen}
+                className="fixed left-0 top-1/2 -translate-y-1/2 z-20 flex h-8 w-5 items-center justify-center bg-[hsl(var(--surface))] border border-[hsl(var(--border))] border-l-0 rounded-r-md shadow-sm text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] transition-colors duration-150 pointer-events-auto"
             >
-                <Sidebar isOpen={navOpen} onToggle={() => setNavOpen((v) => !v)} />
-            </div>
-            <main
-                className={cn(
-                    'h-full overflow-auto bg-background transition-[margin] duration-200',
-                    navOpen ? 'ml-56' : 'ml-0'
-                )}
-            >
+                {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
+            </button>
+            <main id="main-content" className="pointer-events-auto flex-1 overflow-y-auto bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
                 <Outlet />
             </main>
         </div>

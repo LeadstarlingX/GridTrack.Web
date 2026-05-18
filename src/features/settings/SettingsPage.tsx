@@ -1,88 +1,104 @@
+import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Sun, Moon, Monitor } from 'lucide-react'
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
-import { isPageEnabled } from '@/config/devPages'
-import DevDisabled from '@/components/shared/DevDisabled'
-
-interface SwitchProps {
-    checked: boolean
-    onChange: () => void
-    label: string
-}
-
-function Switch({ checked, onChange, label }: SwitchProps) {
-    return (
-        <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
-            onClick={onChange}
-            className={`relative inline-flex h-9 w-16 items-center rounded-full transition ${checked ? 'bg-emerald-500' : 'bg-red-500'}`}
-        >
-            <span className="sr-only">{label}</span>
-            <span
-                className={`inline-block h-7 w-7 rounded-full bg-white shadow transition ${checked ? 'translate-x-8' : 'translate-x-2'}`}
-            />
-        </button>
-    )
-}
+import { cn } from '@/lib/utils'
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme()
     const toastsEnabled = useSettingsStore((s) => s.toastsEnabled)
     const toggleToasts = useSettingsStore((s) => s.toggleToasts)
+    const [section, setSection] = useState<'appearance' | 'notifications' | 'display'>('appearance')
 
     const activeTheme = theme ?? 'system'
-
-    if (!isPageEnabled('settings')) {
-        return <DevDisabled title="Settings" />
-    }
 
     return (
         <div className="p-6 space-y-6">
             <div>
-                <h1 className="text-2xl font-semibold">Settings</h1>
-                <p className="text-sm text-muted-foreground">Customize alerts and appearance.</p>
+                <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Settings</h1>
+                <p className="text-xs text-[hsl(var(--foreground-muted))]">Customize alerts and appearance.</p>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Notifications</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    <label className="flex items-center justify-between gap-4 text-sm">
-                        <span>Show anomaly toast notifications</span>
-                        <Switch checked={toastsEnabled} onChange={toggleToasts} label="Show anomaly toast notifications" />
-                    </label>
-                </CardContent>
-            </Card>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[200px_1fr]">
+                <div className="space-y-2">
+                    {([
+                        { key: 'appearance', label: 'Appearance' },
+                        { key: 'notifications', label: 'Notifications' },
+                        { key: 'display', label: 'Display' },
+                    ] as const).map((item) => (
+                        <button
+                            key={item.key}
+                            type="button"
+                            onClick={() => setSection(item.key)}
+                            className={cn(
+                                'w-full text-left px-3 py-2 rounded text-sm transition-colors duration-100',
+                                section === item.key
+                                    ? 'bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground))]'
+                                    : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]'
+                            )}
+                        >
+                            {item.label}
+                        </button>
+                    ))}
+                </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">Theme</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-wrap gap-2">
-                    <Button
-                        variant={activeTheme === 'light' ? 'default' : 'outline'}
-                        onClick={() => setTheme('light')}
-                    >
-                        Light
-                    </Button>
-                    <Button
-                        variant={activeTheme === 'dark' ? 'default' : 'outline'}
-                        onClick={() => setTheme('dark')}
-                    >
-                        Dark
-                    </Button>
-                    <Button
-                        variant={activeTheme === 'system' ? 'default' : 'outline'}
-                        onClick={() => setTheme('system')}
-                    >
-                        System
-                    </Button>
-                </CardContent>
-            </Card>
+                <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-lg p-4">
+                    {section === 'appearance' && (
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Appearance</p>
+                            </div>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                {([
+                                    { key: 'light', label: 'Light', Icon: Sun },
+                                    { key: 'dark', label: 'Dark', Icon: Moon },
+                                    { key: 'system', label: 'System', Icon: Monitor },
+                                ] as const).map(({ key, label, Icon }) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        onClick={() => setTheme(key)}
+                                        data-selected={activeTheme === key}
+                                        className={cn(
+                                            'border border-[hsl(var(--border))] rounded-lg p-4 text-center text-sm font-medium text-[hsl(var(--foreground))]',
+                                            'hover:border-[hsl(var(--border-strong))] transition-colors duration-100',
+                                            activeTheme === key && 'border-[hsl(var(--primary))] bg-[hsl(var(--surface-raised))]'
+                                        )}
+                                    >
+                                        <Icon className="mx-auto mb-2" size={18} />
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {section === 'notifications' && (
+                        <div>
+                            <p className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Notifications</p>
+                            <div className="flex items-center justify-between py-4 border-b border-[hsl(var(--border))] last:border-0">
+                                <div className="space-y-0.5 pr-8">
+                                    <p className="text-sm font-medium text-[hsl(var(--foreground))]">Toast Notifications</p>
+                                    <p className="text-xs text-[hsl(var(--foreground-muted))]">Show real-time alerts in the corner.</p>
+                                </div>
+                                <ToggleSwitch
+                                    checked={toastsEnabled}
+                                    onCheckedChange={toggleToasts}
+                                    aria-label="Toast Notifications"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {section === 'display' && (
+                        <div>
+                            <p className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Display</p>
+                            <p className="text-xs text-[hsl(var(--foreground-subtle))] mt-2">No display settings yet.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }

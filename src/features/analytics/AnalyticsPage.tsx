@@ -1,10 +1,8 @@
-import DevDisabled from '@/components/shared/DevDisabled'
-import { isPageEnabled } from '@/config/devPages'
-
 export default function AnalyticsPage() {
-    if (!isPageEnabled('analytics')) {
-        return <DevDisabled title="Analytics" />
-    }
-
-    return <h1 className="p-6 text-2xl font-semibold">Analytics</h1>
+    return (
+        <div className="p-6">
+            <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Analytics</h1>
+            <p className="text-xs text-[hsl(var(--foreground-muted))]">Operational insights and trends.</p>
+        </div>
+    )
 }

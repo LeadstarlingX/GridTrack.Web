@@ -1,10 +1,8 @@
-import DevDisabled from '@/components/shared/DevDisabled'
-import { isPageEnabled } from '@/config/devPages'
-
 export default function DriversPage() {
-    if (!isPageEnabled('drivers')) {
-        return <DevDisabled title="Drivers" />
-    }
-
-    return <h1 className="p-6 text-2xl font-semibold">Drivers</h1>
+    return (
+        <div className="p-6">
+            <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Drivers</h1>
+            <p className="text-xs text-[hsl(var(--foreground-muted))]">Manage driver availability.</p>
+        </div>
+    )
 }

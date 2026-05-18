@@ -6,8 +6,6 @@ import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { setMapRef } from '@/lib/mapRef'
-import DevDisabled from '@/components/shared/DevDisabled'
-import { isPageEnabled } from '@/config/devPages'
 import { useFocusMode } from './useFocusMode'
 
 export default function LiveOpsPage() {
@@ -27,10 +25,6 @@ export default function LiveOpsPage() {
         const cleanup = startMockEmitter()
         return cleanup
     }, [])
-
-    if (!isPageEnabled('liveOps')) {
-        return <DevDisabled title="Live Ops" />
-    }
 
     return (
         <div className="relative h-full">

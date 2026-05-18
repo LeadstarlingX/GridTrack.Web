@@ -1,10 +1,8 @@
-import DevDisabled from '@/components/shared/DevDisabled'
-import { isPageEnabled } from '@/config/devPages'
-
 export default function DeliveriesPage() {
-    if (!isPageEnabled('deliveries')) {
-        return <DevDisabled title="Deliveries" />
-    }
-
-    return <h1 className="p-6 text-2xl font-semibold">Deliveries</h1>
+    return (
+        <div className="p-6">
+            <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Deliveries</h1>
+            <p className="text-xs text-[hsl(var(--foreground-muted))]">Track all delivery activity.</p>
+        </div>
+    )
 }
