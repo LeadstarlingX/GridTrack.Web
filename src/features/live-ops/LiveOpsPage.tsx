@@ -1,12 +1,16 @@
 import { useEffect, useRef } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import L from 'leaflet'
 import LiveMap from '@/components/map/LiveMap'
 import ConnectionStatus from '@/components/map/ConnectionStatus'
 import MapControls from '@/components/map/MapControls'
 import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
+import { useFocusStore } from '@/store/focusStore'
+import { useLiveStore } from '@/store/liveStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { setMapRef } from '@/lib/mapRef'
+import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 import { useFocusMode } from './useFocusMode'
 
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
@@ -44,6 +48,10 @@ export default function LiveOpsPage() {
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const heatmapResolution = 8
+    const location = useLocation()
+    const navigate = useNavigate()
+    const enterFocusMode = useFocusStore((s) => s.enterFocusMode)
+    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
 
     useFocusMode(mapRef)
 
@@ -84,6 +92,22 @@ export default function LiveOpsPage() {
         const cleanup = startMockEmitter()
         return cleanup
     }, [])
+
+    useEffect(() => {
+        const state = location.state as { focusDeliveryId?: string } | null
+        const focusDeliveryId = state?.focusDeliveryId
+        if (!focusDeliveryId) return
+
+        const delivery = useLiveStore.getState().deliveries[focusDeliveryId]
+        if (!delivery || !delivery.assignedDriverId) return
+
+        const driver = useLiveStore.getState().drivers[delivery.assignedDriverId]
+        const routeIndex = driver?.routeIndex ?? 0
+        const polyline = DAMASCUS_ROUTES[routeIndex] ?? []
+        enterFocusMode(delivery.id, delivery.assignedDriverId, polyline, delivery.etaSeconds ?? 420)
+        setSidePanelMode('focus')
+        navigate('/', { replace: true, state: null })
+    }, [enterFocusMode, location.state, navigate, setSidePanelMode])
 
     return (
         <div className="relative h-full">

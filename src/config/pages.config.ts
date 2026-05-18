@@ -5,9 +5,9 @@ export const PAGE_CONFIG = {
         enabled: true,
         disabledMessage: 'Comming soon',
     },
-    deliveries: false,
-    alerts: false,
-    drivers: false,
+    deliveries: true,
+    alerts: true,
+    drivers: true,
     settings: true,
 } as const
 

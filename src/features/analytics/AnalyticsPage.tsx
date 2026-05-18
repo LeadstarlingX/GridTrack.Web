@@ -10,6 +10,18 @@ import ChatbotPanel from './chatbot/ChatbotPanel'
 
 type AnalyticsTab = 'overview' | 'ai'
 
+type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+const DAY_OPTIONS: { key: DayKey; label: string }[] = [
+    { key: 'mon', label: 'Mon' },
+    { key: 'tue', label: 'Tue' },
+    { key: 'wed', label: 'Wed' },
+    { key: 'thu', label: 'Thu' },
+    { key: 'fri', label: 'Fri' },
+    { key: 'sat', label: 'Sat' },
+    { key: 'sun', label: 'Sun' },
+]
+
 function formatPercent(value: number) {
     return `${Math.round(value * 100)}%`
 }
@@ -59,6 +71,9 @@ export default function AnalyticsPage() {
     const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview')
     const [isLoading, setIsLoading] = useState(false)
     const loadingRef = useRef<number | null>(null)
+    const [activeDays, setActiveDays] = useState<DayKey[]>(DAY_OPTIONS.map((d) => d.key))
+    const [hourStart, setHourStart] = useState(6)
+    const [hourEnd, setHourEnd] = useState(22)
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
@@ -98,11 +113,52 @@ export default function AnalyticsPage() {
         [slicedTrends]
     )
 
-        const downloadCsv = (mode: 'range' | 'full') => {
-            const query = mode === 'range' ? `?from=${range.from}&to=${range.to}` : ''
-            const url = buildApiUrl(`/api/export/csv${query}`)
-            window.open(url, '_blank')
+    const downloadCsv = async (mode: 'range' | 'full') => {
+        const payload = {
+            mode,
+            from: range.from,
+            to: range.to,
+            days: activeDays,
+            fromHour: hourStart,
+            toHour: hourEnd,
         }
+
+        const response = await fetch(buildApiUrl('/api/export/csv'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        })
+
+        if (!response.ok) {
+            throw new Error('CSV export failed')
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `gridtrack-export-${mode}-${range.from}-to-${range.to}.csv`
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.URL.revokeObjectURL(url)
+    }
+
+    const toggleDay = (day: DayKey) => {
+        setActiveDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))
+    }
+
+    const handleHourStart = (value: string) => {
+        const next = Math.max(0, Math.min(23, Number(value)))
+        setHourStart(next)
+        if (next > hourEnd) setHourEnd(next)
+    }
+
+    const handleHourEnd = (value: string) => {
+        const next = Math.max(0, Math.min(23, Number(value)))
+        setHourEnd(next)
+        if (next < hourStart) setHourStart(next)
+    }
 
     return (
         <div className="flex flex-col gap-6 p-6">
@@ -113,6 +169,39 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <DateRangePicker value={range} onChange={setRange} onApply={handleApplyRange} />
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
+                        <span className="text-xs text-[hsl(var(--foreground-muted))]">Days</span>
+                        <div className="flex flex-wrap items-center gap-1">
+                            {DAY_OPTIONS.map((day) => (
+                                <Button
+                                    key={day.key}
+                                    variant={activeDays.includes(day.key) ? 'secondary' : 'ghost'}
+                                    size="xs"
+                                    onClick={() => toggleDay(day.key)}
+                                >
+                                    {day.label}
+                                </Button>
+                            ))}
+                        </div>
+                        <span className="text-xs text-[hsl(var(--foreground-muted))]">Hours</span>
+                        <input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={hourStart}
+                            onChange={(e) => handleHourStart(e.target.value)}
+                            className="h-7 w-14 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
+                        />
+                        <span className="text-xs text-[hsl(var(--foreground-muted))]">to</span>
+                        <input
+                            type="number"
+                            min={0}
+                            max={23}
+                            value={hourEnd}
+                            onChange={(e) => handleHourEnd(e.target.value)}
+                            className="h-7 w-14 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
+                        />
+                    </div>
                     <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1">
                         <Button
                             variant={activeTab === 'overview' ? 'secondary' : 'ghost'}
@@ -129,14 +218,14 @@ export default function AnalyticsPage() {
                             AI Analysis
                         </Button>
                     </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => downloadCsv('range')}>
-                                Download CSV
-                            </Button>
-                            <Button variant="ghost" size="sm" onClick={() => downloadCsv('full')}>
-                                Download Full CSV
-                            </Button>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => downloadCsv('range')}>
+                            Download CSV
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => downloadCsv('full')}>
+                            Download Full CSV
+                        </Button>
+                    </div>
                 </div>
             </header>
 
@@ -227,7 +316,7 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {chatbotEnabled ? (
-                            <ChatbotPanel range={range} />
+                            <ChatbotPanel range={range} activeDays={activeDays} hourStart={hourStart} hourEnd={hourEnd} />
                         ) : (
                             <div className="rounded-lg border border-dashed border-[hsl(var(--border-strong))] bg-[hsl(var(--surface))] p-6">
                                 <p className="text-xs text-[hsl(var(--foreground-subtle))] italic">

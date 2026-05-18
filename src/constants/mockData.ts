@@ -1,6 +1,7 @@
 import type { DriverState } from '@/types/driver'
 import type { DeliveryState } from '@/types/delivery'
 import type { DistrictStats } from '@/types/district'
+import type { AnomalyAlert } from '@/types/hub'
 import { DAMASCUS_ROUTES } from './mockRoutes'
 
 const driverNames = [
@@ -76,6 +77,69 @@ export const MOCK_ANALYTICS_TRENDS = [
     { bucket: '15:00', deliveries: 27, anomalies: 3 },
     { bucket: '16:00', deliveries: 20, anomalies: 2 },
     { bucket: '17:00', deliveries: 15, anomalies: 1 },
+]
+
+export const MOCK_ALERTS: AnomalyAlert[] = [
+    {
+        id: 'alert-1',
+        deliveryId: 'del-9',
+        driverId: 'driver-9',
+        driverName: 'Hassan N.',
+        anomalyType: 'Stall',
+        reason: 'No movement for 14 minutes',
+        districtId: 'district-2',
+        lat: 33.512,
+        lng: 36.285,
+        timestamp: '2026-05-17T08:42:00Z',
+    },
+    {
+        id: 'alert-2',
+        deliveryId: 'del-4',
+        driverId: 'driver-4',
+        driverName: 'Ali S.',
+        anomalyType: 'Delay',
+        reason: 'ETA exceeded by 18 minutes',
+        districtId: 'district-1',
+        lat: 33.507,
+        lng: 36.262,
+        timestamp: '2026-05-17T08:31:00Z',
+    },
+    {
+        id: 'alert-3',
+        deliveryId: 'del-2',
+        driverId: 'driver-2',
+        driverName: 'Sami K.',
+        anomalyType: 'RouteDeviation',
+        reason: 'Driver left assigned corridor',
+        districtId: 'district-2',
+        lat: 33.514,
+        lng: 36.292,
+        timestamp: '2026-05-17T08:15:00Z',
+    },
+    {
+        id: 'alert-4',
+        deliveryId: 'del-8',
+        driverId: 'driver-8',
+        driverName: 'Fadi J.',
+        anomalyType: 'Delay',
+        reason: 'Traffic congestion flagged',
+        districtId: 'district-3',
+        lat: 33.521,
+        lng: 36.304,
+        timestamp: '2026-05-17T08:02:00Z',
+    },
+    {
+        id: 'alert-5',
+        deliveryId: 'del-5',
+        driverId: 'driver-5',
+        driverName: 'Maher T.',
+        anomalyType: 'Stall',
+        reason: 'Stopped near checkpoint',
+        districtId: 'district-4',
+        lat: 33.498,
+        lng: 36.274,
+        timestamp: '2026-05-17T07:48:00Z',
+    },
 ]
 
 export const MOCK_DISTRICT_VOLUME = MOCK_DISTRICTS.map((district) => ({

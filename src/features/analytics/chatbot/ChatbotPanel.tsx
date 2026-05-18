@@ -6,6 +6,9 @@ import type { DateRangeValue } from '../DateRangePicker'
 
 interface ChatbotPanelProps {
     range: DateRangeValue
+    activeDays: string[]
+    hourStart: number
+    hourEnd: number
 }
 
 function getRangeDays(from: string, to: string) {
@@ -15,7 +18,7 @@ function getRangeDays(from: string, to: string) {
     return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1
 }
 
-export default function ChatbotPanel({ range }: ChatbotPanelProps) {
+export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: ChatbotPanelProps) {
     const [input, setInput] = useState('')
     const { messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation } = useChatbot()
 
@@ -44,7 +47,11 @@ export default function ChatbotPanel({ range }: ChatbotPanelProps) {
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => loadCsvForRange(range.from, range.to)}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => loadCsvForRange(range.from, range.to, activeDays, hourStart, hourEnd)}
+                    >
                         {isCsvLoading ? 'Loading...' : 'Load Data'}
                     </Button>
                     <Button variant="ghost" size="sm" onClick={clearConversation}>

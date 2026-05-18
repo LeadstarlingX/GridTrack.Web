@@ -7,7 +7,7 @@ interface ChatbotState {
     isLoading: boolean
     isCsvLoading: boolean
     sendMessage: (text: string) => Promise<void>
-    loadCsvForRange: (from: string, to: string) => Promise<void>
+    loadCsvForRange: (from: string, to: string, days: string[], fromHour: number, toHour: number) => Promise<void>
     clearConversation: () => void
 }
 
@@ -28,10 +28,14 @@ export function useChatbot(): ChatbotState {
     const [isLoading, setIsLoading] = useState(false)
     const [isCsvLoading, setIsCsvLoading] = useState(false)
 
-    const loadCsvForRange = useCallback(async (from: string, to: string) => {
+    const loadCsvForRange = useCallback(async (from: string, to: string, days: string[], fromHour: number, toHour: number) => {
         setIsCsvLoading(true)
         try {
-            const response = await fetch(buildApiUrl(`/api/export/csv?from=${from}&to=${to}`))
+            const response = await fetch(buildApiUrl('/api/export/csv'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mode: 'range', from, to, days, fromHour, toHour }),
+            })
             if (!response.ok) {
                 throw new Error('Failed to load CSV')
             }
