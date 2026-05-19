@@ -12,6 +12,7 @@ import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { setMapRef } from '@/lib/mapRef'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 import { useFocusMode } from './useFocusMode'
+import {APP_CONFIG} from "@/config/app.config.ts";
 
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
     const first = data.features?.[0]?.geometry?.type === 'Polygon'
@@ -89,7 +90,7 @@ export default function LiveOpsPage() {
     }, [setHeatmapGeoJSON])
 
     useEffect(() => {
-        const fileName = '/district-boundaries.geojson'
+        const fileName = APP_CONFIG.map.districtBoundariesFile
         fetch(fileName)
             .then((r) => {
                 if (!r.ok) {

@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
-import { getMockDistrictStats, MOCK_DISTRICTS } from '@/constants/mockData'
+import { getMockDistrictStats, MOCK_DISTRICTS, MOCK_RECOMMENDATION_DISTRICTS } from '@/constants/mockData'
 
 export default function DistrictPanel() {
     const districtId = useMapStore((s) => s.selectedDistrictId)
@@ -18,6 +18,10 @@ export default function DistrictPanel() {
     const activeDeliveries = district.activeDeliveries
     const completedToday = district.completedToday
     const anomalyRate = district.anomalyRate
+    const recommendationMock = useMapStore((s) => s.recommendationMock)
+    const mockEntry = MOCK_RECOMMENDATION_DISTRICTS.find((m) => m.districtId === districtId)
+    const expectedDemand = recommendationMock?.[districtId] ?? mockEntry?.expectedDemand ?? Math.max(1, Math.round((completedToday / 8) + (activeDeliveries / 4)))
+    const activeDrivers = mockEntry?.activeDrivers ?? Math.max(1, Math.round(activeDeliveries / 3))
 
     return (
         <div className="p-4">
@@ -39,6 +43,14 @@ export default function DistrictPanel() {
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Anomaly Rate</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-bold">{(anomalyRate * 100).toFixed(1)}%</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Expected Demand</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{expectedDemand}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Active Drivers</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{activeDrivers}</p></CardContent>
                 </Card>
             </div>
         </div>
