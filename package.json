@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "extract:endpoints": "tsx scripts/extract-endpoints.ts"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.6",
@@ -50,6 +51,8 @@
     "h3-js": "^4.4.0",
     "osmtogeojson": "^3.0.0-beta.5",
     "tailwindcss": "^4.3.0",
+    "ts-morph": "^28.0.0",
+    "tsx": "^4.22.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12"

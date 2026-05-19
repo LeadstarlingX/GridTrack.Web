@@ -1,0 +1,12 @@
+[
+  { "districtId": "district-1", "expectedDemand": 14 },
+  { "districtId": "district-2", "expectedDemand": 10 },
+  { "districtId": "district-3", "expectedDemand": 8 },
+  { "districtId": "district-4", "expectedDemand": 12 },
+  { "districtId": "district-sy0100", "expectedDemand": 10 },
+  { "districtId": "district-sy0301", "expectedDemand": 7 },
+  { "districtId": "district-sy0302", "expectedDemand": 9 },
+  { "districtId": "district-sy0303", "expectedDemand": 5 },
+  { "districtId": "district-sy0304", "expectedDemand": 8 },
+  { "districtId": "district-sy0305", "expectedDemand": 4 }
+]

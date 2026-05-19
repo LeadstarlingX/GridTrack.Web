@@ -52,18 +52,41 @@ export default function HistoricalHeatmapLayer() {
     if (!enabled || !colored || !thresholds) return null
 
     return (
-        <GeoJSON
-            data={colored}
-            style={(feature) => {
-                const v = feature?.properties?.intensity ?? 0
-                return {
-                    color: 'transparent',
-                    weight: 0,
-                    fillColor: getBlueScale(v, thresholds.p25, thresholds.p50, thresholds.p75),
-                    fillOpacity: 0.5,
-                }
-            }}
-            interactive={false}
-        />
+        <>
+            <GeoJSON
+                data={colored}
+                style={(feature) => {
+                    const v = feature?.properties?.intensity ?? 0
+                    return {
+                        color: 'transparent',
+                        weight: 0,
+                        fillColor: getBlueScale(v, thresholds.p25, thresholds.p50, thresholds.p75),
+                        fillOpacity: 0.5,
+                    }
+                }}
+                interactive={false}
+            />
+            <div className="pointer-events-none absolute bottom-20 right-4 z-[1000]">
+                <div className="space-y-1 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))]/95 px-3 py-2 text-[11px] shadow-lg backdrop-blur-sm">
+                    <div className="text-[12px] font-medium text-[hsl(var(--foreground))]">Historical heat (percentiles)</div>
+                    <div className="flex items-center gap-2 text-[hsl(var(--foreground-muted))] text-[11px]">
+                        <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getBlueScale(thresholds.p25 - 1, thresholds.p25, thresholds.p50, thresholds.p75) }} />
+                        <span>Low &lt; p25 ({thresholds.p25})</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[hsl(var(--foreground-muted))] text-[11px]">
+                        <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getBlueScale(thresholds.p50 - 1, thresholds.p25, thresholds.p50, thresholds.p75) }} />
+                        <span>Medium p25–p50 ({thresholds.p50})</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[hsl(var(--foreground-muted))] text-[11px]">
+                        <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getBlueScale(thresholds.p75 - 1, thresholds.p25, thresholds.p50, thresholds.p75) }} />
+                        <span>High p50–p75 ({thresholds.p75})</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[hsl(var(--foreground-muted))] text-[11px]">
+                        <span className="h-3 w-6 rounded-sm" style={{ backgroundColor: getBlueScale(thresholds.p75 + 1, thresholds.p25, thresholds.p50, thresholds.p75) }} />
+                        <span>Very high &gt; p75</span>
+                    </div>
+                </div>
+            </div>
+        </>
     )
 }

@@ -21,6 +21,7 @@ interface MapStore {
         toHour: number
     } | null
     historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
+    recommendationMock: Record<string, number> | null
 
     toggleHexGrid: () => void
     toggleHeatmap: () => void
@@ -36,6 +37,7 @@ interface MapStore {
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
+    setRecommendationMock: (data: Record<string, number> | null) => void
 }
 
 export const useMapStore = create<MapStore>()((set) => ({
@@ -74,4 +76,6 @@ export const useMapStore = create<MapStore>()((set) => ({
     setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),
     setHistoricalHeatmapRange: (range) => set({ historicalHeatmapRange: range }),
     setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
+    recommendationMock: null,
+    setRecommendationMock: (data) => set({ recommendationMock: data }),
 }))

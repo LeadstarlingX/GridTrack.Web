@@ -104,6 +104,24 @@ export default function LiveOpsPage() {
     }, [setDistrictBoundariesGeoJSON])
 
     useEffect(() => {
+        const url = '/mock-forecasts.json'
+        const setRecommendationMock = useMapStore.getState().setRecommendationMock
+        fetch(url)
+            .then((r) => {
+                if (!r.ok) throw new Error(`Missing mock forecasts file: ${url}`)
+                return r.json()
+            })
+            .then((data: Array<{ districtId: string; expectedDemand: number }>) => {
+                const map: Record<string, number> = {}
+                data.forEach((d) => { map[d.districtId] = d.expectedDemand })
+                setRecommendationMock(map)
+            })
+            .catch((err) => {
+                console.warn(err)
+            })
+    }, [])
+
+    useEffect(() => {
         if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'true') return
         const cleanup = startMockEmitter()
         return cleanup

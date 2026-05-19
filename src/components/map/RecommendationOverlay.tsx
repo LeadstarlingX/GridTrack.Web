@@ -1,7 +1,7 @@
 import { GeoJSON } from 'react-leaflet'
 import { useMemo } from 'react'
 import { APP_CONFIG } from '@/config/app.config'
-import { getMockRecommendationRatio } from '@/constants/mockData'
+import { getMockRecommendationRatio, getMockDistrictStats } from '@/constants/mockData'
 import { useMapStore } from '@/store/mapStore'
 
 type ComputeRatio = (districtId: string, districtName?: string) => number
@@ -24,9 +24,22 @@ function getRecommendationFill(ratio: number) {
     return '#6366f1'
 }
 
-export default function RecommendationOverlay({ computeRatio = getMockRecommendationRatio }: RecommendationOverlayProps) {
+export default function RecommendationOverlay({ computeRatio }: RecommendationOverlayProps) {
     const enabled = useMapStore((s) => s.recommendationEnabled)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const recommendationMock = useMapStore((s) => s.recommendationMock)
+    // computeRatio may be provided for unit tests; otherwise use local stub that prefers loaded mock forecasts
+    const computeLocal = (districtId: string, districtName?: string) => {
+        if (recommendationMock && recommendationMock[districtId] !== undefined) {
+            const expected = recommendationMock[districtId]
+            // derive active drivers from mock recommendation array or seeded district stats
+            const seeded = getMockDistrictStats(districtId, districtName)
+            const activeDrivers = Math.max(1, Math.round((seeded.activeDeliveries / 3)))
+            return Number((activeDrivers / Math.max(1, expected)).toFixed(2))
+        }
+        return getMockRecommendationRatio(districtId, districtName)
+    }
+    const compute = computeRatio ?? computeLocal
     const selectDistrict = useMapStore((s) => s.selectDistrict)
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
 
@@ -38,7 +51,7 @@ export default function RecommendationOverlay({ computeRatio = getMockRecommenda
             features: boundaries.features.map((feature) => {
                 const districtId = feature.properties?.districtId ?? ''
                 const districtName = feature.properties?.name as string | undefined
-                const staffingRatio = computeRatio(districtId, districtName)
+                const staffingRatio = compute(districtId, districtName)
 
                 return {
                     ...feature,
