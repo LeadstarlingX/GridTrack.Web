@@ -41,6 +41,20 @@ export const MOCK_DELIVERIES: DeliveryState[] = [
     { id: 'del-8', status: 'InTransit', assignedDriverId: 'driver-8', districtId: 'district-3', etaSeconds: 600, createdAt: '2026-05-17T08:25:00Z' },
     { id: 'del-9', status: 'Anomalous', assignedDriverId: 'driver-9', districtId: 'district-2', etaSeconds: null, createdAt: '2026-05-17T07:45:00Z' },
     { id: 'del-10', status: 'InTransit', assignedDriverId: 'driver-10', districtId: 'district-4', etaSeconds: 540, createdAt: '2026-05-17T08:30:00Z' },
+    { id: 'del-11', status: 'Delivered', assignedDriverId: 'driver-11', districtId: 'district-1', etaSeconds: null, createdAt: '2026-05-16T18:10:00Z' },
+    { id: 'del-12', status: 'Delivered', assignedDriverId: 'driver-12', districtId: 'district-2', etaSeconds: null, createdAt: '2026-05-16T18:35:00Z' },
+    { id: 'del-13', status: 'InTransit', assignedDriverId: 'driver-13', districtId: 'district-3', etaSeconds: 360, createdAt: '2026-05-16T19:05:00Z' },
+    { id: 'del-14', status: 'InTransit', assignedDriverId: 'driver-14', districtId: 'district-4', etaSeconds: 620, createdAt: '2026-05-16T19:15:00Z' },
+    { id: 'del-15', status: 'Assigned', assignedDriverId: 'driver-15', districtId: 'district-1', etaSeconds: 900, createdAt: '2026-05-16T19:40:00Z' },
+    { id: 'del-16', status: 'Created', assignedDriverId: null, districtId: 'district-2', etaSeconds: null, createdAt: '2026-05-16T20:00:00Z' },
+    { id: 'del-17', status: 'Delivered', assignedDriverId: 'driver-1', districtId: 'district-3', etaSeconds: null, createdAt: '2026-05-15T08:10:00Z' },
+    { id: 'del-18', status: 'Delivered', assignedDriverId: 'driver-2', districtId: 'district-4', etaSeconds: null, createdAt: '2026-05-15T09:10:00Z' },
+    { id: 'del-19', status: 'InTransit', assignedDriverId: 'driver-3', districtId: 'district-1', etaSeconds: 480, createdAt: '2026-05-15T09:40:00Z' },
+    { id: 'del-20', status: 'Anomalous', assignedDriverId: 'driver-4', districtId: 'district-2', etaSeconds: null, createdAt: '2026-05-15T10:05:00Z' },
+    { id: 'del-21', status: 'Delivered', assignedDriverId: 'driver-5', districtId: 'district-4', etaSeconds: null, createdAt: '2026-05-14T13:25:00Z' },
+    { id: 'del-22', status: 'Delivered', assignedDriverId: 'driver-6', districtId: 'district-3', etaSeconds: null, createdAt: '2026-05-14T14:15:00Z' },
+    { id: 'del-23', status: 'Assigned', assignedDriverId: 'driver-7', districtId: 'district-2', etaSeconds: 1020, createdAt: '2026-05-14T14:30:00Z' },
+    { id: 'del-24', status: 'InTransit', assignedDriverId: 'driver-8', districtId: 'district-1', etaSeconds: 510, createdAt: '2026-05-14T15:00:00Z' },
 ]
 
 export const MOCK_DISTRICTS: DistrictStats[] = [
@@ -146,3 +160,36 @@ export const MOCK_DISTRICT_VOLUME = MOCK_DISTRICTS.map((district) => ({
     district: district.name,
     deliveries: district.completedToday + district.activeDeliveries,
 }))
+
+function hashString(input: string) {
+    let hash = 2166136261
+    for (let i = 0; i < input.length; i += 1) {
+        hash ^= input.charCodeAt(i)
+        hash = Math.imul(hash, 16777619)
+    }
+    return hash >>> 0
+}
+
+function clamp(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value))
+}
+
+function parseRangeDays(from: string, to: string) {
+    const start = new Date(`${from}T00:00:00`)
+    const end = new Date(`${to}T23:59:59`)
+    const diffMs = Math.max(0, end.getTime() - start.getTime())
+    return Math.max(1, Math.ceil(diffMs / 86_400_000))
+}
+
+export function getMockHistoricalHeatmapCount(h3Index: string, range: { from: string; to: string; fromHour: number; toHour: number }) {
+    const days = parseRangeDays(range.from, range.to)
+    const hours = Math.max(1, range.toHour - range.fromHour + 1)
+    const hash = hashString(`${h3Index}:${range.from}:${range.to}:${range.fromHour}-${range.toHour}`)
+    const base = 2 + (hash % 11)
+    const dayBoost = 1 + Math.min(2.2, days / 5)
+    const hourBoost = 1 + Math.min(1.4, hours / 8)
+    const rushBoost = range.fromHour <= 8 && range.toHour >= 17 ? 1.25 : 1
+    const variance = ((hash >> 8) % 100) / 100
+
+    return clamp(Math.round(base * dayBoost * hourBoost * rushBoost + variance * 6), 0, 99)
+}
