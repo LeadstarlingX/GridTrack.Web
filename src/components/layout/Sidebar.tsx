@@ -1,11 +1,13 @@
 import { NavLink } from 'react-router-dom'
-import { Radio, BarChart3, Package, Bell, Users, Settings } from 'lucide-react'
+import { Radio, BarChart3, Package, Bell, Users, Settings, Grid3X3 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useLiveStore } from '@/store/liveStore'
+import { useMapStore } from '@/store/mapStore'
 
 const navItems = [
     { to: '/', label: 'Live Ops', icon: Radio },
+    { to: '/', label: 'Districts', icon: Grid3X3, openDistricts: true },
     { to: '/analytics', label: 'Analytics', icon: BarChart3 },
     { to: '/deliveries', label: 'Deliveries', icon: Package },
     { to: '/alerts', label: 'Alerts', icon: Bell },
@@ -18,6 +20,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen }: SidebarProps) {
     const anomalyCount = useLiveStore((s) => s.anomalyQueue.length)
+    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+    const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
 
     return (
         <aside
@@ -38,6 +42,12 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                         key={item.to}
                         to={item.to}
                         end={item.to === '/'}
+                        onClick={() => {
+                            if (item.openDistricts) {
+                                setSidePanelMode('district')
+                                setDistrictPanelView('browse')
+                            }
+                        }}
                         className={({ isActive }) =>
                             cn(
                                 'flex items-center gap-3 px-3 py-2 rounded text-sm transition-colors duration-100 w-full',

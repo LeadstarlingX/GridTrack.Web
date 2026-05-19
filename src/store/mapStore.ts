@@ -11,6 +11,7 @@ interface MapStore {
     selectedDistrictId: string | null
     selectedDriverId: string | null
     sidePanelMode: SidePanelMode
+    districtPanelView: 'details' | 'browse'
     hexGeoJSON: GeoJSON.FeatureCollection | null
     heatmapGeoJSON: GeoJSON.FeatureCollection | null
     districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
@@ -32,6 +33,7 @@ interface MapStore {
     selectDriver: (id: string | null) => void
     toggleDriverPanel: (id: string) => void
     setSidePanelMode: (mode: SidePanelMode) => void
+    setDistrictPanelView: (view: 'details' | 'browse') => void
     setHexGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
@@ -49,6 +51,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     selectedDistrictId: null,
     selectedDriverId: null,
     sidePanelMode: 'idle',
+    districtPanelView: 'browse',
     hexGeoJSON: null,
     heatmapGeoJSON: null,
     districtBoundariesGeoJSON: null,
@@ -71,6 +74,7 @@ export const useMapStore = create<MapStore>()((set) => ({
             return { selectedDriverId: id, sidePanelMode: 'driver' }
         }),
     setSidePanelMode: (mode) => set({ sidePanelMode: mode }),
+    setDistrictPanelView: (view) => set({ districtPanelView: view }),
     setHexGeoJSON: (data) => set({ hexGeoJSON: data }),
     setHeatmapGeoJSON: (data) => set({ heatmapGeoJSON: data }),
     setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),

@@ -10,6 +10,7 @@ export default function RoutePolyline() {
         <Polyline
             positions={polyline}
             pathOptions={{ color: '#f59e0b', weight: 4, opacity: 0.8, dashArray: '8 8' }}
+            interactive={false}
         />
     )
 }

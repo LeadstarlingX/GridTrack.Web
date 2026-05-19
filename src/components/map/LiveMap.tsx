@@ -71,8 +71,8 @@ export default function LiveMap({ onMapReady }: Props) {
             <HeatmapLayer />
             <HistoricalHeatmapLayer />
             <RecommendationOverlay />
-            <DistrictBoundaryLayer />
             <RoutePolyline />
+            <DistrictBoundaryLayer />
         </MapContainer>
     )
 }

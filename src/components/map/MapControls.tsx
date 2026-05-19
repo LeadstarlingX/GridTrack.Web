@@ -21,9 +21,8 @@ export default function MapControls() {
     const minResolution = APP_CONFIG.map.hexResolution.min
     const allowHighRes = import.meta.env.DEV && import.meta.env[APP_CONFIG.map.hexResolution.highResEnvFlag] === 'true'
     const maxResolution = allowHighRes ? APP_CONFIG.map.hexResolution.devMax : APP_CONFIG.map.hexResolution.max
-    const hexGlowStyle = hexEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.35)' } : undefined
-    const heatGlowStyle = heatEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-warning) / 0.35)' } : undefined
-    const recommendationGlowStyle = recommendationEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.35)' } : undefined
+    const activeGlowBase = 'shadow-[0_0_0_3px_hsl(var(--map-btn-glow-primary)/0.35)] dark:shadow-[0_0_0_3px_hsl(var(--map-btn-glow-primary)/0.45)]'
+    const activeWarningGlowBase = 'shadow-[0_0_0_3px_hsl(var(--map-btn-glow-warning)/0.35)] dark:shadow-[0_0_0_3px_hsl(var(--map-btn-glow-warning)/0.45)]'
 
     useEffect(() => {
         if (!historicalEnabled || historicalRange) return
@@ -55,8 +54,7 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHex}
                     title="Toggle hex grid"
-                    className="transition-shadow duration-150"
-                    style={hexGlowStyle}
+                    className={`transition-shadow duration-150 ${hexEnabled ? activeGlowBase : ''}`}
                 >
                     <Layers className="h-8 w-8" />
                 </Button>
@@ -65,8 +63,7 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHeat}
                     title="Toggle heatmap"
-                    className="transition-shadow duration-150"
-                    style={heatGlowStyle}
+                    className={`transition-shadow duration-150 ${heatEnabled ? activeWarningGlowBase : ''}`}
                 >
                     <Thermometer className="h-8 w-8" />
                 </Button>
@@ -83,8 +80,7 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleRecommendation}
                     title="Toggle recommendation overlay"
-                    className="transition-shadow duration-150"
-                    style={recommendationGlowStyle}
+                    className={`transition-shadow duration-150 ${recommendationEnabled ? activeGlowBase : ''}`}
                 >
                     <Users className="h-8 w-8" />
                 </Button>
