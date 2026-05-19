@@ -31,9 +31,9 @@ interface MapStore {
     selectDriver: (id: string | null) => void
     toggleDriverPanel: (id: string) => void
     setSidePanelMode: (mode: SidePanelMode) => void
-    setHexGeoJSON: (data: GeoJSON.FeatureCollection) => void
-    setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection) => void
-    setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection) => void
+    setHexGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
+    setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
+    setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
 }

@@ -246,15 +246,3 @@ export function getMockHistoricalHeatmapCount(h3Index: string, range: { from: st
 
     return clamp(Math.round(base * dayBoost * hourBoost * rushBoost + variance * 6), 0, 99)
 }
-
-export function getMockRecommendationRatio(districtId: string, name?: string) {
-    const match = MOCK_RECOMMENDATION_DISTRICTS.find((district) => district.districtId === districtId || district.name === name)
-    if (match) {
-        return match.activeDrivers / match.expectedDemand
-    }
-
-    const seed = hashString(`${districtId}:${name ?? ''}`)
-    const activeDrivers = 2 + (seed % 7)
-    const expectedDemand = 3 + ((seed >> 3) % 7)
-    return clamp(activeDrivers / expectedDemand, 0.25, 1.75)
-}
