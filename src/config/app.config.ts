@@ -7,8 +7,8 @@ export const APP_CONFIG = {
         hexResolution: {
             default: 8,
             min: 7,
-            max: 9,
-            devMax: 11,
+            max: 10,
+            devMax: 10,
             highResEnvFlag: 'VITE_ENABLE_HIGH_RES',
         },
         heatmapResolution: 8,

@@ -1,5 +1,6 @@
 export { default as LiveMap } from './LiveMap'
 export { default as DriverMarkers } from './DriverMarker'
+export { default as DistrictBoundaryLayer } from './DistrictBoundaryLayer'
 export { default as HexGridLayer } from './HexGridLayer'
 export { default as HeatmapLayer } from './HeatmapLayer'
 export { default as MapControls } from './MapControls'

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Layers, Thermometer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMapStore } from '@/store/mapStore'
+import { APP_CONFIG } from '@/config/app.config'
 
 export default function MapControls() {
     const hexEnabled = useMapStore((s) => s.hexGridEnabled)
@@ -10,9 +11,9 @@ export default function MapControls() {
     const toggleHex = useMapStore((s) => s.toggleHexGrid)
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
-    const minResolution = 7
-    const allowHighRes = import.meta.env.DEV && import.meta.env.VITE_ENABLE_HIGH_RES === 'true'
-    const maxResolution = allowHighRes ? 11 : 9
+    const minResolution = APP_CONFIG.map.hexResolution.min
+    const allowHighRes = import.meta.env.DEV && import.meta.env[APP_CONFIG.map.hexResolution.highResEnvFlag] === 'true'
+    const maxResolution = allowHighRes ? APP_CONFIG.map.hexResolution.devMax : APP_CONFIG.map.hexResolution.max
 
     useEffect(() => {
         if (hexResolution > maxResolution) {

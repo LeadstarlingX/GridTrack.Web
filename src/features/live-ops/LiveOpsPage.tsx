@@ -46,6 +46,7 @@ export default function LiveOpsPage() {
     const mapRef = useRef<L.Map | null>(null)
     const setHexGeoJSON = useMapStore((s) => s.setHexGeoJSON)
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
+    const setDistrictBoundariesGeoJSON = useMapStore((s) => s.setDistrictBoundariesGeoJSON)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const heatmapResolution = 8
     const location = useLocation()
@@ -86,6 +87,21 @@ export default function LiveOpsPage() {
                 console.warn(err)
             })
     }, [setHeatmapGeoJSON])
+
+    useEffect(() => {
+        const fileName = '/district-boundaries.geojson'
+        fetch(fileName)
+            .then((r) => {
+                if (!r.ok) {
+                    throw new Error(`Missing district boundaries file: ${fileName}`)
+                }
+                return r.json()
+            })
+            .then((data) => setDistrictBoundariesGeoJSON(normalizeGeoJson(data)))
+            .catch((err) => {
+                console.warn(err)
+            })
+    }, [setDistrictBoundariesGeoJSON])
 
     useEffect(() => {
         if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'true') return

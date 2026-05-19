@@ -11,6 +11,7 @@ interface MapStore {
     sidePanelMode: SidePanelMode
     hexGeoJSON: GeoJSON.FeatureCollection | null
     heatmapGeoJSON: GeoJSON.FeatureCollection | null
+    districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
 
     toggleHexGrid: () => void
     toggleHeatmap: () => void
@@ -21,6 +22,7 @@ interface MapStore {
     setSidePanelMode: (mode: SidePanelMode) => void
     setHexGeoJSON: (data: GeoJSON.FeatureCollection) => void
     setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection) => void
+    setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection) => void
 }
 
 export const useMapStore = create<MapStore>()((set) => ({
@@ -32,6 +34,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     sidePanelMode: 'idle',
     hexGeoJSON: null,
     heatmapGeoJSON: null,
+    districtBoundariesGeoJSON: null,
 
     toggleHexGrid: () => set((s) => ({ hexGridEnabled: !s.hexGridEnabled })),
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
@@ -49,4 +52,5 @@ export const useMapStore = create<MapStore>()((set) => ({
     setSidePanelMode: (mode) => set({ sidePanelMode: mode }),
     setHexGeoJSON: (data) => set({ hexGeoJSON: data }),
     setHeatmapGeoJSON: (data) => set({ heatmapGeoJSON: data }),
+    setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),
 }))

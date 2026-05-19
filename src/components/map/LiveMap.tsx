@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import DriverMarkers from './DriverMarker'
+import DistrictBoundaryLayer from './DistrictBoundaryLayer'
 import HexGridLayer from './HexGridLayer'
 import HeatmapLayer from './HeatmapLayer'
 import RoutePolyline from './RoutePolyline'
@@ -66,6 +67,7 @@ export default function LiveMap({ onMapReady }: Props) {
             <DriverMarkers />
             <HexGridLayer />
             <HeatmapLayer />
+            <DistrictBoundaryLayer />
             <RoutePolyline />
         </MapContainer>
     )
