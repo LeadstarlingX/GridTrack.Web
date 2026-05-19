@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Clock, Layers, Thermometer } from 'lucide-react'
+import { Clock, Layers, Thermometer, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMapStore } from '@/store/mapStore'
 import { APP_CONFIG } from '@/config/app.config'
@@ -8,17 +8,22 @@ import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateR
 export default function MapControls() {
     const hexEnabled = useMapStore((s) => s.hexGridEnabled)
     const heatEnabled = useMapStore((s) => s.heatmapEnabled)
+    const recommendationEnabled = useMapStore((s) => s.recommendationEnabled)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const historicalEnabled = useMapStore((s) => s.historicalHeatmapEnabled)
     const historicalRange = useMapStore((s) => s.historicalHeatmapRange)
     const toggleHex = useMapStore((s) => s.toggleHexGrid)
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
     const toggleHistorical = useMapStore((s) => s.toggleHistoricalHeatmap)
+    const toggleRecommendation = useMapStore((s) => s.toggleRecommendation)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
     const setHistoricalRange = useMapStore((s) => s.setHistoricalHeatmapRange)
     const minResolution = APP_CONFIG.map.hexResolution.min
     const allowHighRes = import.meta.env.DEV && import.meta.env[APP_CONFIG.map.hexResolution.highResEnvFlag] === 'true'
     const maxResolution = allowHighRes ? APP_CONFIG.map.hexResolution.devMax : APP_CONFIG.map.hexResolution.max
+    const hexGlowStyle = hexEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.35)' } : undefined
+    const heatGlowStyle = heatEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-warning) / 0.35)' } : undefined
+    const recommendationGlowStyle = recommendationEnabled ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.35)' } : undefined
 
     useEffect(() => {
         if (!historicalEnabled || historicalRange) return
@@ -50,6 +55,8 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHex}
                     title="Toggle hex grid"
+                    className="transition-shadow duration-150"
+                    style={hexGlowStyle}
                 >
                     <Layers className="h-8 w-8" />
                 </Button>
@@ -58,6 +65,8 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHeat}
                     title="Toggle heatmap"
+                    className="transition-shadow duration-150"
+                    style={heatGlowStyle}
                 >
                     <Thermometer className="h-8 w-8" />
                 </Button>
@@ -68,6 +77,16 @@ export default function MapControls() {
                     title="Toggle historical heatmap"
                 >
                     <Clock className="h-8 w-8" />
+                </Button>
+                <Button
+                    variant={recommendationEnabled ? 'default' : 'secondary'}
+                    size="icon-lg"
+                    onClick={toggleRecommendation}
+                    title="Toggle recommendation overlay"
+                    className="transition-shadow duration-150"
+                    style={recommendationGlowStyle}
+                >
+                    <Users className="h-8 w-8" />
                 </Button>
             </div>
             <div className="flex items-center gap-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1">

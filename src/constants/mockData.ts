@@ -161,6 +161,59 @@ export const MOCK_DISTRICT_VOLUME = MOCK_DISTRICTS.map((district) => ({
     deliveries: district.completedToday + district.activeDeliveries,
 }))
 
+export interface RecommendationMockDistrict {
+    districtId: string
+    name: string
+    activeDrivers: number
+    expectedDemand: number
+}
+
+export const MOCK_RECOMMENDATION_DISTRICTS: RecommendationMockDistrict[] = [
+    { districtId: 'district-sy0100', name: 'Damascus', activeDrivers: 5, expectedDemand: 10 },
+    { districtId: 'district-sy0301', name: 'Rural Damascus', activeDrivers: 4, expectedDemand: 7 },
+    { districtId: 'district-sy0302', name: 'Duma', activeDrivers: 2, expectedDemand: 9 },
+    { districtId: 'district-sy0303', name: 'Al Qutayfah', activeDrivers: 6, expectedDemand: 5 },
+    { districtId: 'district-sy0304', name: 'At Tall', activeDrivers: 7, expectedDemand: 8 },
+    { districtId: 'district-sy0305', name: 'Yabroud', activeDrivers: 1, expectedDemand: 4 },
+    { districtId: 'district-sy0306', name: 'An Nabk', activeDrivers: 8, expectedDemand: 6 },
+    { districtId: 'district-sy0307', name: 'Az-Zabdani', activeDrivers: 3, expectedDemand: 4 },
+    { districtId: 'district-sy0308', name: 'Qatana', activeDrivers: 9, expectedDemand: 8 },
+    { districtId: 'district-sy0309', name: 'Darayya', activeDrivers: 4, expectedDemand: 3 },
+]
+
+function getSeededRatioBucket(seed: number) {
+    return [0.42, 0.72, 0.98, 1.28][seed % 4]
+}
+
+export function getMockDistrictStats(districtId: string, districtName?: string): DistrictStats {
+    const knownDistrict = MOCK_DISTRICTS.find((district) => district.id === districtId || district.name === districtName)
+    if (knownDistrict) return knownDistrict
+
+    const seed = hashString(`${districtId}:${districtName ?? ''}`)
+    const sourceDistrict = MOCK_DISTRICTS[seed % MOCK_DISTRICTS.length]
+    const activeDeliveries = clamp(Math.round(sourceDistrict.activeDeliveries * (0.7 + ((seed >> 6) % 35) / 100)), 4, 22)
+    const completedToday = clamp(Math.round(sourceDistrict.completedToday * (0.65 + ((seed >> 12) % 40) / 100)), 10, 80)
+    const anomalyRate = clamp(Number((sourceDistrict.anomalyRate + ((seed >> 18) % 8) / 100 - 0.02).toFixed(3)), 0.01, 0.12)
+
+    return {
+        id: districtId,
+        name: districtName ?? sourceDistrict.name,
+        center: sourceDistrict.center,
+        activeDeliveries,
+        completedToday,
+        anomalyRate,
+    }
+}
+
+export function getMockRecommendationRatio(districtId: string, districtName?: string) {
+    const district = getMockDistrictStats(districtId, districtName)
+    const seed = hashString(`${districtId}:${districtName ?? district.name}`)
+    const baseRatio = getSeededRatioBucket(seed)
+    const loadBias = (district.completedToday / 100) * 0.06 + (district.activeDeliveries / 100) * 0.12
+    const anomalyBias = district.anomalyRate * 0.35
+    return clamp(Number((baseRatio + loadBias - anomalyBias).toFixed(2)), 0.25, 1.45)
+}
+
 function hashString(input: string) {
     let hash = 2166136261
     for (let i = 0; i < input.length; i += 1) {
@@ -192,4 +245,16 @@ export function getMockHistoricalHeatmapCount(h3Index: string, range: { from: st
     const variance = ((hash >> 8) % 100) / 100
 
     return clamp(Math.round(base * dayBoost * hourBoost * rushBoost + variance * 6), 0, 99)
+}
+
+export function getMockRecommendationRatio(districtId: string, name?: string) {
+    const match = MOCK_RECOMMENDATION_DISTRICTS.find((district) => district.districtId === districtId || district.name === name)
+    if (match) {
+        return match.activeDrivers / match.expectedDemand
+    }
+
+    const seed = hashString(`${districtId}:${name ?? ''}`)
+    const activeDrivers = 2 + (seed % 7)
+    const expectedDemand = 3 + ((seed >> 3) % 7)
+    return clamp(activeDrivers / expectedDemand, 0.25, 1.75)
 }

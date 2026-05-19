@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
-import { MOCK_DISTRICTS } from '@/constants/mockData'
+import { getMockDistrictStats, MOCK_DISTRICTS } from '@/constants/mockData'
 
 export default function DistrictPanel() {
     const districtId = useMapStore((s) => s.selectedDistrictId)
@@ -13,11 +13,11 @@ export default function DistrictPanel() {
 
     const boundaryMatch = boundaries?.features?.find((feature) => feature.properties?.districtId === districtId)
     const boundaryName = boundaryMatch?.properties?.name as string | undefined
-    const district = MOCK_DISTRICTS.find((d) => d.id === districtId)
+    const district = MOCK_DISTRICTS.find((d) => d.id === districtId) ?? getMockDistrictStats(districtId, boundaryName)
     const displayName = district?.name ?? boundaryName ?? districtId
-    const activeDeliveries = district?.activeDeliveries ?? 0
-    const completedToday = district?.completedToday ?? 0
-    const anomalyRate = district?.anomalyRate ?? 0
+    const activeDeliveries = district.activeDeliveries
+    const completedToday = district.completedToday
+    const anomalyRate = district.anomalyRate
 
     return (
         <div className="p-4">

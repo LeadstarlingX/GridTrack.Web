@@ -6,6 +6,7 @@ import DistrictBoundaryLayer from './DistrictBoundaryLayer'
 import HexGridLayer from './HexGridLayer'
 import HeatmapLayer from './HeatmapLayer'
 import HistoricalHeatmapLayer from './HistoricalHeatmapLayer'
+import RecommendationOverlay from './RecommendationOverlay'
 import RoutePolyline from './RoutePolyline'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
@@ -69,6 +70,7 @@ export default function LiveMap({ onMapReady }: Props) {
             <HexGridLayer />
             <HeatmapLayer />
             <HistoricalHeatmapLayer />
+            <RecommendationOverlay />
             <DistrictBoundaryLayer />
             <RoutePolyline />
         </MapContainer>
