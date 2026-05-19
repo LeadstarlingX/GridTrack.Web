@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { DriverState } from '@/types/driver'
 import type { DeliveryState } from '@/types/delivery'
 import type { AnomalyAlert } from '@/types/hub'
+import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
 interface LiveStore {
@@ -42,7 +43,7 @@ export const useLiveStore = create<LiveStore>()((set) => ({
             }
 
             return {
-                anomalyQueue: [alert, ...s.anomalyQueue].slice(0, 50),
+                anomalyQueue: [alert, ...s.anomalyQueue].slice(0, APP_CONFIG.store.anomalyQueueLimit),
             }
         }),
 }))

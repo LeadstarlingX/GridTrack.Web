@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { toast } from '@/components/ui'
+import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { useToastSettings } from '@/hooks/useToastSettings'
 import { getMapRef } from '@/lib/mapRef'
@@ -19,12 +20,12 @@ export function useAnomalyToasts() {
         const timestamp = new Date(latest.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         toast.error(`Anomaly detected in ${latest.districtId}`, {
             description: `${latest.reason} · ${timestamp}`,
-            duration: 8000,
+            duration: APP_CONFIG.toast.anomalyDurationMs,
             action: {
                 label: 'View',
                 onClick: () => {
                     const map = getMapRef()
-                    map?.flyTo([latest.lat, latest.lng], 15)
+                    map?.flyTo([latest.lat, latest.lng], APP_CONFIG.map.focusZoom)
                     const mapState = useMapStore.getState()
                     mapState.selectDriver(latest.driverId)
                     mapState.setSidePanelMode('driver')

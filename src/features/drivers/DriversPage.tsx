@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react'
 import { Badge, Button, toast } from '@/components/ui'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
+import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { MOCK_DISTRICTS } from '@/constants/mockData'
 import type { DriverState } from '@/types/driver'
 
 export default function DriversPage() {
     const driversById = useLiveStore((s) => s.drivers)
-    const [visibleCount, setVisibleCount] = useState(8)
+    const [visibleCount, setVisibleCount] = useState<number>(APP_CONFIG.table.driversPageSize)
 
     const districtNameById = useMemo(() => {
         return Object.fromEntries(MOCK_DISTRICTS.map((district) => [district.id, district.name]))
@@ -77,7 +78,7 @@ export default function DriversPage() {
                 rows={rows}
                 getRowId={(row) => row.id}
                 nextCursor={nextCursor}
-                onLoadMore={() => setVisibleCount((prev) => prev + 8)}
+                onLoadMore={() => setVisibleCount((prev) => prev + APP_CONFIG.table.driversPageSize)}
                 emptyTitle="No drivers"
                 emptyDescription="No drivers are currently available in the system."
             />

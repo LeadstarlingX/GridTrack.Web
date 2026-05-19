@@ -1,12 +1,13 @@
 import { GeoJSON } from 'react-leaflet'
+import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { MOCK_DELIVERIES, getDistrictForCoords } from '@/constants/mockData'
 
 function getColor(value: number): string {
-    if (value > 8) return '#ef4444'
-    if (value > 5) return '#f59e0b'
-    if (value > 2) return '#eab308'
-    return '#22c55e'
+    if (value > APP_CONFIG.heatmap.highThreshold) return APP_CONFIG.heatmap.colors.extreme
+    if (value > APP_CONFIG.heatmap.mediumThreshold) return APP_CONFIG.heatmap.colors.high
+    if (value > APP_CONFIG.heatmap.lowThreshold) return APP_CONFIG.heatmap.colors.medium
+    return APP_CONFIG.heatmap.colors.low
 }
 
 export default function HeatmapLayer() {

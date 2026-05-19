@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { APP_CONFIG } from '@/config/app.config'
 import Sidebar from './Sidebar'
 // import { cn } from '@/lib/utils'
 import { useAnomalyToasts } from '@/hooks/useAnomalyToasts'
 
 export default function AppShell() {
-    const [navOpen, setNavOpen] = useState(true)
+    const [navOpen, setNavOpen] = useState<boolean>(APP_CONFIG.layout.sidebarOpenDefault)
     useAnomalyToasts()
 
     return (

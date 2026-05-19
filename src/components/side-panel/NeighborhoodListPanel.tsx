@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import L from 'leaflet'
 import { Search } from 'lucide-react'
+import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
 
@@ -64,7 +65,7 @@ export default function NeighborhoodListPanel() {
                                     if (map) {
                                         const bounds = L.geoJSON(item.feature as any).getBounds()
                                         if (bounds.isValid()) {
-                                            map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                                            map.fitBounds(bounds, { padding: APP_CONFIG.map.fitBoundsPaddingPx, maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
                                         }
                                     }
                                 }}
@@ -84,7 +85,7 @@ export default function NeighborhoodListPanel() {
                                         if (map) {
                                             const bounds = L.geoJSON(item.feature as any).getBounds()
                                             if (bounds.isValid()) {
-                                                map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                                                map.fitBounds(bounds, { padding: APP_CONFIG.map.fitBoundsPaddingPx, maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
                                             }
                                         }
                                     }}

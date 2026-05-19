@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Badge, Button } from '@/components/ui'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
+import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { MOCK_DISTRICTS } from '@/constants/mockData'
 import type { DeliveryState, DeliveryStatus } from '@/types/delivery'
@@ -25,17 +26,17 @@ export default function DeliveriesPage() {
     const drivers = useLiveStore((s) => s.drivers)
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>('all')
-    const [visibleCount, setVisibleCount] = useState(6)
+    const [visibleCount, setVisibleCount] = useState<number>(APP_CONFIG.table.defaultPageSize)
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
-        start.setDate(end.getDate() - 6)
+        start.setDate(end.getDate() - (APP_CONFIG.analytics.defaultRangeDays - 1))
         return { from: toIsoDate(start), to: toIsoDate(end) }
     })
     const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
 
     useEffect(() => {
-        setVisibleCount(6)
+        setVisibleCount(APP_CONFIG.table.defaultPageSize)
     }, [statusFilter, districtFilter, appliedRange.from, appliedRange.to])
 
     const districtNameById = useMemo(() => {
@@ -146,7 +147,7 @@ export default function DeliveriesPage() {
                 rows={rows}
                 getRowId={(row) => row.id}
                 nextCursor={nextCursor}
-                onLoadMore={() => setVisibleCount((prev) => prev + 6)}
+                onLoadMore={() => setVisibleCount((prev) => prev + APP_CONFIG.table.defaultPageSize)}
                 onRowClick={(row) => navigate('/', { state: { focusDeliveryId: row.id } })}
                 emptyTitle="No deliveries"
                 emptyDescription="Try a different status or date range."

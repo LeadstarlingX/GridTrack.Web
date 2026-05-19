@@ -1,4 +1,5 @@
 import { GeoJSON } from 'react-leaflet'
+import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getDistrictForCoords } from '@/constants/mockData'
 
@@ -22,7 +23,7 @@ export default function HexGridLayer() {
                 layer.on('click', () => {
                     const coords = feature.geometry.type === 'Polygon'
                         ? feature.geometry.coordinates[0][0]
-                        : [36.2765, 33.5138]
+                        : APP_CONFIG.map.center
                     const district = getDistrictForCoords(coords[1], coords[0])
                     selectDistrict(district.id)
                 })

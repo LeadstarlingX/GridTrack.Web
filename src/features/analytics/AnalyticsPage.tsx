@@ -3,6 +3,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Skel
 import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
 import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
+import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
 import { PAGE_CONFIG } from '@/config/pages.config'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
@@ -61,10 +62,10 @@ function sliceTrendsByRange(days: number) {
     return MOCK_ANALYTICS_TRENDS.slice(Math.max(0, total - target))
 }
 
-    function buildApiUrl(path: string) {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
-        return `${baseUrl}${path}`
-    }
+function buildApiUrl(path: string) {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
+    return `${baseUrl}${path}`
+}
 
 export default function AnalyticsPage() {
     const chatbotEnabled = PAGE_CONFIG.analyticsChatbot.enabled
@@ -72,12 +73,12 @@ export default function AnalyticsPage() {
     const [isLoading, setIsLoading] = useState(false)
     const loadingRef = useRef<number | null>(null)
     const [activeDays, setActiveDays] = useState<DayKey[]>(DAY_OPTIONS.map((d) => d.key))
-    const [hourStart, setHourStart] = useState(6)
-    const [hourEnd, setHourEnd] = useState(22)
+    const [hourStart, setHourStart] = useState<number>(APP_CONFIG.analytics.defaultHourStart)
+    const [hourEnd, setHourEnd] = useState<number>(APP_CONFIG.analytics.defaultHourEnd)
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
-        start.setDate(end.getDate() - 6)
+        start.setDate(end.getDate() - (APP_CONFIG.analytics.defaultRangeDays - 1))
         return { from: start.toISOString().slice(0, 10), to: end.toISOString().slice(0, 10) }
     })
     const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
@@ -98,7 +99,7 @@ export default function AnalyticsPage() {
         }
         loadingRef.current = window.setTimeout(() => {
             setIsLoading(false)
-        }, 500)
+        }, APP_CONFIG.analytics.loadingDelayMs)
     }
 
     const rangeDays = useMemo(() => getRangeDays(appliedRange.from, appliedRange.to), [appliedRange.from, appliedRange.to])
@@ -123,7 +124,7 @@ export default function AnalyticsPage() {
             toHour: hourEnd,
         }
 
-        const response = await fetch(buildApiUrl('/api/export/csv'), {
+        const response = await fetch(buildApiUrl(APP_CONFIG.api.exportCsvPath), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
@@ -186,8 +187,8 @@ export default function AnalyticsPage() {
                         <span className="text-xs text-[hsl(var(--foreground-muted))]">Hours</span>
                         <input
                             type="number"
-                            min={0}
-                            max={23}
+                            min={APP_CONFIG.analytics.minHour}
+                            max={APP_CONFIG.analytics.maxHour}
                             value={hourStart}
                             onChange={(e) => handleHourStart(e.target.value)}
                             className="h-7 w-14 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
@@ -195,8 +196,8 @@ export default function AnalyticsPage() {
                         <span className="text-xs text-[hsl(var(--foreground-muted))]">to</span>
                         <input
                             type="number"
-                            min={0}
-                            max={23}
+                            min={APP_CONFIG.analytics.minHour}
+                            max={APP_CONFIG.analytics.maxHour}
                             value={hourEnd}
                             onChange={(e) => handleHourEnd(e.target.value)}
                             className="h-7 w-14 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"

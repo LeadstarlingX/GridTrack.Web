@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { APP_CONFIG } from '@/config/app.config'
 
 type SidePanelMode = 'idle' | 'district' | 'driver' | 'focus'
 
@@ -47,7 +48,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
     recommendationEnabled: false,
-    hexResolution: 8,
+    hexResolution: APP_CONFIG.map.hexResolution.default,
     selectedDistrictId: null,
     selectedDriverId: null,
     sidePanelMode: 'idle',

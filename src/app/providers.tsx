@@ -2,13 +2,14 @@ import { ClerkProvider, ClerkLoading, ClerkLoaded, SignedIn, SignedOut, Redirect
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
+import { APP_CONFIG } from '@/config/app.config'
 
 const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            staleTime: 60 * 1000,        // data is fresh for 60s — no background refetch
-            retry: 1,                     // fail fast, don't retry 3 times by default
-            refetchOnWindowFocus: false,  // don't refetch when user alt-tabs back
+            staleTime: APP_CONFIG.query.staleTimeMs,
+            retry: APP_CONFIG.query.retry,
+            refetchOnWindowFocus: APP_CONFIG.query.refetchOnWindowFocus,
         },
     },
 })

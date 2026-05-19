@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { APP_CONFIG } from '@/config/app.config'
 import type { ChatMessage } from '@/types/chatbot'
 
 interface ChatbotState {
@@ -17,7 +18,7 @@ function buildApiUrl(path: string) {
 }
 
 function trimCsvForContext(csvData: string) {
-    const maxLength = 80000
+    const maxLength = APP_CONFIG.chatbot.csvMaxChars
     if (csvData.length <= maxLength) return csvData
     return csvData.slice(0, maxLength)
 }
@@ -31,7 +32,7 @@ export function useChatbot(): ChatbotState {
     const loadCsvForRange = useCallback(async (from: string, to: string, days: string[], fromHour: number, toHour: number) => {
         setIsCsvLoading(true)
         try {
-            const response = await fetch(buildApiUrl('/api/export/csv'), {
+            const response = await fetch(buildApiUrl(APP_CONFIG.api.exportCsvPath), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mode: 'range', from, to, days, fromHour, toHour }),
@@ -56,7 +57,7 @@ export function useChatbot(): ChatbotState {
             setIsLoading(true)
 
             try {
-                const response = await fetch(buildApiUrl('/api/analysis/chat'), {
+                const response = await fetch(buildApiUrl(APP_CONFIG.api.analysisChatPath), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ messages: nextMessages, csvData }),

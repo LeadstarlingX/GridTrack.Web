@@ -1,4 +1,5 @@
 import { Polyline } from 'react-leaflet'
+import { APP_CONFIG } from '@/config/app.config'
 import { useFocusStore } from '@/store/focusStore'
 
 export default function RoutePolyline() {
@@ -9,7 +10,7 @@ export default function RoutePolyline() {
     return (
         <Polyline
             positions={polyline}
-            pathOptions={{ color: '#f59e0b', weight: 4, opacity: 0.8, dashArray: '8 8' }}
+            pathOptions={APP_CONFIG.map.routePolyline}
             interactive={false}
         />
     )

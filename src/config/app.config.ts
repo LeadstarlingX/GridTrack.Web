@@ -4,6 +4,17 @@ export const APP_CONFIG = {
         defaultZoom: 12,
         focusZoom: 15,
         flyToDurationSec: 1.2,
+        fitBoundsPaddingPx: [32, 32] as [number, number],
+        fitBoundsMaxZoom: 15,
+        defaultEtaFallbackSeconds: 420,
+        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        routePolyline: {
+            color: '#f59e0b',
+            weight: 4,
+            opacity: 0.8,
+            dashArray: '8 8',
+        },
         hexResolution: {
             default: 8,
             min: 7,
@@ -15,15 +26,28 @@ export const APP_CONFIG = {
         h3FilePattern: '/h3-damascus-r{res}.geojson',
         districtBoundariesFile: '/damascus_level10.geojson',
     },
+    heatmap: {
+        lowThreshold: 2,
+        mediumThreshold: 5,
+        highThreshold: 8,
+        colors: {
+            low: '#22c55e',
+            medium: '#eab308',
+            high: '#f59e0b',
+            extreme: '#ef4444',
+        },
+    },
     signalr: {
         reconnectDelaysMs: [0, 2000, 5000, 10000, 30000],
         disconnectFatalAfterMs: 30000,
     },
     mock: {
         positionTickMs: 1000,
+        etaTickMs: 2000,
         deliveryPatchMs: 10000,
         anomalyInjectMs: 15000,
         avgSpeedMps: 8.3,
+        anomalyReasons: ['Stalled for 3 min', 'Rerouting unexpectedly', 'Delivery delayed by 8 min'],
     },
     store: {
         anomalyQueueLimit: 50,
@@ -34,6 +58,7 @@ export const APP_CONFIG = {
     query: {
         staleTimeMs: 60000,
         retry: 1,
+        refetchOnWindowFocus: false,
         historicalHeatmapStaleTimeMs: 300000,
     },
     toast: {
@@ -50,9 +75,28 @@ export const APP_CONFIG = {
         minHour: 0,
         maxHour: 23,
         quickRangesDays: [7, 30],
+        loadingDelayMs: 500,
     },
     export: {
         csvFilenamePrefix: 'gridtrack-export',
+    },
+    api: {
+        districtsPath: '/api/districts',
+        districtBoundariesPath: '/api/districts/boundaries',
+        deliveriesPath: '/api/deliveries',
+        deliveryDetailPath: '/api/deliveries/{id}',
+        driversPath: '/api/drivers',
+        driverAvailabilityPath: '/api/drivers/{id}/availability',
+        alertsPath: '/api/alerts',
+        analyticsSummaryPath: '/api/analytics/summary',
+        analyticsTrendsPath: '/api/analytics/trends',
+        analyticsH3DensityPath: '/api/analytics/h3-density',
+        forecastPath: '/api/forecast/{districtId}',
+        exportCsvPath: '/api/export/csv',
+        analysisChatPath: '/api/analysis/chat',
+    },
+    layout: {
+        sidebarOpenDefault: true,
     },
     recommendation: {
         understaffedThreshold: 0.85,

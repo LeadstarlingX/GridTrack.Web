@@ -77,7 +77,7 @@ export default function LiveOpsPage() {
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
     const setDistrictBoundariesGeoJSON = useMapStore((s) => s.setDistrictBoundariesGeoJSON)
     const hexResolution = useMapStore((s) => s.hexResolution)
-    const heatmapResolution = 8
+    const heatmapResolution = APP_CONFIG.map.heatmapResolution
     const location = useLocation()
     const navigate = useNavigate()
     const enterFocusMode = useFocusStore((s) => s.enterFocusMode)
@@ -161,7 +161,7 @@ export default function LiveOpsPage() {
         const driver = useLiveStore.getState().drivers[delivery.assignedDriverId]
         const routeIndex = driver?.routeIndex ?? 0
         const polyline = DAMASCUS_ROUTES[routeIndex] ?? []
-        enterFocusMode(delivery.id, delivery.assignedDriverId, polyline, delivery.etaSeconds ?? 420)
+        enterFocusMode(delivery.id, delivery.assignedDriverId, polyline, delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds)
         setSidePanelMode('focus')
         navigate('/', { replace: true, state: null })
     }, [enterFocusMode, location.state, navigate, setSidePanelMode])

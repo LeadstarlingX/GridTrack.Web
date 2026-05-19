@@ -8,6 +8,7 @@ import HeatmapLayer from './HeatmapLayer'
 import HistoricalHeatmapLayer from './HistoricalHeatmapLayer'
 import RecommendationOverlay from './RecommendationOverlay'
 import RoutePolyline from './RoutePolyline'
+import { APP_CONFIG } from '@/config/app.config'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
 
@@ -53,16 +54,16 @@ export default function LiveMap({ onMapReady }: Props) {
 
     return (
         <MapContainer
-            center={[33.5138, 36.2765]}
-            zoom={12}
+            center={APP_CONFIG.map.center}
+            zoom={APP_CONFIG.map.defaultZoom}
             preferCanvas={true}
             className="h-full w-full z-0"
             zoomControl={false}
             attributionControl={false}
         >
             <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution={APP_CONFIG.map.tileAttribution}
+                url={APP_CONFIG.map.tileUrl}
             />
             <MapRefCapture setMap={(m) => stableRef.current(m)} />
             <AutoFollowController />
