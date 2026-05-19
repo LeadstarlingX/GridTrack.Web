@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
-import { getMockNeighborhoodStats } from '@/constants/mockData'
+import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
 
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)
@@ -18,10 +18,12 @@ export default function DistrictPanel() {
     })
     const boundaryName = (boundaryMatch?.properties?.displayName ?? boundaryMatch?.properties?.name_fixed ?? boundaryMatch?.properties?.name) as string | undefined
     const neighborhood = getMockNeighborhoodStats(boundaryId, boundaryName)
+    const districtStats = getMockDistrictStats(boundaryId, boundaryName)
     const displayName = boundaryName ?? boundaryId
     const expectedDemand = recommendationMock?.[boundaryId] ?? neighborhood.expectedDemand
     const activeDrivers = neighborhood.activeDrivers
     const staffingRatio = Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
+    const anomalyRate = districtStats.anomalyRate
 
     return (
         <div className="p-4">
@@ -47,6 +49,10 @@ export default function DistrictPanel() {
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Staffing Ratio</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-bold">{staffingRatio.toFixed(2)}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Anomaly Rate</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{(anomalyRate * 100).toFixed(1)}%</p></CardContent>
                 </Card>
             </div>
         </div>

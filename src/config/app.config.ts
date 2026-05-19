@@ -13,7 +13,7 @@ export const APP_CONFIG = {
         },
         heatmapResolution: 8,
         h3FilePattern: '/h3-damascus-r{res}.geojson',
-        districtBoundariesFile: '/district-boundaries.geojson',
+        districtBoundariesFile: '/damascus_level10.geojson',
     },
     signalr: {
         reconnectDelaysMs: [0, 2000, 5000, 10000, 30000],

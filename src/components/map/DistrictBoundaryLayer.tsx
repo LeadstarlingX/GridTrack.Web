@@ -1,5 +1,6 @@
 import { GeoJSON } from 'react-leaflet'
 import L from 'leaflet'
+import { useMemo } from 'react'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
 
@@ -23,32 +24,54 @@ export default function DistrictBoundaryLayer() {
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
     const selectedDistrictId = useMapStore((s) => s.selectedDistrictId)
     const selectDistrict = useMapStore((s) => s.selectDistrict)
-    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+
+    const selectedFeatureCollection = useMemo(() => {
+        if (!boundaries || !selectedDistrictId) return null
+        const feature = boundaries.features.find((f) => {
+            const id = f.properties?.boundaryId ?? String(f.properties?.osm_id ?? '')
+            return id === selectedDistrictId
+        })
+        if (!feature) return null
+        return {
+            ...boundaries,
+            features: [feature],
+        }
+    }, [boundaries, selectedDistrictId])
 
     if (!boundaries) return null
 
     return (
-        <GeoJSON
-            data={boundaries}
-            style={(feature) => {
-                const id = feature?.properties?.boundaryId ?? String(feature?.properties?.osm_id ?? '')
-                return id && id === selectedDistrictId ? selectedStyle : unselectedStyle
-            }}
-            onEachFeature={(feature, layer) => {
-                layer.on('click', () => {
-                    const id = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
-                    if (!id) return
-                    selectDistrict(id)
-                    setSidePanelMode('district')
-                    const map = getMapRef()
-                    if (map) {
-                        const bounds = L.geoJSON(feature as any).getBounds()
-                        if (bounds.isValid()) {
-                            map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+        <>
+            <GeoJSON
+                key={`boundaries-${selectedDistrictId ?? 'none'}`}
+                data={boundaries}
+                style={(feature) => {
+                    const id = feature?.properties?.boundaryId ?? String(feature?.properties?.osm_id ?? '')
+                    return id && id === selectedDistrictId ? selectedStyle : unselectedStyle
+                }}
+                onEachFeature={(feature, layer) => {
+                    layer.on('click', () => {
+                        const id = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
+                        if (!id) return
+                        selectDistrict(id)
+                        const map = getMapRef()
+                        if (map) {
+                            const bounds = L.geoJSON(feature as any).getBounds()
+                            if (bounds.isValid()) {
+                                map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                            }
                         }
-                    }
-                })
-            }}
-        />
+                    })
+                }}
+            />
+            {selectedFeatureCollection && (
+                <GeoJSON
+                    key={`selected-${selectedDistrictId}`}
+                    data={selectedFeatureCollection}
+                    style={selectedStyle}
+                    interactive={false}
+                />
+            )}
+        </>
     )
 }

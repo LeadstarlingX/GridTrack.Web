@@ -51,6 +51,7 @@ function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
         ...normalized,
         features: normalized.features.map((feature) => {
             const osmId = feature.properties?.osm_id ?? feature.properties?.osmId ?? feature.id
+            // Cast number osm_id to string for consistent ID handling
             const boundaryId = osmId != null ? String(osmId) : ''
             const displayName = (feature.properties?.name_fixed ?? feature.properties?.name ?? boundaryId) as string
             const expected = getMockNeighborhoodStats(boundaryId, displayName)
@@ -59,8 +60,8 @@ function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
                 ...feature,
                 properties: {
                     ...feature.properties,
-                    boundaryId,
-                    displayName,
+                    boundaryId,        // Now derived from osm_id (e.g., "13288134")
+                    displayName,       // Now Arabic name from name_fixed
                     expectedDemand: expected.expectedDemand,
                     activeDrivers: expected.activeDrivers,
                     staffingRatio: expected.staffingRatio,

@@ -6,7 +6,6 @@ export default function HexGridLayer() {
     const hexGeoJSON = useMapStore((s) => s.hexGeoJSON)
     const enabled = useMapStore((s) => s.hexGridEnabled)
     const selectDistrict = useMapStore((s) => s.selectDistrict)
-    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
 
     if (!enabled || !hexGeoJSON) return null
 
@@ -26,7 +25,6 @@ export default function HexGridLayer() {
                         : [36.2765, 33.5138]
                     const district = getDistrictForCoords(coords[1], coords[0])
                     selectDistrict(district.id)
-                    setSidePanelMode('district')
                 })
             }}
         />

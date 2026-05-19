@@ -9,6 +9,7 @@ export default function NeighborhoodListPanel() {
     const selectedDistrictId = useMapStore((s) => s.selectedDistrictId)
     const selectDistrict = useMapStore((s) => s.selectDistrict)
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+    const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
     const [query, setQuery] = useState('')
 
     const neighborhoods = useMemo(() => {
@@ -50,25 +51,48 @@ export default function NeighborhoodListPanel() {
                 {neighborhoods.map((item) => {
                     const active = item.boundaryId === selectedDistrictId
                     return (
-                        <button
+                        <div
                             key={item.boundaryId}
-                            type="button"
-                            className={`w-full rounded-md border px-3 py-2 text-left transition ${active ? 'border-blue-400 bg-blue-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
-                            onClick={() => {
-                                selectDistrict(item.boundaryId)
-                                setSidePanelMode('district')
-                                const map = getMapRef()
-                                if (map) {
-                                    const bounds = L.geoJSON(item.feature as any).getBounds()
-                                    if (bounds.isValid()) {
-                                        map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
-                                    }
-                                }
-                            }}
+                            className={`w-full rounded-md border px-3 py-2 transition ${active ? 'border-blue-400 bg-blue-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
                         >
-                            <div className="text-sm font-medium text-white">{item.displayName}</div>
-                            <div className="text-[11px] text-white/45">{item.boundaryId}</div>
-                        </button>
+                            <button
+                                type="button"
+                                className="w-full text-left"
+                                onClick={() => {
+                                    selectDistrict(item.boundaryId)
+                                    const map = getMapRef()
+                                    if (map) {
+                                        const bounds = L.geoJSON(item.feature as any).getBounds()
+                                        if (bounds.isValid()) {
+                                            map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                                        }
+                                    }
+                                }}
+                            >
+                                <div className="text-sm font-medium text-white">{item.displayName}</div>
+                                <div className="text-[11px] text-white/45">{item.boundaryId}</div>
+                            </button>
+                            <div className="mt-2 flex justify-end">
+                                <button
+                                    type="button"
+                                    className="rounded-md border border-white/15 bg-white/5 px-2 py-1 text-[11px] text-white/80 hover:bg-white/10 hover:text-white"
+                                    onClick={() => {
+                                        selectDistrict(item.boundaryId)
+                                        setDistrictPanelView('details')
+                                        setSidePanelMode('district')
+                                        const map = getMapRef()
+                                        if (map) {
+                                            const bounds = L.geoJSON(item.feature as any).getBounds()
+                                            if (bounds.isValid()) {
+                                                map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                                            }
+                                        }
+                                    }}
+                                >
+                                    Details
+                                </button>
+                            </div>
+                        </div>
                     )
                 })}
             </div>

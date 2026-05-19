@@ -38,8 +38,6 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
         return getMockRecommendationRatio(boundaryId, boundaryName)
     }
     const compute = computeRatio ?? computeLocal
-    const selectDistrict = useMapStore((s) => s.selectDistrict)
-    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
 
     const colored = useMemo(() => {
         if (!boundaries) return null
@@ -77,14 +75,6 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
                         fillColor: getRecommendationFill(staffingRatio),
                         fillOpacity: 0.45,
                     }
-                }}
-                onEachFeature={(feature, layer) => {
-                    layer.on('click', () => {
-                        const boundaryId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
-                        if (!boundaryId) return
-                        selectDistrict(boundaryId)
-                        setSidePanelMode('district')
-                    })
                 }}
             />
             <div className="pointer-events-none absolute bottom-4 right-4 z-[1000]">

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Clock, Layers, Thermometer, Users } from 'lucide-react'
+import { Clock, Layers, Search, Thermometer, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMapStore } from '@/store/mapStore'
 import { APP_CONFIG } from '@/config/app.config'
@@ -12,17 +12,35 @@ export default function MapControls() {
     const hexResolution = useMapStore((s) => s.hexResolution)
     const historicalEnabled = useMapStore((s) => s.historicalHeatmapEnabled)
     const historicalRange = useMapStore((s) => s.historicalHeatmapRange)
+    const districtPanelView = useMapStore((s) => s.districtPanelView)
+    const sidePanelMode = useMapStore((s) => s.sidePanelMode)
     const toggleHex = useMapStore((s) => s.toggleHexGrid)
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
     const toggleHistorical = useMapStore((s) => s.toggleHistoricalHeatmap)
     const toggleRecommendation = useMapStore((s) => s.toggleRecommendation)
+    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+    const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
     const setHistoricalRange = useMapStore((s) => s.setHistoricalHeatmapRange)
     const minResolution = APP_CONFIG.map.hexResolution.min
     const allowHighRes = import.meta.env.DEV && import.meta.env[APP_CONFIG.map.hexResolution.highResEnvFlag] === 'true'
     const maxResolution = allowHighRes ? APP_CONFIG.map.hexResolution.devMax : APP_CONFIG.map.hexResolution.max
-    const activeGlowBase = 'shadow-[0_0_0_3px_hsl(var(--map-btn-glow-primary)/0.35)] dark:shadow-[0_0_0_3px_hsl(var(--map-btn-glow-primary)/0.45)]'
-    const activeWarningGlowBase = 'shadow-[0_0_0_3px_hsl(var(--map-btn-glow-warning)/0.35)] dark:shadow-[0_0_0_3px_hsl(var(--map-btn-glow-warning)/0.45)]'
+    const hexGlowStyle = hexEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
+        : undefined
+    const heatGlowStyle = heatEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-warning) / 0.45), 0 0 18px hsl(var(--map-btn-glow-warning) / 0.45)' }
+        : undefined
+    const historicalGlowStyle = historicalEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
+        : undefined
+    const recommendationGlowStyle = recommendationEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
+        : undefined
+    const listEnabled = sidePanelMode === 'district' && districtPanelView === 'browse'
+    const listGlowStyle = listEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
+        : undefined
 
     useEffect(() => {
         if (!historicalEnabled || historicalRange) return
@@ -54,7 +72,8 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHex}
                     title="Toggle hex grid"
-                    className={`transition-shadow duration-150 ${hexEnabled ? activeGlowBase : ''}`}
+                    className="transition-shadow duration-150"
+                    style={hexGlowStyle}
                 >
                     <Layers className="h-8 w-8" />
                 </Button>
@@ -63,7 +82,8 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHeat}
                     title="Toggle heatmap"
-                    className={`transition-shadow duration-150 ${heatEnabled ? activeWarningGlowBase : ''}`}
+                    className="transition-shadow duration-150"
+                    style={heatGlowStyle}
                 >
                     <Thermometer className="h-8 w-8" />
                 </Button>
@@ -72,6 +92,8 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleHistorical}
                     title="Toggle historical heatmap"
+                    className="transition-shadow duration-150"
+                    style={historicalGlowStyle}
                 >
                     <Clock className="h-8 w-8" />
                 </Button>
@@ -80,9 +102,23 @@ export default function MapControls() {
                     size="icon-lg"
                     onClick={toggleRecommendation}
                     title="Toggle recommendation overlay"
-                    className={`transition-shadow duration-150 ${recommendationEnabled ? activeGlowBase : ''}`}
+                    className="transition-shadow duration-150"
+                    style={recommendationGlowStyle}
                 >
                     <Users className="h-8 w-8" />
+                </Button>
+                <Button
+                    variant={listEnabled ? 'default' : 'secondary'}
+                    size="icon-lg"
+                    onClick={() => {
+                        setDistrictPanelView('browse')
+                        setSidePanelMode('district')
+                    }}
+                    title="Open district list"
+                    className="transition-shadow duration-150"
+                    style={listGlowStyle}
+                >
+                    <Search className="h-8 w-8" />
                 </Button>
             </div>
             <div className="flex items-center gap-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1">
