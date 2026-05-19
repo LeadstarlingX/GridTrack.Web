@@ -11,8 +11,9 @@ import { useLiveStore } from '@/store/liveStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { setMapRef } from '@/lib/mapRef'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
+import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
-import {APP_CONFIG} from "@/config/app.config.ts";
+import { APP_CONFIG } from '@/config/app.config'
 
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
     const first = data.features?.[0]?.geometry?.type === 'Polygon'
@@ -37,6 +38,32 @@ function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
                 geometry: {
                     ...feature.geometry,
                     coordinates: swapped,
+                },
+            }
+        }),
+    }
+}
+
+function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
+    const normalized = normalizeGeoJson(data)
+
+    return {
+        ...normalized,
+        features: normalized.features.map((feature) => {
+            const osmId = feature.properties?.osm_id ?? feature.properties?.osmId ?? feature.id
+            const boundaryId = osmId != null ? String(osmId) : ''
+            const displayName = (feature.properties?.name_fixed ?? feature.properties?.name ?? boundaryId) as string
+            const expected = getMockNeighborhoodStats(boundaryId, displayName)
+
+            return {
+                ...feature,
+                properties: {
+                    ...feature.properties,
+                    boundaryId,
+                    displayName,
+                    expectedDemand: expected.expectedDemand,
+                    activeDrivers: expected.activeDrivers,
+                    staffingRatio: expected.staffingRatio,
                 },
             }
         }),
@@ -98,29 +125,23 @@ export default function LiveOpsPage() {
                 }
                 return r.json()
             })
-            .then((data) => setDistrictBoundariesGeoJSON(normalizeGeoJson(data)))
+            .then((data) => {
+                const normalized = normalizeBoundaryGeoJson(data)
+                setDistrictBoundariesGeoJSON(normalized)
+
+                const recommendationMap: Record<string, number> = {}
+                normalized.features.forEach((feature) => {
+                    const boundaryId = feature.properties?.boundaryId
+                    const expectedDemand = feature.properties?.expectedDemand
+                    if (!boundaryId || typeof expectedDemand !== 'number') return
+                    recommendationMap[boundaryId] = expectedDemand
+                })
+                useMapStore.getState().setRecommendationMock(recommendationMap)
+            })
             .catch((err) => {
                 console.warn(err)
             })
     }, [setDistrictBoundariesGeoJSON])
-
-    useEffect(() => {
-        const url = '/mock-forecasts.json'
-        const setRecommendationMock = useMapStore.getState().setRecommendationMock
-        fetch(url)
-            .then((r) => {
-                if (!r.ok) throw new Error(`Missing mock forecasts file: ${url}`)
-                return r.json()
-            })
-            .then((data: Array<{ districtId: string; expectedDemand: number }>) => {
-                const map: Record<string, number> = {}
-                data.forEach((d) => { map[d.districtId] = d.expectedDemand })
-                setRecommendationMock(map)
-            })
-            .catch((err) => {
-                console.warn(err)
-            })
-    }, [])
 
     useEffect(() => {
         if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'true') return

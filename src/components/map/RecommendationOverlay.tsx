@@ -1,10 +1,10 @@
 import { GeoJSON } from 'react-leaflet'
 import { useMemo } from 'react'
 import { APP_CONFIG } from '@/config/app.config'
-import { getMockRecommendationRatio, getMockDistrictStats } from '@/constants/mockData'
+import { getMockRecommendationRatio, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useMapStore } from '@/store/mapStore'
 
-type ComputeRatio = (districtId: string, districtName?: string) => number
+type ComputeRatio = (boundaryId: string, boundaryName?: string) => number
 
 interface RecommendationOverlayProps {
     computeRatio?: ComputeRatio
@@ -29,15 +29,13 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
     const recommendationMock = useMapStore((s) => s.recommendationMock)
     // computeRatio may be provided for unit tests; otherwise use local stub that prefers loaded mock forecasts
-    const computeLocal = (districtId: string, districtName?: string) => {
-        if (recommendationMock && recommendationMock[districtId] !== undefined) {
-            const expected = recommendationMock[districtId]
-            // derive active drivers from mock recommendation array or seeded district stats
-            const seeded = getMockDistrictStats(districtId, districtName)
-            const activeDrivers = Math.max(1, Math.round((seeded.activeDeliveries / 3)))
-            return Number((activeDrivers / Math.max(1, expected)).toFixed(2))
+    const computeLocal = (boundaryId: string, boundaryName?: string) => {
+        if (recommendationMock && recommendationMock[boundaryId] !== undefined) {
+            const expected = recommendationMock[boundaryId]
+            const seeded = getMockNeighborhoodStats(boundaryId, boundaryName)
+            return Number((seeded.activeDrivers / Math.max(1, expected)).toFixed(2))
         }
-        return getMockRecommendationRatio(districtId, districtName)
+        return getMockRecommendationRatio(boundaryId, boundaryName)
     }
     const compute = computeRatio ?? computeLocal
     const selectDistrict = useMapStore((s) => s.selectDistrict)
@@ -49,9 +47,9 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
         return {
             ...boundaries,
             features: boundaries.features.map((feature) => {
-                const districtId = feature.properties?.districtId ?? ''
-                const districtName = feature.properties?.name as string | undefined
-                const staffingRatio = compute(districtId, districtName)
+                const boundaryId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
+                const boundaryName = (feature.properties?.displayName ?? feature.properties?.name_fixed ?? feature.properties?.name) as string | undefined
+                const staffingRatio = compute(boundaryId, boundaryName)
 
                 return {
                     ...feature,
@@ -70,6 +68,7 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
         <>
             <GeoJSON
                 data={colored}
+                interactive={false}
                 style={(feature) => {
                     const staffingRatio = feature?.properties?.staffingRatio ?? 0
                     return {
@@ -81,9 +80,9 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
                 }}
                 onEachFeature={(feature, layer) => {
                     layer.on('click', () => {
-                        const districtId = feature.properties?.districtId
-                        if (!districtId) return
-                        selectDistrict(districtId)
+                        const boundaryId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
+                        if (!boundaryId) return
+                        selectDistrict(boundaryId)
                         setSidePanelMode('district')
                     })
                 }}

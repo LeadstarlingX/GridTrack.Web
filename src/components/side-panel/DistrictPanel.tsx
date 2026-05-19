@@ -2,26 +2,26 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
-import { getMockDistrictStats, MOCK_DISTRICTS, MOCK_RECOMMENDATION_DISTRICTS } from '@/constants/mockData'
+import { getMockNeighborhoodStats } from '@/constants/mockData'
 
 export default function DistrictPanel() {
-    const districtId = useMapStore((s) => s.selectedDistrictId)
+    const boundaryId = useMapStore((s) => s.selectedDistrictId)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const recommendationMock = useMapStore((s) => s.recommendationMock)
     const setMode = useMapStore((s) => s.setSidePanelMode)
 
-    if (!districtId) return null
+    if (!boundaryId) return null
 
-    const boundaryMatch = boundaries?.features?.find((feature) => feature.properties?.districtId === districtId)
-    const boundaryName = boundaryMatch?.properties?.name as string | undefined
-    const district = MOCK_DISTRICTS.find((d) => d.id === districtId) ?? getMockDistrictStats(districtId, boundaryName)
-    const displayName = district?.name ?? boundaryName ?? districtId
-    const activeDeliveries = district.activeDeliveries
-    const completedToday = district.completedToday
-    const anomalyRate = district.anomalyRate
-    const recommendationMock = useMapStore((s) => s.recommendationMock)
-    const mockEntry = MOCK_RECOMMENDATION_DISTRICTS.find((m) => m.districtId === districtId)
-    const expectedDemand = recommendationMock?.[districtId] ?? mockEntry?.expectedDemand ?? Math.max(1, Math.round((completedToday / 8) + (activeDeliveries / 4)))
-    const activeDrivers = mockEntry?.activeDrivers ?? Math.max(1, Math.round(activeDeliveries / 3))
+    const boundaryMatch = boundaries?.features?.find((feature) => {
+        const featureId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
+        return featureId === boundaryId
+    })
+    const boundaryName = (boundaryMatch?.properties?.displayName ?? boundaryMatch?.properties?.name_fixed ?? boundaryMatch?.properties?.name) as string | undefined
+    const neighborhood = getMockNeighborhoodStats(boundaryId, boundaryName)
+    const displayName = boundaryName ?? boundaryId
+    const expectedDemand = recommendationMock?.[boundaryId] ?? neighborhood.expectedDemand
+    const activeDrivers = neighborhood.activeDrivers
+    const staffingRatio = Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
 
     return (
         <div className="p-4">
@@ -33,16 +33,8 @@ export default function DistrictPanel() {
             </div>
             <div className="space-y-3">
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Active Deliveries</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{activeDeliveries}</p></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Completed Today</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{completedToday}</p></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Anomaly Rate</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{(anomalyRate * 100).toFixed(1)}%</p></CardContent>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Boundary ID</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{boundaryId}</p></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Expected Demand</CardTitle></CardHeader>
@@ -51,6 +43,10 @@ export default function DistrictPanel() {
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Active Drivers</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-bold">{activeDrivers}</p></CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Staffing Ratio</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{staffingRatio.toFixed(2)}</p></CardContent>
                 </Card>
             </div>
         </div>

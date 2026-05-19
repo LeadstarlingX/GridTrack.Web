@@ -214,6 +214,28 @@ export function getMockRecommendationRatio(districtId: string, districtName?: st
     return clamp(Number((baseRatio + loadBias - anomalyBias).toFixed(2)), 0.25, 1.45)
 }
 
+export interface NeighborhoodStats {
+    activeDrivers: number
+    expectedDemand: number
+    staffingRatio: number
+}
+
+export function getMockNeighborhoodStats(boundaryId: string, boundaryName?: string): NeighborhoodStats {
+    const seed = hashString(`${boundaryId}:${boundaryName ?? ''}`)
+    const baseDemand = 4 + (seed % 12)
+    const demandNameBias = boundaryName ? Math.min(5, Math.floor(boundaryName.length / 8)) : 0
+    const expectedDemand = clamp(baseDemand + demandNameBias, 2, 30)
+    const driverSkew = ((seed >> 8) % 7) - 2
+    const activeDrivers = clamp(Math.round(expectedDemand * (0.68 + ((seed >> 16) % 18) / 100)) + driverSkew, 1, 24)
+    const staffingRatio = Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
+
+    return {
+        activeDrivers,
+        expectedDemand,
+        staffingRatio,
+    }
+}
+
 function hashString(input: string) {
     let hash = 2166136261
     for (let i = 0; i < input.length; i += 1) {

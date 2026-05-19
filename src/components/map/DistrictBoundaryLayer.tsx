@@ -1,10 +1,13 @@
 import { GeoJSON } from 'react-leaflet'
+import L from 'leaflet'
 import { useMapStore } from '@/store/mapStore'
+import { getMapRef } from '@/lib/mapRef'
 
 const unselectedStyle = {
     color: '#64748b',
     weight: 1,
-    fillOpacity: 0,
+    fillColor: '#64748b',
+    fillOpacity: 0.03,
     opacity: 0.35,
 }
 
@@ -28,15 +31,22 @@ export default function DistrictBoundaryLayer() {
         <GeoJSON
             data={boundaries}
             style={(feature) => {
-                const id = feature?.properties?.districtId
+                const id = feature?.properties?.boundaryId ?? String(feature?.properties?.osm_id ?? '')
                 return id && id === selectedDistrictId ? selectedStyle : unselectedStyle
             }}
             onEachFeature={(feature, layer) => {
                 layer.on('click', () => {
-                    const id = feature.properties?.districtId
+                    const id = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
                     if (!id) return
                     selectDistrict(id)
                     setSidePanelMode('district')
+                    const map = getMapRef()
+                    if (map) {
+                        const bounds = L.geoJSON(feature as any).getBounds()
+                        if (bounds.isValid()) {
+                            map.fitBounds(bounds, { padding: [32, 32], maxZoom: 15 })
+                        }
+                    }
                 })
             }}
         />
