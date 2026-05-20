@@ -1,29 +1,21 @@
-import { useMemo, useState } from 'react'
-import { Badge, Button, toast } from '@/components/ui'
+import { useMemo } from 'react'
+import { Badge, Button } from '@/components/ui'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import { APP_CONFIG } from '@/config/app.config'
-import { useLiveStore } from '@/store/liveStore'
-import { MOCK_DISTRICTS } from '@/constants/mockData'
-import type { DriverState } from '@/types/driver'
+import { useDrivers } from '@/lib/api/queries/useDrivers'
+import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
+import type { DriverListItemDto } from '@/types/api'
 
 export default function DriversPage() {
-    const driversById = useLiveStore((s) => s.drivers)
-    const [visibleCount, setVisibleCount] = useState<number>(APP_CONFIG.table.driversPageSize)
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDrivers({
+        pageSize: APP_CONFIG.table.driversPageSize,
+    })
 
-    const districtNameById = useMemo(() => {
-        return Object.fromEntries(MOCK_DISTRICTS.map((district) => [district.id, district.name]))
-    }, [])
+    const { mutate: setAvailability, isPending } = useDriverAvailability()
 
-    const drivers = useMemo(() => Object.values(driversById), [driversById])
+    const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 
-    const rows = drivers
-        .slice()
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .slice(0, visibleCount)
-
-    const nextCursor = visibleCount < drivers.length ? `cursor-${visibleCount}` : null
-
-    const columns: CursorColumn<DriverState>[] = [
+    const columns: CursorColumn<DriverListItemDto>[] = [
         {
             key: 'name',
             header: 'Driver',
@@ -37,32 +29,33 @@ export default function DriversPage() {
         {
             key: 'district',
             header: 'District',
-            cell: (row) => districtNameById[row.districtId] ?? row.districtId,
+            cell: (row) => row.districtName,
         },
         {
             key: 'status',
             header: 'Status',
             cell: (row) => {
-                const variant = row.status === 'in-transit' ? 'default' : row.status === 'available' ? 'secondary' : 'outline'
+                const variant =
+                    row.status === 'in-transit' ? 'default' : row.status === 'available' ? 'secondary' : 'outline'
                 return <Badge variant={variant}>{row.status}</Badge>
             },
         },
         {
             key: 'action',
             header: 'Availability',
-            cell: (row) => (
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                        toast.message('Availability updates are not wired yet.', {
-                            description: `Driver ${row.name} (${row.id})`,
-                        })
-                    }
-                >
-                    Toggle
-                </Button>
-            ),
+            cell: (row) => {
+                const nextStatus = row.status === 'offline' ? 'available' : 'offline'
+                return (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={isPending || row.status === 'in-transit'}
+                        onClick={() => setAvailability({ id: row.id, status: nextStatus })}
+                    >
+                        {row.status === 'offline' ? 'Set Available' : 'Set Offline'}
+                    </Button>
+                )
+            },
         },
     ]
 
@@ -77,10 +70,11 @@ export default function DriversPage() {
                 columns={columns}
                 rows={rows}
                 getRowId={(row) => row.id}
-                nextCursor={nextCursor}
-                onLoadMore={() => setVisibleCount((prev) => prev + APP_CONFIG.table.driversPageSize)}
-                emptyTitle="No drivers"
-                emptyDescription="No drivers are currently available in the system."
+                nextCursor={hasNextPage ? 'has-more' : null}
+                isLoading={isLoading || isFetchingNextPage}
+                onLoadMore={() => fetchNextPage()}
+                emptyTitle={isLoading ? 'Loading...' : 'No drivers'}
+                emptyDescription={isLoading ? '' : 'No drivers are currently available in the system.'}
             />
         </div>
     )

@@ -7,6 +7,7 @@ import AlertsPage from '@/features/alerts/AlertsPage'
 import DriversPage from '@/features/drivers/DriversPage'
 import SettingsPage from '@/features/settings/SettingsPage'
 import { PageGuard } from '@/components/PageGuard'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 export const router = createBrowserRouter([
     {
@@ -16,49 +17,61 @@ export const router = createBrowserRouter([
             {
                 index: true,
                 element: (
-                    <PageGuard pageKey="liveOps">
-                        <LiveOpsPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="liveOps">
+                            <LiveOpsPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
             {
                 path: 'analytics',
                 element: (
-                    <PageGuard pageKey="analytics">
-                        <AnalyticsPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="analytics">
+                            <AnalyticsPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
             {
                 path: 'deliveries',
                 element: (
-                    <PageGuard pageKey="deliveries">
-                        <DeliveriesPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="deliveries">
+                            <DeliveriesPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
             {
                 path: 'alerts',
                 element: (
-                    <PageGuard pageKey="alerts">
-                        <AlertsPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="alerts">
+                            <AlertsPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
             {
                 path: 'drivers',
                 element: (
-                    <PageGuard pageKey="drivers">
-                        <DriversPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="drivers">
+                            <DriversPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
             {
                 path: 'settings',
                 element: (
-                    <PageGuard pageKey="settings">
-                        <SettingsPage />
-                    </PageGuard>
+                    <ErrorBoundary>
+                        <PageGuard pageKey="settings">
+                            <SettingsPage />
+                        </PageGuard>
+                    </ErrorBoundary>
                 ),
             },
         ],

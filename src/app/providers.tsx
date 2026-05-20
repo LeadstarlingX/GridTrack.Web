@@ -1,8 +1,10 @@
-import { ClerkProvider, ClerkLoading, ClerkLoaded, SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react'
+import { useEffect } from 'react'
+import { ClerkProvider, ClerkLoading, ClerkLoaded, SignedIn, SignedOut, RedirectToSignIn, useAuth } from '@clerk/clerk-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
 import { APP_CONFIG } from '@/config/app.config'
+import { setAuthBridge } from '@/lib/api/authBridge'
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -13,6 +15,14 @@ const queryClient = new QueryClient({
         },
     },
 })
+
+function TokenBridge() {
+    const { getToken, signOut } = useAuth()
+    useEffect(() => {
+        setAuthBridge({ getToken, signOut })
+    }, [getToken, signOut])
+    return null
+}
 
 function AppLoadingScreen() {
     return (
@@ -51,7 +61,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
                         <AppLoadingScreen />
                     </ClerkLoading>
                     <ClerkLoaded>
-                        <SignedIn>{children}</SignedIn>
+                        <SignedIn>
+                            <TokenBridge />
+                            {children}
+                        </SignedIn>
                         <SignedOut><RedirectToSignIn /></SignedOut>
                     </ClerkLoaded>
                     <Toaster position="bottom-right" />

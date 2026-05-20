@@ -2,8 +2,10 @@ import { create } from 'zustand'
 import { APP_CONFIG } from '@/config/app.config'
 
 type SidePanelMode = 'idle' | 'district' | 'driver' | 'focus'
+export type HubStatus = 'connected' | 'reconnecting' | 'disconnected'
 
 interface MapStore {
+    hubStatus: HubStatus
     hexGridEnabled: boolean
     heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
@@ -41,9 +43,11 @@ interface MapStore {
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
     setRecommendationMock: (data: Record<string, number> | null) => void
+    setHubStatus: (status: HubStatus) => void
 }
 
 export const useMapStore = create<MapStore>()((set) => ({
+    hubStatus: 'disconnected',
     hexGridEnabled: false,
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
@@ -83,4 +87,5 @@ export const useMapStore = create<MapStore>()((set) => ({
     setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
     recommendationMock: null,
     setRecommendationMock: (data) => set({ recommendationMock: data }),
+    setHubStatus: (status) => set({ hubStatus: status }),
 }))

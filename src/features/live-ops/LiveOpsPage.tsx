@@ -9,16 +9,21 @@ import { useMapStore } from '@/store/mapStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
+import { useSignalR } from '@/hooks/useSignalR'
+import { useDistrictBoundaries } from '@/lib/api/queries/useDistrictBoundaries'
 import { setMapRef } from '@/lib/mapRef'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
-    const first = data.features?.[0]?.geometry?.type === 'Polygon'
-        ? (data.features[0].geometry.coordinates[0]?.[0] as number[] | undefined)
-        : undefined
+    const first =
+        data.features?.[0]?.geometry?.type === 'Polygon'
+            ? (data.features[0].geometry.coordinates[0]?.[0] as number[] | undefined)
+            : undefined
 
     if (!first || first.length < 2) return data
 
@@ -30,38 +35,27 @@ function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
         ...data,
         features: data.features.map((feature) => {
             if (feature.geometry.type !== 'Polygon') return feature
-            const swapped = feature.geometry.coordinates.map((ring) =>
-                ring.map(([lat, lng]) => [lng, lat])
-            )
-            return {
-                ...feature,
-                geometry: {
-                    ...feature.geometry,
-                    coordinates: swapped,
-                },
-            }
+            const swapped = feature.geometry.coordinates.map((ring) => ring.map(([lat, lng]) => [lng, lat]))
+            return { ...feature, geometry: { ...feature.geometry, coordinates: swapped } }
         }),
     }
 }
 
 function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
     const normalized = normalizeGeoJson(data)
-
     return {
         ...normalized,
         features: normalized.features.map((feature) => {
             const osmId = feature.properties?.osm_id ?? feature.properties?.osmId ?? feature.id
-            // Cast number osm_id to string for consistent ID handling
             const boundaryId = osmId != null ? String(osmId) : ''
             const displayName = (feature.properties?.name_fixed ?? feature.properties?.name ?? boundaryId) as string
             const expected = getMockNeighborhoodStats(boundaryId, displayName)
-
             return {
                 ...feature,
                 properties: {
                     ...feature.properties,
-                    boundaryId,        // Now derived from osm_id (e.g., "13288134")
-                    displayName,       // Now Arabic name from name_fixed
+                    boundaryId,
+                    displayName,
                     expectedDemand: expected.expectedDemand,
                     activeDrivers: expected.activeDrivers,
                     staffingRatio: expected.staffingRatio,
@@ -71,11 +65,24 @@ function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
     }
 }
 
+function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
+    const normalized = normalizeBoundaryGeoJson(raw)
+    useMapStore.getState().setDistrictBoundariesGeoJSON(normalized)
+
+    const recommendationMap: Record<string, number> = {}
+    normalized.features.forEach((feature) => {
+        const boundaryId = feature.properties?.boundaryId
+        const expectedDemand = feature.properties?.expectedDemand
+        if (!boundaryId || typeof expectedDemand !== 'number') return
+        recommendationMap[boundaryId] = expectedDemand
+    })
+    useMapStore.getState().setRecommendationMock(recommendationMap)
+}
+
 export default function LiveOpsPage() {
     const mapRef = useRef<L.Map | null>(null)
     const setHexGeoJSON = useMapStore((s) => s.setHexGeoJSON)
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
-    const setDistrictBoundariesGeoJSON = useMapStore((s) => s.setDistrictBoundariesGeoJSON)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const heatmapResolution = APP_CONFIG.map.heatmapResolution
     const location = useLocation()
@@ -85,71 +92,61 @@ export default function LiveOpsPage() {
 
     useFocusMode(mapRef)
 
+    // Guards against mock mode internally; no-op when VITE_USE_MOCK_SIGNALR=true
+    useSignalR()
+
+    // H3 hex grid — always loaded from public/ files
     useEffect(() => {
         const fileName = `/h3-damascus-r${hexResolution}.geojson`
-        const url = `${fileName}?v=${hexResolution}`
         setHexGeoJSON(null)
-        fetch(url)
+        fetch(`${fileName}?v=${hexResolution}`)
             .then((r) => {
-                if (!r.ok) {
-                    throw new Error(`Missing H3 file: ${fileName}`)
-                }
+                if (!r.ok) throw new Error(`Missing H3 file: ${fileName}`)
                 return r.json()
             })
             .then((data) => setHexGeoJSON(normalizeGeoJson(data)))
-            .catch((err) => {
-                console.warn(err)
-            })
+            .catch((err) => console.warn(err))
     }, [setHexGeoJSON, hexResolution])
 
     useEffect(() => {
         const fileName = `/h3-damascus-r${heatmapResolution}.geojson`
         fetch(fileName)
             .then((r) => {
-                if (!r.ok) {
-                    throw new Error(`Missing H3 file: ${fileName}`)
-                }
+                if (!r.ok) throw new Error(`Missing H3 file: ${fileName}`)
                 return r.json()
             })
             .then((data) => setHeatmapGeoJSON(normalizeGeoJson(data)))
-            .catch((err) => {
-                console.warn(err)
-            })
+            .catch((err) => console.warn(err))
     }, [setHeatmapGeoJSON])
 
+    // District boundaries — local file in mock mode, API in real mode
+    const { data: apiBoundaries } = useDistrictBoundaries({ enabled: !USE_MOCK })
+
     useEffect(() => {
-        const fileName = APP_CONFIG.map.districtBoundariesFile
-        fetch(fileName)
+        if (!USE_MOCK) return
+        fetch(APP_CONFIG.map.districtBoundariesFile)
             .then((r) => {
-                if (!r.ok) {
-                    throw new Error(`Missing district boundaries file: ${fileName}`)
-                }
+                if (!r.ok) throw new Error(`Missing district boundaries file`)
                 return r.json()
             })
-            .then((data) => {
-                const normalized = normalizeBoundaryGeoJson(data)
-                setDistrictBoundariesGeoJSON(normalized)
-
-                const recommendationMap: Record<string, number> = {}
-                normalized.features.forEach((feature) => {
-                    const boundaryId = feature.properties?.boundaryId
-                    const expectedDemand = feature.properties?.expectedDemand
-                    if (!boundaryId || typeof expectedDemand !== 'number') return
-                    recommendationMap[boundaryId] = expectedDemand
-                })
-                useMapStore.getState().setRecommendationMock(recommendationMap)
-            })
-            .catch((err) => {
-                console.warn(err)
-            })
-    }, [setDistrictBoundariesGeoJSON])
+            .then(applyBoundaryToStore)
+            .catch((err) => console.warn(err))
+    }, [])
 
     useEffect(() => {
-        if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'true') return
+        if (USE_MOCK || !apiBoundaries) return
+        applyBoundaryToStore(apiBoundaries)
+    }, [apiBoundaries])
+
+    // Mock emitter — only in mock mode
+    useEffect(() => {
+        if (!USE_MOCK) return
+        useMapStore.getState().setHubStatus('connected')
         const cleanup = startMockEmitter()
         return cleanup
     }, [])
 
+    // Deep-link focus mode from DeliveriesPage
     useEffect(() => {
         const state = location.state as { focusDeliveryId?: string } | null
         const focusDeliveryId = state?.focusDeliveryId
@@ -161,17 +158,24 @@ export default function LiveOpsPage() {
         const driver = useLiveStore.getState().drivers[delivery.assignedDriverId]
         const routeIndex = driver?.routeIndex ?? 0
         const polyline = DAMASCUS_ROUTES[routeIndex] ?? []
-        enterFocusMode(delivery.id, delivery.assignedDriverId, polyline, delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds)
+        enterFocusMode(
+            delivery.id,
+            delivery.assignedDriverId,
+            polyline,
+            delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds,
+        )
         setSidePanelMode('focus')
         navigate('/', { replace: true, state: null })
     }, [enterFocusMode, location.state, navigate, setSidePanelMode])
 
     return (
         <div className="relative h-full">
-            <LiveMap onMapReady={(m) => {
-                mapRef.current = m
-                setMapRef(m)
-            }} />
+            <LiveMap
+                onMapReady={(m) => {
+                    mapRef.current = m
+                    setMapRef(m)
+                }}
+            />
             <ConnectionStatus />
             <MapControls />
             <SidePanel />

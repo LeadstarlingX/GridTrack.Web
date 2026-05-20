@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from '@/components/ui'
 import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
@@ -6,11 +6,15 @@ import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
 import { PAGE_CONFIG } from '@/config/pages.config'
+import { apiClient } from '@/lib/api/client'
+import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
+import { useAnalyticsTrends } from '@/lib/api/queries/useAnalyticsTrends'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 import ChatbotPanel from './chatbot/ChatbotPanel'
 
-type AnalyticsTab = 'overview' | 'ai'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
 
+type AnalyticsTab = 'overview' | 'ai'
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
 
 const DAY_OPTIONS: { key: DayKey; label: string }[] = [
@@ -27,7 +31,17 @@ function formatPercent(value: number) {
     return `${Math.round(value * 100)}%`
 }
 
-function MetricCard({ label, value, helper, isLoading }: { label: string; value: string; helper: string; isLoading: boolean }) {
+function MetricCard({
+    label,
+    value,
+    helper,
+    isLoading,
+}: {
+    label: string
+    value: string
+    helper: string
+    isLoading: boolean
+}) {
     return (
         <Card>
             <CardHeader>
@@ -50,28 +64,19 @@ function MetricCard({ label, value, helper, isLoading }: { label: string; value:
 }
 
 function getRangeDays(from: string, to: string) {
-    const start = new Date(from)
-    const end = new Date(to)
-    const diff = Math.max(0, end.getTime() - start.getTime())
+    const diff = Math.max(0, new Date(to).getTime() - new Date(from).getTime())
     return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1
 }
 
-function sliceTrendsByRange(days: number) {
+function sliceMockTrends(days: number) {
     const total = MOCK_ANALYTICS_TRENDS.length
     const target = days <= 7 ? 8 : days <= 14 ? 10 : total
     return MOCK_ANALYTICS_TRENDS.slice(Math.max(0, total - target))
 }
 
-function buildApiUrl(path: string) {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
-    return `${baseUrl}${path}`
-}
-
 export default function AnalyticsPage() {
     const chatbotEnabled = PAGE_CONFIG.analyticsChatbot.enabled
     const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview')
-    const [isLoading, setIsLoading] = useState(false)
-    const loadingRef = useRef<number | null>(null)
     const [activeDays, setActiveDays] = useState<DayKey[]>(DAY_OPTIONS.map((d) => d.key))
     const [hourStart, setHourStart] = useState<number>(APP_CONFIG.analytics.defaultHourStart)
     const [hourEnd, setHourEnd] = useState<number>(APP_CONFIG.analytics.defaultHourEnd)
@@ -83,66 +88,50 @@ export default function AnalyticsPage() {
     })
     const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
 
-    useEffect(() => {
-        return () => {
-            if (loadingRef.current) {
-                window.clearTimeout(loadingRef.current)
-            }
-        }
-    }, [])
-
-    const handleApplyRange = (next: DateRangeValue) => {
-        setIsLoading(true)
-        setAppliedRange(next)
-        if (loadingRef.current) {
-            window.clearTimeout(loadingRef.current)
-        }
-        loadingRef.current = window.setTimeout(() => {
-            setIsLoading(false)
-        }, APP_CONFIG.analytics.loadingDelayMs)
-    }
-
-    const rangeDays = useMemo(() => getRangeDays(appliedRange.from, appliedRange.to), [appliedRange.from, appliedRange.to])
-    const slicedTrends = useMemo(() => sliceTrendsByRange(rangeDays), [rangeDays])
-
-    const deliveryTrend = useMemo(
-        () => slicedTrends.map((item) => ({ bucket: item.bucket, deliveries: item.deliveries })),
-        [slicedTrends]
+    const trendsParams = useMemo(
+        () => ({
+            from: appliedRange.from,
+            to: appliedRange.to,
+            granularity: 'day' as const,
+        }),
+        [appliedRange],
     )
-    const anomalyTrend = useMemo(
-        () => slicedTrends.map((item) => ({ bucket: item.bucket, anomalies: item.anomalies })),
-        [slicedTrends]
-    )
+
+    const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary()
+    const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
+
+    // In mock mode, fall back to static mock data
+    const summary = USE_MOCK ? MOCK_ANALYTICS : summaryData
+    const isLoading = USE_MOCK ? false : summaryLoading
+
+    const rangeDays = useMemo(() => getRangeDays(appliedRange.from, appliedRange.to), [appliedRange])
+
+    const deliveryTrend = useMemo(() => {
+        if (USE_MOCK) {
+            return sliceMockTrends(rangeDays).map((item) => ({ bucket: item.bucket, deliveries: item.deliveries }))
+        }
+        return trendsData?.deliveryTrend.map((p) => ({ bucket: p.bucket, deliveries: p.value })) ?? []
+    }, [USE_MOCK, rangeDays, trendsData])
+
+    const anomalyTrend = useMemo(() => {
+        if (USE_MOCK) {
+            return sliceMockTrends(rangeDays).map((item) => ({ bucket: item.bucket, anomalies: item.anomalies }))
+        }
+        return trendsData?.anomalyTrend.map((p) => ({ bucket: p.bucket, anomalies: p.value })) ?? []
+    }, [USE_MOCK, rangeDays, trendsData])
 
     const downloadCsv = async (mode: 'range' | 'full') => {
-        const payload = {
-            mode,
-            from: range.from,
-            to: range.to,
-            days: activeDays,
-            fromHour: hourStart,
-            toHour: hourEnd,
-        }
-
-        const response = await fetch(buildApiUrl(APP_CONFIG.api.exportCsvPath), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-        })
-
-        if (!response.ok) {
-            throw new Error('CSV export failed')
-        }
-
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
+        const payload = { mode, from: range.from, to: range.to, days: activeDays, fromHour: hourStart, toHour: hourEnd }
+        const response = await apiClient.post(APP_CONFIG.api.exportCsvPath, payload, { responseType: 'blob' })
+        const blob = new Blob([response.data as BlobPart], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
         link.href = url
-        link.download = `gridtrack-export-${mode}-${range.from}-to-${range.to}.csv`
+        link.download = `${APP_CONFIG.export.csvFilenamePrefix}-${mode}-${range.from}-to-${range.to}.csv`
         document.body.appendChild(link)
         link.click()
         link.remove()
-        window.URL.revokeObjectURL(url)
+        URL.revokeObjectURL(url)
     }
 
     const toggleDay = (day: DayKey) => {
@@ -169,7 +158,7 @@ export default function AnalyticsPage() {
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Operational insights and trends.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <DateRangePicker value={range} onChange={setRange} onApply={handleApplyRange} />
+                    <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
                     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
                         <span className="text-xs text-[hsl(var(--foreground-muted))]">Days</span>
                         <div className="flex flex-wrap items-center gap-1">
@@ -235,25 +224,25 @@ export default function AnalyticsPage() {
                     <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                         <MetricCard
                             label="Deliveries Today"
-                            value={MOCK_ANALYTICS.totalDeliveriesToday.toLocaleString()}
+                            value={(summary?.totalDeliveriesToday ?? 0).toLocaleString()}
                             helper="Last 24 hours"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Completion Rate"
-                            value={formatPercent(MOCK_ANALYTICS.completionRate)}
+                            value={formatPercent(summary?.completionRate ?? 0)}
                             helper="Delivered vs created"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Active Drivers"
-                            value={MOCK_ANALYTICS.activeDrivers.toString()}
+                            value={(summary?.activeDrivers ?? 0).toString()}
                             helper="Currently in transit"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Anomaly Rate"
-                            value={formatPercent(MOCK_ANALYTICS.anomalyRate)}
+                            value={formatPercent(summary?.anomalyRate ?? 0)}
                             helper="Last 7 days"
                             isLoading={isLoading}
                         />
@@ -266,11 +255,11 @@ export default function AnalyticsPage() {
                                     Delivery Trend
                                 </CardTitle>
                                 <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Hourly volume across the selected range.
+                                    Volume across the selected range.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <DeliveryTrendChart data={deliveryTrend} isLoading={isLoading} />
+                                <DeliveryTrendChart data={deliveryTrend} isLoading={USE_MOCK ? false : trendsLoading} />
                             </CardContent>
                         </Card>
 
@@ -280,11 +269,11 @@ export default function AnalyticsPage() {
                                     Anomaly Rate
                                 </CardTitle>
                                 <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Hourly anomaly counts.
+                                    Anomaly counts across the selected range.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <AnomalyRateChart data={anomalyTrend} isLoading={isLoading} />
+                                <AnomalyRateChart data={anomalyTrend} isLoading={USE_MOCK ? false : trendsLoading} />
                             </CardContent>
                         </Card>
                     </section>
@@ -300,7 +289,7 @@ export default function AnalyticsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <DistrictVolumeChart data={MOCK_DISTRICT_VOLUME} isLoading={isLoading} />
+                                <DistrictVolumeChart data={MOCK_DISTRICT_VOLUME} isLoading={false} />
                             </CardContent>
                         </Card>
                     </section>
@@ -317,7 +306,12 @@ export default function AnalyticsPage() {
                     </CardHeader>
                     <CardContent>
                         {chatbotEnabled ? (
-                            <ChatbotPanel range={range} activeDays={activeDays} hourStart={hourStart} hourEnd={hourEnd} />
+                            <ChatbotPanel
+                                range={range}
+                                activeDays={activeDays}
+                                hourStart={hourStart}
+                                hourEnd={hourEnd}
+                            />
                         ) : (
                             <div className="rounded-lg border border-dashed border-[hsl(var(--border-strong))] bg-[hsl(var(--surface))] p-6">
                                 <p className="text-xs text-[hsl(var(--foreground-subtle))] italic">

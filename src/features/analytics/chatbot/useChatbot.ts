@@ -1,6 +1,9 @@
 import { useCallback, useMemo, useState } from 'react'
+import { toast } from 'sonner'
 import { APP_CONFIG } from '@/config/app.config'
+import { apiClient } from '@/lib/api/client'
 import type { ChatMessage } from '@/types/chatbot'
+import type { ChatRequest, ChatResponse } from '@/types/api'
 
 interface ChatbotState {
     messages: ChatMessage[]
@@ -12,15 +15,9 @@ interface ChatbotState {
     clearConversation: () => void
 }
 
-function buildApiUrl(path: string) {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL ?? ''
-    return `${baseUrl}${path}`
-}
-
 function trimCsvForContext(csvData: string) {
-    const maxLength = APP_CONFIG.chatbot.csvMaxChars
-    if (csvData.length <= maxLength) return csvData
-    return csvData.slice(0, maxLength)
+    const max = APP_CONFIG.chatbot.csvMaxChars
+    return csvData.length <= max ? csvData : csvData.slice(0, max)
 }
 
 export function useChatbot(): ChatbotState {
@@ -29,23 +26,24 @@ export function useChatbot(): ChatbotState {
     const [isLoading, setIsLoading] = useState(false)
     const [isCsvLoading, setIsCsvLoading] = useState(false)
 
-    const loadCsvForRange = useCallback(async (from: string, to: string, days: string[], fromHour: number, toHour: number) => {
-        setIsCsvLoading(true)
-        try {
-            const response = await fetch(buildApiUrl(APP_CONFIG.api.exportCsvPath), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mode: 'range', from, to, days, fromHour, toHour }),
-            })
-            if (!response.ok) {
-                throw new Error('Failed to load CSV')
+    const loadCsvForRange = useCallback(
+        async (from: string, to: string, days: string[], fromHour: number, toHour: number) => {
+            setIsCsvLoading(true)
+            try {
+                const response = await apiClient.post<string>(
+                    APP_CONFIG.api.exportCsvPath,
+                    { mode: 'range', from, to, days, fromHour, toHour },
+                    { responseType: 'text' },
+                )
+                setCsvData(trimCsvForContext(response.data))
+            } catch {
+                toast.error('Could not load export data. Try again.')
+            } finally {
+                setIsCsvLoading(false)
             }
-            const text = await response.text()
-            setCsvData(trimCsvForContext(text))
-        } finally {
-            setIsCsvLoading(false)
-        }
-    }, [])
+        },
+        [],
+    )
 
     const sendMessage = useCallback(
         async (text: string) => {
@@ -57,18 +55,12 @@ export function useChatbot(): ChatbotState {
             setIsLoading(true)
 
             try {
-                const response = await fetch(buildApiUrl(APP_CONFIG.api.analysisChatPath), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ messages: nextMessages, csvData }),
-                })
-
-                if (!response.ok) {
-                    throw new Error('Failed to send message')
-                }
-
-                const data: { reply?: string } = await response.json()
-                setMessages((prev) => [...prev, { role: 'assistant', content: data.reply ?? 'No reply received.' }])
+                const body: ChatRequest = { messages: nextMessages, csvData }
+                const response = await apiClient.post<ChatResponse>(APP_CONFIG.api.analysisChatPath, body)
+                setMessages((prev) => [
+                    ...prev,
+                    { role: 'assistant', content: response.data.reply ?? 'No reply received.' },
+                ])
             } catch {
                 setMessages((prev) => [
                     ...prev,
@@ -78,15 +70,13 @@ export function useChatbot(): ChatbotState {
                 setIsLoading(false)
             }
         },
-        [csvData, messages]
+        [csvData, messages],
     )
 
-    const clearConversation = useCallback(() => {
-        setMessages([])
-    }, [])
+    const clearConversation = useCallback(() => setMessages([]), [])
 
     return useMemo(
         () => ({ messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation }),
-        [messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation]
+        [messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation],
     )
 }

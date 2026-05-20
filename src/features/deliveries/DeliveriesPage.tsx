@@ -1,14 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge, Button } from '@/components/ui'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
 import { APP_CONFIG } from '@/config/app.config'
-import { useLiveStore } from '@/store/liveStore'
 import { MOCK_DISTRICTS } from '@/constants/mockData'
-import type { DeliveryState, DeliveryStatus } from '@/types/delivery'
+import { useDeliveries } from '@/lib/api/queries/useDeliveries'
+import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 
-type StatusFilter = DeliveryStatus | 'all'
+type StatusFilter = DeliveryListItemDto['status'] | 'all'
 
 const STATUS_OPTIONS: StatusFilter[] = ['all', 'Created', 'Assigned', 'InTransit', 'Delivered', 'Anomalous']
 
@@ -22,11 +22,8 @@ function toIsoDate(date: Date) {
 
 export default function DeliveriesPage() {
     const navigate = useNavigate()
-    const deliveriesById = useLiveStore((s) => s.deliveries)
-    const drivers = useLiveStore((s) => s.drivers)
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>('all')
-    const [visibleCount, setVisibleCount] = useState<number>(APP_CONFIG.table.defaultPageSize)
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
@@ -35,33 +32,19 @@ export default function DeliveriesPage() {
     })
     const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
 
-    useEffect(() => {
-        setVisibleCount(APP_CONFIG.table.defaultPageSize)
-    }, [statusFilter, districtFilter, appliedRange.from, appliedRange.to])
+    const queryParams: Omit<DeliveriesQueryParams, 'cursor'> = useMemo(() => ({
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        districtId: districtFilter !== 'all' ? districtFilter : undefined,
+        from: appliedRange.from,
+        to: appliedRange.to,
+        pageSize: APP_CONFIG.table.defaultPageSize,
+    }), [statusFilter, districtFilter, appliedRange])
 
-    const districtNameById = useMemo(() => {
-        return Object.fromEntries(MOCK_DISTRICTS.map((district) => [district.id, district.name]))
-    }, [])
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDeliveries(queryParams)
 
-    const deliveries = useMemo(() => Object.values(deliveriesById), [deliveriesById])
+    const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 
-    const filtered = useMemo(() => {
-        const start = new Date(`${appliedRange.from}T00:00:00`)
-        const end = new Date(`${appliedRange.to}T23:59:59`)
-        return deliveries
-            .filter((delivery) => {
-                if (statusFilter !== 'all' && delivery.status !== statusFilter) return false
-                if (districtFilter !== 'all' && delivery.districtId !== districtFilter) return false
-                const created = new Date(delivery.createdAt)
-                return created >= start && created <= end
-            })
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    }, [appliedRange.from, appliedRange.to, deliveries, districtFilter, statusFilter])
-
-    const rows = filtered.slice(0, visibleCount)
-    const nextCursor = visibleCount < filtered.length ? `cursor-${visibleCount}` : null
-
-    const columns: CursorColumn<DeliveryState>[] = [
+    const columns: CursorColumn<DeliveryListItemDto>[] = [
         {
             key: 'id',
             header: 'Delivery',
@@ -71,22 +54,23 @@ export default function DeliveriesPage() {
             key: 'status',
             header: 'Status',
             cell: (row) => {
-                const variant = row.status === 'Anomalous' ? 'destructive' : row.status === 'Delivered' ? 'secondary' : 'outline'
+                const variant =
+                    row.status === 'Anomalous' ? 'destructive' : row.status === 'Delivered' ? 'secondary' : 'outline'
                 return <Badge variant={variant}>{row.status}</Badge>
             },
         },
         {
             key: 'district',
             header: 'District',
-            cell: (row) => districtNameById[row.districtId] ?? row.districtId,
+            cell: (row) => row.districtId,
         },
         {
             key: 'driver',
             header: 'Driver',
-            cell: (row) => {
-                if (!row.assignedDriverId) return <span className="text-[hsl(var(--foreground-muted))]">Unassigned</span>
-                return drivers[row.assignedDriverId]?.name ?? row.assignedDriverId
-            },
+            cell: (row) =>
+                row.assignedDriverName ?? (
+                    <span className="text-[hsl(var(--foreground-muted))]">Unassigned</span>
+                ),
         },
         {
             key: 'eta',
@@ -136,7 +120,7 @@ export default function DeliveriesPage() {
                         </select>
                     </div>
                     <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
-                    <Button variant="outline" size="sm" onClick={() => setAppliedRange(range)}>
+                    <Button variant="outline" size="sm" onClick={() => setAppliedRange({ ...appliedRange })}>
                         Refresh
                     </Button>
                 </div>
@@ -146,11 +130,12 @@ export default function DeliveriesPage() {
                 columns={columns}
                 rows={rows}
                 getRowId={(row) => row.id}
-                nextCursor={nextCursor}
-                onLoadMore={() => setVisibleCount((prev) => prev + APP_CONFIG.table.defaultPageSize)}
+                nextCursor={hasNextPage ? 'has-more' : null}
+                isLoading={isLoading || isFetchingNextPage}
+                onLoadMore={() => fetchNextPage()}
                 onRowClick={(row) => navigate('/', { state: { focusDeliveryId: row.id } })}
-                emptyTitle="No deliveries"
-                emptyDescription="Try a different status or date range."
+                emptyTitle={isLoading ? 'Loading...' : 'No deliveries'}
+                emptyDescription={isLoading ? '' : 'Try a different status or date range.'}
             />
         </div>
     )
