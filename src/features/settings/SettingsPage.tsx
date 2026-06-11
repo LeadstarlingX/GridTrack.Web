@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon, Monitor, RefreshCw } from 'lucide-react'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
 import { APP_CONFIG } from '@/config/app.config'
+import { apiClient } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
+
+interface LatencyResult { ok: boolean; ms: number; error?: string }
+interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult }
 
 type Section = 'appearance' | 'notifications' | 'map' | 'connection'
 
@@ -21,6 +25,20 @@ export default function SettingsPage() {
     const hexResolution = useMapStore((s) => s.hexResolution)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
     const hubStatus = useMapStore((s) => s.hubStatus)
+    const [latency, setLatency] = useState<LatencyResponse | null>(null)
+    const [pinging, setPinging] = useState(false)
+
+    async function runPing() {
+        setPinging(true)
+        try {
+            const res = await apiClient.get<LatencyResponse>('/api/diagnostics/latency')
+            setLatency(res.data)
+        } catch {
+            toast.error('Latency check failed — API unreachable.')
+        } finally {
+            setPinging(false)
+        }
+    }
 
     const activeTheme = theme ?? 'system'
     const minRes = APP_CONFIG.map.hexResolution.min
@@ -148,30 +166,67 @@ export default function SettingsPage() {
 
                     {/* ── Connection ── */}
                     {section === 'connection' && (
-                        <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
-                            <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Connection</p>
-                            <SettingRow label="SignalR endpoint" description="Real-time data hub URL.">
-                                <span className="text-xs font-mono text-[hsl(var(--foreground-muted))]">wss://api.gridtrack.sy/hub</span>
-                            </SettingRow>
-                            <SettingRow label="Status" description="Current hub connection state.">
-                                <span className={cn(
-                                    'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
-                                    hubStatus === 'connected'
-                                        ? 'bg-green-500/15 text-green-600 dark:text-green-400'
-                                        : hubStatus === 'reconnecting'
-                                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                                        : 'bg-red-500/15 text-red-600 dark:text-red-400'
-                                )}>
+                        <div className="space-y-4">
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">SignalR</p>
+                                <SettingRow label="Status" description="Current hub connection state.">
                                     <span className={cn(
-                                        'inline-block w-1.5 h-1.5 rounded-full',
-                                        hubStatus === 'connected' ? 'bg-green-500' : hubStatus === 'reconnecting' ? 'bg-amber-500' : 'bg-red-500'
-                                    )} />
-                                    {hubStatus === 'connected' ? 'Connected' : hubStatus === 'reconnecting' ? 'Reconnecting' : 'Disconnected'}
-                                </span>
-                            </SettingRow>
-                            <SettingRow label="Last update" description="Time of most recent data tick.">
-                                <span className="text-xs font-mono text-[hsl(var(--foreground-muted))]">{new Date().toLocaleTimeString()}</span>
-                            </SettingRow>
+                                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
+                                        hubStatus === 'connected'
+                                            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                                            : hubStatus === 'reconnecting'
+                                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                            : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                    )}>
+                                        <span className={cn(
+                                            'inline-block w-1.5 h-1.5 rounded-full',
+                                            hubStatus === 'connected' ? 'bg-green-500' : hubStatus === 'reconnecting' ? 'bg-amber-500' : 'bg-red-500'
+                                        )} />
+                                        {hubStatus === 'connected' ? 'Connected' : hubStatus === 'reconnecting' ? 'Reconnecting' : 'Disconnected'}
+                                    </span>
+                                </SettingRow>
+                            </div>
+
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Service Latency</p>
+                                    <button
+                                        type="button"
+                                        onClick={runPing}
+                                        disabled={pinging}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[hsl(var(--border))] text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] disabled:opacity-50 transition-colors"
+                                    >
+                                        <RefreshCw size={12} className={pinging ? 'animate-spin' : ''} />
+                                        {pinging ? 'Pinging…' : 'Run ping'}
+                                    </button>
+                                </div>
+                                {latency ? (
+                                    <div className="space-y-2">
+                                        {(['postgres', 'redis', 'python'] as const).map((svc) => {
+                                            const r = latency[svc]
+                                            const label = svc === 'postgres' ? 'PostgreSQL (Neon)' : svc === 'redis' ? 'Redis (Render)' : 'Python (Forecasting)'
+                                            return (
+                                                <div key={svc} className="flex items-center justify-between py-2 border-b border-[hsl(var(--border))] last:border-0">
+                                                    <div>
+                                                        <p className="text-sm text-[hsl(var(--foreground))]">{label}</p>
+                                                        {!r.ok && <p className="text-xs text-red-500 mt-0.5 truncate max-w-[220px]">{r.error}</p>}
+                                                    </div>
+                                                    <span className={cn(
+                                                        'text-sm font-mono font-semibold',
+                                                        !r.ok ? 'text-red-500' : r.ms < 50 ? 'text-green-500' : r.ms < 200 ? 'text-amber-500' : 'text-red-500'
+                                                    )}>
+                                                        {r.ok ? `${r.ms} ms` : 'error'}
+                                                    </span>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-[hsl(var(--foreground-muted))]">
+                                        Press <span className="font-medium">Run ping</span> to measure round-trip latency to each backend service.
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

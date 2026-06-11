@@ -105,7 +105,7 @@ export default function NeighborhoodListPanel() {
             )}
 
             <div className="mt-4 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/50">
-                Tip: click a neighborhood on the map or choose one here to inspect its stats.
+                Tip: search by name then tap Details to inspect a district's forecast and staffing stats.
             </div>
         </div>
     )
