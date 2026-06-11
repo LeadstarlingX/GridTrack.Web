@@ -17,6 +17,8 @@ import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
+import LiveKpiStrip from '@/components/live-ops/LiveKpiStrip'
+import AlertTriagePanel from '@/components/live-ops/AlertTriagePanel'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
@@ -172,16 +174,20 @@ export default function LiveOpsPage() {
     }, [enterFocusMode, location.state, navigate, setSidePanelMode])
 
     return (
-        <div className="relative h-full">
-            <LiveMap
-                onMapReady={(m) => {
-                    mapRef.current = m
-                    setMapRef(m)
-                }}
-            />
-            <ConnectionStatus />
-            <MapControls />
-            <SidePanel />
+        <div className="flex flex-col h-full">
+            <LiveKpiStrip />
+            <div className="relative flex-1">
+                <LiveMap
+                    onMapReady={(m) => {
+                        mapRef.current = m
+                        setMapRef(m)
+                    }}
+                />
+                <ConnectionStatus />
+                <MapControls />
+                <AlertTriagePanel />
+                <SidePanel />
+            </div>
         </div>
     )
 }

@@ -132,8 +132,26 @@ export default function SignInPage() {
                 </form>
             </div>
 
+            {/* Test accounts */}
+            <div className="mt-4 w-full max-w-sm rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-4 py-3">
+                <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Demo accounts</p>
+                <div className="space-y-1">
+                    {['test1@gmail.com', 'test2@gmail.com', 'test3@gmail.com'].map((email) => (
+                        <button
+                            key={email}
+                            type="button"
+                            onClick={() => { setEmail(email); setPassword('test') }}
+                            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs text-[hsl(var(--foreground-muted))] transition-colors hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]"
+                        >
+                            <span className="font-mono">{email}</span>
+                            <span className="text-[10px] text-[hsl(var(--foreground-subtle))]">pw: test</span>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             {/* Footer */}
-            <p className="mt-6 text-[11px] text-[hsl(var(--foreground-subtle))]">
+            <p className="mt-4 text-[11px] text-[hsl(var(--foreground-subtle))]">
                 GridTrack · Fleet Operations Platform
             </p>
         </div>
