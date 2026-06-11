@@ -38,7 +38,7 @@ function SparklineChart({ districtId }: { districtId: string }) {
                 <XAxis dataKey="hour" hide />
                 <Tooltip
                     contentStyle={{ background: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', borderRadius: 6, fontSize: 11 }}
-                    formatter={(v: number) => [`${v} deliveries`, '']}
+                    formatter={(v) => [`${v} deliveries`, '']}
                 />
                 <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} dot={false} />
             </AreaChart>
