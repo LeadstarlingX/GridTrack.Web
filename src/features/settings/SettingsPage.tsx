@@ -9,7 +9,7 @@ import { APP_CONFIG } from '@/config/app.config'
 import { cn } from '@/lib/utils'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
-interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult }
+interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
 
 type Section = 'appearance' | 'notifications' | 'map' | 'connection'
 
@@ -233,9 +233,9 @@ export default function SettingsPage() {
                                 </div>
                                 {latency ? (
                                     <div className="space-y-2">
-                                        {(['postgres', 'redis', 'python'] as const).map((svc) => {
+                                        {(['postgres', 'redis', 'python', 'osrm', 'rabbit'] as const).map((svc) => {
                                             const r = latency[svc]
-                                            const label = svc === 'postgres' ? 'PostgreSQL (Neon)' : svc === 'redis' ? 'Redis (Render)' : 'Python (Forecasting)'
+                                            const label = svc === 'postgres' ? 'PostgreSQL (Neon)' : svc === 'redis' ? 'Redis (Render)' : svc === 'python' ? 'Python (Forecasting)' : svc === 'osrm' ? 'OSRM (Routing)' : 'RabbitMQ (CloudAMQP)'
                                             return (
                                                 <div key={svc} className="flex items-center justify-between py-2 border-b border-[hsl(var(--border))] last:border-0">
                                                     <div>

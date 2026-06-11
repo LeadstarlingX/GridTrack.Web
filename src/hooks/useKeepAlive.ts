@@ -1,12 +1,7 @@
 import { useEffect } from 'react'
 
-const INTERVAL_MS = 10 * 60 * 1000 // 10 minutes — well under Render's 15-min sleep threshold
-
-/**
- * Sends a lightweight HTTP ping to /health every 10 minutes.
- * Prevents Render's free-tier service from sleeping during an active session,
- * which would otherwise kill the SignalR WebSocket connection.
- */
+// Ping /health every 10 min to prevent Render free-tier from sleeping and killing the SignalR connection.
+const INTERVAL_MS = 10 * 60 * 1000
 export function useKeepAlive() {
     useEffect(() => {
         if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false') return

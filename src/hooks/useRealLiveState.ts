@@ -37,11 +37,7 @@ interface PagedResponse<T> {
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
-/**
- * When real mode is active, fetches initial driver and delivery state from the
- * REST API and populates liveStore. SignalR delta updates then take over.
- * No-op in mock mode.
- */
+// Hydrates liveStore from REST on mount (real mode only); SignalR deltas take over after.
 export function useRealLiveState() {
     useEffect(() => {
         if (USE_MOCK) return
