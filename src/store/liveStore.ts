@@ -5,7 +5,7 @@ import type { AnomalyAlert } from '@/types/hub'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 interface LiveStore {
     drivers: Record<string, DriverState>

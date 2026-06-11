@@ -13,7 +13,7 @@ import { useAnalyticsTrends } from '@/lib/api/queries/useAnalyticsTrends'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 import ChatbotPanel from './chatbot/ChatbotPanel'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type AnalyticsTab = 'overview' | 'ai'
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'

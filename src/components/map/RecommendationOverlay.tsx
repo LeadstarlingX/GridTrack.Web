@@ -4,7 +4,7 @@ import { APP_CONFIG } from '@/config/app.config'
 import { getMockRecommendationRatio, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useMapStore } from '@/store/mapStore'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type ComputeRatio = (boundaryId: string, boundaryName?: string) => number
 

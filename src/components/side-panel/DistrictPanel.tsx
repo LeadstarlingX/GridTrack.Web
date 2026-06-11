@@ -5,7 +5,7 @@ import { useMapStore } from '@/store/mapStore'
 import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useForecast } from '@/lib/api/queries/useForecast'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)

@@ -5,7 +5,7 @@ import { useH3Density } from '@/lib/api/queries/useH3Density'
 import { getMockHistoricalHeatmapCount } from '@/constants/mockData'
 import type { H3DensityQueryParams } from '@/types/api'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 function percentile(values: number[], p: number) {
     if (values.length === 0) return 0

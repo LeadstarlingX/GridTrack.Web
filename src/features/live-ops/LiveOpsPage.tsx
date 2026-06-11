@@ -17,7 +17,7 @@ import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
     const first =

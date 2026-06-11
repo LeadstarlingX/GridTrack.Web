@@ -4,14 +4,17 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
+import { PAGE_CONFIG } from '@/config/pages.config'
 
-const navItems = [
-    { to: '/', label: 'Live Ops', icon: Radio },
-    { to: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { to: '/deliveries', label: 'Deliveries', icon: Package },
-    { to: '/alerts', label: 'Alerts', icon: Bell },
-    { to: '/drivers', label: 'Drivers', icon: Users },
+const ALL_NAV_ITEMS = [
+    { to: '/', label: 'Live Ops', icon: Radio, pageKey: 'liveOps' as const },
+    { to: '/analytics', label: 'Analytics', icon: BarChart3, pageKey: 'analytics' as const },
+    { to: '/deliveries', label: 'Deliveries', icon: Package, pageKey: 'deliveries' as const },
+    { to: '/alerts', label: 'Alerts', icon: Bell, pageKey: 'alerts' as const },
+    { to: '/drivers', label: 'Drivers', icon: Users, pageKey: 'drivers' as const },
 ]
+
+const navItems = ALL_NAV_ITEMS.filter((item) => PAGE_CONFIG[item.pageKey])
 
 interface SidebarProps {
     isOpen: boolean
@@ -70,22 +73,24 @@ export default function Sidebar({ isOpen }: SidebarProps) {
             </nav>
 
             {/* Settings link */}
-            <div className="px-2 pb-1.5 shrink-0">
-                <NavLink
-                    to="/settings"
-                    className={({ isActive }) =>
-                        cn(
-                            'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-100 w-full',
-                            isActive
-                                ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
-                                : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]'
-                        )
-                    }
-                >
-                    <Settings size={16} className="shrink-0" />
-                    Settings
-                </NavLink>
-            </div>
+            {PAGE_CONFIG.settings && (
+                <div className="px-2 pb-1.5 shrink-0">
+                    <NavLink
+                        to="/settings"
+                        className={({ isActive }) =>
+                            cn(
+                                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors duration-100 w-full',
+                                isActive
+                                    ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
+                                    : 'text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))]'
+                            )
+                        }
+                    >
+                        <Settings size={16} className="shrink-0" />
+                        Settings
+                    </NavLink>
+                </div>
+            )}
 
             {/* Connection status footer */}
             <div className="border-t border-[hsl(var(--border))] px-4 py-3 shrink-0">

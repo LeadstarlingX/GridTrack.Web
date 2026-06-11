@@ -35,7 +35,7 @@ export function useSignalR() {
 
     useEffect(() => {
         // In mock mode the mock emitter handles position/delivery updates
-        if (import.meta.env.VITE_USE_MOCK_SIGNALR === 'true') return
+        if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false') return
 
         const connection = new HubConnectionBuilder()
             .withUrl(import.meta.env.VITE_HUB_URL ?? '', {

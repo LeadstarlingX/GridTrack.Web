@@ -7,7 +7,7 @@ import { useAlerts } from '@/lib/api/queries/useAlerts'
 import { useMapStore } from '@/store/mapStore'
 import type { AnomalyAlertDto } from '@/types/api'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type UrgencyFilter = 'all' | 'critical' | 'high' | 'low'
 
