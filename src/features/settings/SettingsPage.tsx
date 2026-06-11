@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Monitor, RefreshCw } from 'lucide-react'
+import { Sun, Moon, Monitor } from 'lucide-react'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
@@ -13,7 +13,8 @@ interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; pytho
 
 type Section = 'appearance' | 'notifications' | 'map' | 'connection'
 
-const LATENCY_TIMEOUT_MS = 30_000
+const PING_INTERVAL_MS = 3_000
+const PING_TIMEOUT_MS  = 8_000
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme()
@@ -28,28 +29,49 @@ export default function SettingsPage() {
     const hubStatus = useMapStore((s) => s.hubStatus)
     const [latency, setLatency] = useState<LatencyResponse | null>(null)
     const [pinging, setPinging] = useState(false)
+    const [pingError, setPingError] = useState<string | null>(null)
 
-    async function runPing() {
-        setPinging(true)
-        setLatency(null)
-        const controller = new AbortController()
-        const timerId = setTimeout(() => controller.abort(), LATENCY_TIMEOUT_MS)
-        try {
-            const base = import.meta.env.VITE_API_BASE_URL ?? ''
-            const res = await fetch(`${base}/api/diagnostics/latency`, { signal: controller.signal })
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            const data: LatencyResponse = await res.json()
-            setLatency(data)
-        } catch (err) {
-            const msg = (err instanceof Error && err.name === 'AbortError')
-                ? 'Latency check timed out (30 s) — backend may be cold-starting.'
-                : 'Latency check failed — API unreachable.'
-            toast.error(msg)
-        } finally {
-            clearTimeout(timerId)
-            setPinging(false)
+    // Auto-ping loop: fires immediately, waits for response, then waits 3 s before next ping.
+    // Chained (not setInterval) so requests never overlap.
+    useEffect(() => {
+        if (section !== 'connection') return
+        let cancelled = false
+        const abortRef = { current: new AbortController() }
+
+        async function doPing() {
+            if (cancelled) return
+            abortRef.current = new AbortController()
+            const timerId = setTimeout(() => abortRef.current.abort(), PING_TIMEOUT_MS)
+            setPinging(true)
+            try {
+                const base = import.meta.env.VITE_API_BASE_URL ?? ''
+                const res = await fetch(`${base}/api/diagnostics/latency`, { signal: abortRef.current.signal })
+                if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                const data: LatencyResponse = await res.json()
+                if (!cancelled) { setLatency(data); setPingError(null) }
+            } catch (err) {
+                if (cancelled) return
+                if (err instanceof Error && err.name === 'AbortError') {
+                    setPingError('Timed out — backend may be cold-starting.')
+                } else {
+                    setPingError('API unreachable.')
+                }
+                setLatency(null)
+            } finally {
+                clearTimeout(timerId)
+                if (!cancelled) {
+                    setPinging(false)
+                    setTimeout(doPing, PING_INTERVAL_MS)
+                }
+            }
         }
-    }
+
+        doPing()
+        return () => {
+            cancelled = true
+            abortRef.current.abort()
+        }
+    }, [section])
 
     const activeTheme = theme ?? 'system'
     const minRes = APP_CONFIG.map.hexResolution.min
@@ -201,15 +223,13 @@ export default function SettingsPage() {
                             <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
                                 <div className="flex items-center justify-between">
                                     <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Service Latency</p>
-                                    <button
-                                        type="button"
-                                        onClick={runPing}
-                                        disabled={pinging}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-[hsl(var(--border))] text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] disabled:opacity-50 transition-colors"
-                                    >
-                                        <RefreshCw size={12} className={pinging ? 'animate-spin' : ''} />
-                                        {pinging ? 'Pinging…' : 'Run ping'}
-                                    </button>
+                                    <span className="inline-flex items-center gap-1.5 text-xs text-[hsl(var(--foreground-muted))]">
+                                        <span className={cn(
+                                            'inline-block w-1.5 h-1.5 rounded-full',
+                                            pinging ? 'bg-amber-400 animate-pulse' : 'bg-green-500'
+                                        )} />
+                                        {pinging ? 'Pinging…' : 'Live · 3 s'}
+                                    </span>
                                 </div>
                                 {latency ? (
                                     <div className="space-y-2">
@@ -234,7 +254,7 @@ export default function SettingsPage() {
                                     </div>
                                 ) : (
                                     <p className="text-xs text-[hsl(var(--foreground-muted))]">
-                                        Press <span className="font-medium">Run ping</span> to measure round-trip latency to each backend service.
+                                        {pingError ?? 'Waiting for response…'}
                                     </p>
                                 )}
                             </div>

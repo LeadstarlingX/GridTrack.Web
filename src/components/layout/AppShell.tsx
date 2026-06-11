@@ -3,12 +3,14 @@ import { Outlet } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { APP_CONFIG } from '@/config/app.config'
 import Sidebar from './Sidebar'
-// import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useAnomalyToasts } from '@/hooks/useAnomalyToasts'
+import { useKeepAlive } from '@/hooks/useKeepAlive'
 
 export default function AppShell() {
     const [navOpen, setNavOpen] = useState<boolean>(APP_CONFIG.layout.sidebarOpenDefault)
     useAnomalyToasts()
+    useKeepAlive()
 
     return (
         <div id="ui-shell" className="relative z-10 flex h-screen w-screen overflow-hidden pointer-events-none">
@@ -22,7 +24,11 @@ export default function AppShell() {
             >
                 {navOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
             </button>
-            <main id="main-content" className="pointer-events-auto flex-1 overflow-y-auto bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+            <main id="main-content" className={cn(
+                'pointer-events-auto flex-1 overflow-y-auto bg-[hsl(var(--background))] text-[hsl(var(--foreground))]',
+                'transition-[margin] duration-200 ease-out',
+                navOpen ? 'ml-[240px]' : 'ml-0'
+            )}>
                 <Outlet />
             </main>
         </div>
