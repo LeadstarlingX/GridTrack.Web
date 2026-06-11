@@ -4,13 +4,13 @@ import { getAuthToken, signOutUser } from './authBridge'
 import type { ApiError } from '@/types/api'
 
 export class AppError extends Error {
-    constructor(
-        public readonly code: string,
-        message: string,
-        public readonly traceId?: string,
-    ) {
+    readonly code: string
+    readonly traceId?: string
+    constructor(code: string, message: string, traceId?: string) {
         super(message)
         this.name = 'AppError'
+        this.code = code
+        this.traceId = traceId
     }
 }
 

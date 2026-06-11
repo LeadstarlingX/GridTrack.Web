@@ -41,7 +41,7 @@ export function useSignalR() {
             .withUrl(import.meta.env.VITE_HUB_URL ?? '', {
                 accessTokenFactory: () => getAuthToken().then((t) => t ?? ''),
             })
-            .withAutomaticReconnect(APP_CONFIG.signalr.reconnectDelaysMs as number[])
+            .withAutomaticReconnect([...APP_CONFIG.signalr.reconnectDelaysMs])
             .configureLogging(LogLevel.Warning)
             .build()
 
