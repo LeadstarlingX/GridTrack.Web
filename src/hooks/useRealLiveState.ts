@@ -93,7 +93,7 @@ export function useRealLiveState() {
 
 function normalizeDriverStatus(raw: string): DriverState['status'] {
     const s = raw.toLowerCase()
-    if (s === 'available') return 'available'
+    if (s === 'available' || s === 'stalled') return 'available'
     if (s === 'in-transit' || s === 'intransit') return 'in-transit'
     return 'offline'
 }
