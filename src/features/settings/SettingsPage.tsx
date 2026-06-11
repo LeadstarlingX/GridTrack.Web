@@ -6,13 +6,14 @@ import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
 import { APP_CONFIG } from '@/config/app.config'
-import { apiClient } from '@/lib/api/client'
 import { cn } from '@/lib/utils'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult }
 
 type Section = 'appearance' | 'notifications' | 'map' | 'connection'
+
+const LATENCY_TIMEOUT_MS = 30_000
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme()
@@ -30,12 +31,22 @@ export default function SettingsPage() {
 
     async function runPing() {
         setPinging(true)
+        setLatency(null)
+        const controller = new AbortController()
+        const timerId = setTimeout(() => controller.abort(), LATENCY_TIMEOUT_MS)
         try {
-            const res = await apiClient.get<LatencyResponse>('/api/diagnostics/latency')
-            setLatency(res.data)
-        } catch {
-            toast.error('Latency check failed — API unreachable.')
+            const base = import.meta.env.VITE_API_BASE_URL ?? ''
+            const res = await fetch(`${base}/api/diagnostics/latency`, { signal: controller.signal })
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const data: LatencyResponse = await res.json()
+            setLatency(data)
+        } catch (err) {
+            const msg = (err instanceof Error && err.name === 'AbortError')
+                ? 'Latency check timed out (30 s) — backend may be cold-starting.'
+                : 'Latency check failed — API unreachable.'
+            toast.error(msg)
         } finally {
+            clearTimeout(timerId)
             setPinging(false)
         }
     }

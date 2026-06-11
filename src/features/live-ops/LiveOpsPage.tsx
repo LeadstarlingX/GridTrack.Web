@@ -10,6 +10,7 @@ import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
 import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { useSignalR } from '@/hooks/useSignalR'
+import { useRealLiveState } from '@/hooks/useRealLiveState'
 import { useDistrictBoundaries } from '@/lib/api/queries/useDistrictBoundaries'
 import { setMapRef } from '@/lib/mapRef'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
@@ -94,6 +95,8 @@ export default function LiveOpsPage() {
 
     // Guards against mock mode internally; no-op when VITE_USE_MOCK_SIGNALR=true
     useSignalR()
+    // Fetches initial drivers/deliveries from REST API in real mode; no-op in mock mode
+    useRealLiveState()
 
     // H3 hex grid — always loaded from public/ files
     useEffect(() => {
