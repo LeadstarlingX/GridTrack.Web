@@ -5,6 +5,8 @@ import type { AnomalyAlert } from '@/types/hub'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+
 interface LiveStore {
     drivers: Record<string, DriverState>
     deliveries: Record<string, DeliveryState>
@@ -16,8 +18,8 @@ interface LiveStore {
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
-    drivers: Object.fromEntries(MOCK_DRIVERS.map((d) => [d.id, d])),
-    deliveries: Object.fromEntries(MOCK_DELIVERIES.map((d) => [d.id, d])),
+    drivers: USE_MOCK ? Object.fromEntries(MOCK_DRIVERS.map((d) => [d.id, d])) : {},
+    deliveries: USE_MOCK ? Object.fromEntries(MOCK_DELIVERIES.map((d) => [d.id, d])) : {},
     anomalyQueue: [],
 
     updateDriverPosition: (id, lat, lng, districtId) =>

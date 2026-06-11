@@ -99,7 +99,7 @@ export const MOCK_ALERTS: AnomalyAlert[] = [
         deliveryId: 'del-9',
         driverId: 'driver-9',
         driverName: 'Hassan N.',
-        anomalyType: 'Stall',
+        anomalyType: 'StalePosition',
         reason: 'No movement for 14 minutes',
         districtId: 'district-2',
         lat: 33.512,
@@ -111,7 +111,7 @@ export const MOCK_ALERTS: AnomalyAlert[] = [
         deliveryId: 'del-4',
         driverId: 'driver-4',
         driverName: 'Ali S.',
-        anomalyType: 'Delay',
+        anomalyType: 'EtaExceeded',
         reason: 'ETA exceeded by 18 minutes',
         districtId: 'district-1',
         lat: 33.507,
@@ -135,7 +135,7 @@ export const MOCK_ALERTS: AnomalyAlert[] = [
         deliveryId: 'del-8',
         driverId: 'driver-8',
         driverName: 'Fadi J.',
-        anomalyType: 'Delay',
+        anomalyType: 'EtaExceeded',
         reason: 'Traffic congestion flagged',
         districtId: 'district-3',
         lat: 33.521,
@@ -147,13 +147,33 @@ export const MOCK_ALERTS: AnomalyAlert[] = [
         deliveryId: 'del-5',
         driverId: 'driver-5',
         driverName: 'Maher T.',
-        anomalyType: 'Stall',
+        anomalyType: 'StalePosition',
         reason: 'Stopped near checkpoint',
         districtId: 'district-4',
         lat: 33.498,
         lng: 36.274,
         timestamp: '2026-05-17T07:48:00Z',
     },
+]
+
+export interface UrgencyAlert {
+    id: string
+    type: 'EtaExceeded' | 'RouteDeviation' | 'StalePosition' | 'UnexpectedStop'
+    driverName: string
+    driverId: string
+    districtName: string
+    reason: string
+    urgency: number
+    aiNote: string
+    time: string
+}
+
+export const MOCK_URGENCY_ALERTS: UrgencyAlert[] = [
+    { id: 'a1', type: 'StalePosition', driverName: 'Hassan N.', driverId: 'driver-9', districtName: 'Bab Touma', reason: 'No movement for 14 min', urgency: 9, aiNote: 'Critical — high-demand zone with zero movement. Immediate check recommended.', time: '08:42' },
+    { id: 'a2', type: 'StalePosition', driverName: 'Maher T.', driverId: 'driver-5', districtName: 'Kafr Sousa', reason: 'Stopped near checkpoint', urgency: 8, aiNote: 'High — checkpoint stop cascading delays to 3 pending orders.', time: '07:48' },
+    { id: 'a3', type: 'EtaExceeded', driverName: 'Ali S.', driverId: 'driver-4', districtName: 'Mezzeh', reason: 'ETA exceeded by 18 min', urgency: 7, aiNote: 'High — Mezzeh Autostrade congestion. Suggest reroute via eastern corridor.', time: '08:31' },
+    { id: 'a4', type: 'RouteDeviation', driverName: 'Sami K.', driverId: 'driver-2', districtName: 'Malki', reason: 'Left assigned corridor', urgency: 6, aiNote: 'Moderate — possible road blockage. Confirm reroute with driver.', time: '08:15' },
+    { id: 'a5', type: 'EtaExceeded', driverName: 'Fadi J.', driverId: 'driver-7', districtName: 'Bab Touma', reason: 'Traffic congestion flagged', urgency: 4, aiNote: 'Low — peak-hour traffic pattern. ETA automatically adjusted.', time: '08:02' },
 ]
 
 export const MOCK_DISTRICT_VOLUME = MOCK_DISTRICTS.map((district) => ({

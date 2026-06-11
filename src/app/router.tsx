@@ -1,4 +1,5 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { useAuth } from '@clerk/clerk-react'
 import AppShell from '@/components/layout/AppShell'
 import LiveOpsPage from '@/features/live-ops/LiveOpsPage'
 import AnalyticsPage from '@/features/analytics/AnalyticsPage'
@@ -6,13 +7,29 @@ import DeliveriesPage from '@/features/deliveries/DeliveriesPage'
 import AlertsPage from '@/features/alerts/AlertsPage'
 import DriversPage from '@/features/drivers/DriversPage'
 import SettingsPage from '@/features/settings/SettingsPage'
+import SignInPage from '@/features/auth/SignInPage'
 import { PageGuard } from '@/components/PageGuard'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+    const { isLoaded, isSignedIn } = useAuth()
+    if (!isLoaded) return null
+    if (!isSignedIn) return <Navigate to="/sign-in" replace />
+    return <>{children}</>
+}
+
 export const router = createBrowserRouter([
     {
+        path: '/sign-in',
+        element: <SignInPage />,
+    },
+    {
         path: '/',
-        element: <AppShell />,
+        element: (
+            <AuthGuard>
+                <AppShell />
+            </AuthGuard>
+        ),
         children: [
             {
                 index: true,

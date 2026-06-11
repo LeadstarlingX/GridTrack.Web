@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { ClerkProvider, ClerkLoading, ClerkLoaded, SignedIn, SignedOut, RedirectToSignIn, useAuth } from '@clerk/clerk-react'
+import { ClerkProvider, ClerkLoading, ClerkLoaded, SignedIn, useAuth } from '@clerk/clerk-react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from 'next-themes'
 import { Toaster } from '@/components/ui/sonner'
@@ -54,7 +54,7 @@ function AppLoadingScreen() {
 
 export function Providers({ children }: { children: React.ReactNode }) {
     return (
-        <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}>
+        <ClerkProvider publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY} signInUrl="/sign-in">
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="gridtrack-theme">
                 <QueryClientProvider client={queryClient}>
                     <ClerkLoading>
@@ -63,9 +63,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <ClerkLoaded>
                         <SignedIn>
                             <TokenBridge />
-                            {children}
                         </SignedIn>
-                        <SignedOut><RedirectToSignIn /></SignedOut>
+                        {children}
                     </ClerkLoaded>
                     <Toaster position="bottom-right" />
                 </QueryClientProvider>

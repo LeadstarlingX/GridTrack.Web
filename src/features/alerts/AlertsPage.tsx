@@ -1,85 +1,256 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui'
-import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
-import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
+import { cn } from '@/lib/utils'
+import { MOCK_URGENCY_ALERTS, type UrgencyAlert } from '@/constants/mockData'
 import { useAlerts } from '@/lib/api/queries/useAlerts'
-import type { AnomalyAlertDto, AlertsQueryParams } from '@/types/api'
+import { useMapStore } from '@/store/mapStore'
+import type { AnomalyAlertDto } from '@/types/api'
 
-function toIsoDate(date: Date) {
-    return date.toISOString().slice(0, 10)
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+
+type UrgencyFilter = 'all' | 'critical' | 'high' | 'low'
+
+function urgencyFromType(type: AnomalyAlertDto['anomalyType']): number {
+    if (type === 'StalePosition') return 9
+    if (type === 'UnexpectedStop') return 8
+    if (type === 'EtaExceeded') return 7
+    return 5
 }
 
-function formatTimestamp(value: string) {
-    return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+function urgencyColor(u: number) {
+    if (u >= 8) return 'hsl(var(--destructive))'
+    if (u >= 6) return 'hsl(var(--warning, 38 92% 50%))'
+    return 'hsl(var(--primary))'
+}
+
+function urgencyBadgeVariant(u: number): 'destructive' | 'warning' | 'outline' {
+    if (u >= 8) return 'destructive'
+    if (u >= 6) return 'warning'
+    return 'outline'
+}
+
+function urgencyLabel(u: number) {
+    if (u >= 8) return 'Critical'
+    if (u >= 6) return 'High'
+    if (u >= 4) return 'Moderate'
+    return 'Low'
+}
+
+function formatTime(ts: string) {
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+interface AlertCardProps {
+    type: string
+    driverName: string
+    driverId: string
+    districtName: string
+    reason: string
+    urgency: number
+    aiNote?: string
+    time: string
+}
+
+function AlertCard({ type, driverName, driverId, districtName, reason, urgency, aiNote, time }: AlertCardProps) {
+    const navigate = useNavigate()
+    const selectDriver = useMapStore((s) => s.selectDriver)
+    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
+    const color = urgencyColor(urgency)
+
+    const handleViewOnMap = () => {
+        selectDriver(driverId)
+        setSidePanelMode('driver')
+        navigate('/')
+    }
+
+    return (
+        <div className={cn(
+            'flex gap-3 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))]',
+            'p-4 transition-colors hover:border-[hsl(var(--border-strong))]'
+        )}>
+            {/* Urgency bar */}
+            <div className="w-1 shrink-0 rounded-full" style={{ background: color }} />
+
+            <div className="flex-1 min-w-0">
+                {/* Header row */}
+                <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <span className="text-xl font-extrabold font-mono leading-none" style={{ color }}>{urgency}</span>
+                    <span className="text-xs text-[hsl(var(--foreground-muted))]">/ 10</span>
+                    <Badge variant={urgencyBadgeVariant(urgency)}>{urgencyLabel(urgency)}</Badge>
+                    <Badge variant="outline">{type}</Badge>
+                    <span className="ml-auto text-[11px] font-mono text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]">{time}</span>
+                </div>
+
+                {/* Driver + district */}
+                <div className="flex items-baseline gap-1.5 mb-1">
+                    <span className="font-semibold text-sm text-[hsl(var(--foreground))]">{driverName}</span>
+                    <span className="text-xs text-[hsl(var(--foreground-muted))]">· {districtName}</span>
+                </div>
+
+                {/* Reason */}
+                <p className="text-sm text-[hsl(var(--foreground-muted))] mb-2">{reason}</p>
+
+                {/* AI note */}
+                {aiNote && (
+                    <div className="rounded-md px-3 py-2 text-xs leading-relaxed"
+                        style={{
+                            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                            border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+                            color,
+                        }}>
+                        ⚡ {aiNote}
+                    </div>
+                )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex shrink-0 items-start">
+                <button
+                    type="button"
+                    onClick={handleViewOnMap}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors"
+                >
+                    View on map
+                </button>
+            </div>
+        </div>
+    )
+}
+
+function MockAlertsList({ filter }: { filter: UrgencyFilter }) {
+    const alerts = useMemo<UrgencyAlert[]>(() => {
+        if (filter === 'all') return MOCK_URGENCY_ALERTS
+        if (filter === 'critical') return MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 8)
+        if (filter === 'high') return MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 6 && a.urgency < 8)
+        return MOCK_URGENCY_ALERTS.filter((a) => a.urgency < 6)
+    }, [filter])
+
+    const criticalCount = MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 8).length
+
+    return (
+        <>
+            <div className="flex items-center gap-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--primary)/0.08)] px-4 py-3 text-sm text-[hsl(var(--primary))]">
+                <span>⚡</span>
+                <span>AI ranked {MOCK_URGENCY_ALERTS.length} alerts by urgency · {criticalCount} require immediate action</span>
+            </div>
+            <div className="flex flex-col gap-3">
+                {alerts.map(({ id, ...a }) => (
+                    <AlertCard key={id} {...a} />
+                ))}
+                {alerts.length === 0 && (
+                    <p className="py-12 text-center text-sm text-[hsl(var(--foreground-muted))]">No alerts match this filter.</p>
+                )}
+            </div>
+        </>
+    )
+}
+
+function ApiAlertsList({ filter }: { filter: UrgencyFilter }) {
+    const today = new Date()
+    const weekAgo = new Date()
+    weekAgo.setDate(today.getDate() - 6)
+
+    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAlerts({
+        from: weekAgo.toISOString().slice(0, 10),
+        to: today.toISOString().slice(0, 10),
+        pageSize: 20,
+    })
+
+    const allRows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
+
+    const filtered = useMemo(() => {
+        return allRows.filter((a) => {
+            const u = urgencyFromType(a.anomalyType)
+            if (filter === 'critical') return u >= 8
+            if (filter === 'high') return u >= 6 && u < 8
+            if (filter === 'low') return u < 6
+            return true
+        })
+    }, [allRows, filter])
+
+    const criticalCount = allRows.filter((a) => urgencyFromType(a.anomalyType) >= 8).length
+
+    if (isLoading) {
+        return <p className="py-12 text-center text-sm text-[hsl(var(--foreground-muted))]">Loading alerts…</p>
+    }
+
+    return (
+        <>
+            {allRows.length > 0 && (
+                <div className="flex items-center gap-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--primary)/0.08)] px-4 py-3 text-sm text-[hsl(var(--primary))]">
+                    <span>⚡</span>
+                    <span>AI ranked {allRows.length} alerts by urgency · {criticalCount} require immediate action</span>
+                </div>
+            )}
+            <div className="flex flex-col gap-3">
+                {filtered.map((a) => (
+                    <AlertCard
+                        key={a.id}
+                        type={a.anomalyType}
+                        driverName={a.driverName}
+                        driverId={a.driverId}
+                        districtName={a.districtName}
+                        reason={a.reason}
+                        urgency={urgencyFromType(a.anomalyType)}
+                        time={formatTime(a.timestamp)}
+                    />
+                ))}
+                {filtered.length === 0 && !isLoading && (
+                    <p className="py-12 text-center text-sm text-[hsl(var(--foreground-muted))]">No alerts match this filter.</p>
+                )}
+            </div>
+            {hasNextPage && (
+                <button
+                    type="button"
+                    onClick={() => fetchNextPage()}
+                    disabled={isFetchingNextPage}
+                    className="w-full py-2.5 text-sm text-[hsl(var(--primary))] border-t border-[hsl(var(--border))] bg-transparent hover:bg-[hsl(var(--surface-raised))] transition-colors"
+                >
+                    {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                </button>
+            )}
+        </>
+    )
 }
 
 export default function AlertsPage() {
-    const [range, setRange] = useState<DateRangeValue>(() => {
-        const end = new Date()
-        const start = new Date()
-        start.setDate(end.getDate() - 6)
-        return { from: toIsoDate(start), to: toIsoDate(end) }
-    })
-    const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
+    const [filter, setFilter] = useState<UrgencyFilter>('all')
 
-    const queryParams: Omit<AlertsQueryParams, 'cursor'> = useMemo(() => ({
-        from: appliedRange.from,
-        to: appliedRange.to,
-        pageSize: 6,
-    }), [appliedRange])
-
-    const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAlerts(queryParams)
-
-    const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
-
-    const columns: CursorColumn<AnomalyAlertDto>[] = [
-        {
-            key: 'time',
-            header: 'Time',
-            cell: (row) => formatTimestamp(row.timestamp),
-        },
-        {
-            key: 'district',
-            header: 'District',
-            cell: (row) => row.districtName,
-        },
-        {
-            key: 'driver',
-            header: 'Driver',
-            cell: (row) => row.driverName,
-        },
-        {
-            key: 'type',
-            header: 'Type',
-            cell: (row) => <Badge variant="destructive">{row.anomalyType}</Badge>,
-        },
-        {
-            key: 'reason',
-            header: 'Reason',
-            cell: (row) => row.reason,
-        },
+    const filterOptions: { value: UrgencyFilter; label: string }[] = [
+        { value: 'all', label: 'All' },
+        { value: 'critical', label: 'Critical' },
+        { value: 'high', label: 'High' },
+        { value: 'low', label: 'Low' },
     ]
 
     return (
-        <div className="flex flex-col gap-6 p-6">
-            <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-4 p-6">
+            <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Alerts</h1>
-                    <p className="text-xs text-[hsl(var(--foreground-muted))]">Review anomalies and incidents.</p>
+                    <p className="text-xs text-[hsl(var(--foreground-muted))]">AI-triaged anomaly queue · sorted by urgency</p>
                 </div>
-                <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
+                <div className="flex gap-1.5">
+                    {filterOptions.map((opt) => (
+                        <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setFilter(opt.value)}
+                            className={cn(
+                                'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
+                                filter === opt.value
+                                    ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
+                                    : 'border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))]'
+                            )}
+                        >
+                            {opt.label}
+                        </button>
+                    ))}
+                </div>
             </header>
 
-            <CursorTable
-                columns={columns}
-                rows={rows}
-                getRowId={(row) => row.id}
-                nextCursor={hasNextPage ? 'has-more' : null}
-                isLoading={isLoading || isFetchingNextPage}
-                onLoadMore={() => fetchNextPage()}
-                emptyTitle={isLoading ? 'Loading...' : 'No alerts'}
-                emptyDescription={isLoading ? '' : 'You are all clear for the selected range.'}
-            />
+            {USE_MOCK ? <MockAlertsList filter={filter} /> : <ApiAlertsList filter={filter} />}
         </div>
     )
 }

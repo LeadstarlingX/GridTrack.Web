@@ -38,6 +38,8 @@ implementation_plan_web.md
 style.md
 progress.md
 endpoints.md
+api-contracts
+.claude
 
 h3-damascus-r11.geojson
 public/h3-damascus-r10.geojson

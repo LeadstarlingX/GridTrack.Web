@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { APP_CONFIG } from '@/config/app.config'
+import type { ForecastDto } from '@/types/api'
 
 type SidePanelMode = 'idle' | 'district' | 'driver' | 'focus'
 export type HubStatus = 'connected' | 'reconnecting' | 'disconnected'
@@ -26,6 +27,7 @@ interface MapStore {
     } | null
     historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
     recommendationMock: Record<string, number> | null
+    districtForecasts: Record<string, ForecastDto>
 
     toggleHexGrid: () => void
     toggleHeatmap: () => void
@@ -43,6 +45,7 @@ interface MapStore {
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
     setRecommendationMock: (data: Record<string, number> | null) => void
+    setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
 }
 
@@ -86,6 +89,9 @@ export const useMapStore = create<MapStore>()((set) => ({
     setHistoricalHeatmapRange: (range) => set({ historicalHeatmapRange: range }),
     setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
     recommendationMock: null,
+    districtForecasts: {},
     setRecommendationMock: (data) => set({ recommendationMock: data }),
+    setDistrictForecast: (districtId, forecast) =>
+        set((s) => ({ districtForecasts: { ...s.districtForecasts, [districtId]: forecast } })),
     setHubStatus: (status) => set({ hubStatus: status }),
 }))

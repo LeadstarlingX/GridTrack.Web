@@ -36,7 +36,7 @@ export function startMockEmitter(): () => void {
     const deliveryIds = Object.keys(useLiveStore.getState().deliveries)
     const statuses: DeliveryStatus[] = ['InTransit', 'Delivered', 'Assigned']
     const reasons = APP_CONFIG.mock.anomalyReasons
-    const anomalyTypes: AnomalyType[] = ['Stall', 'RouteDeviation', 'Delay']
+    const anomalyTypes: AnomalyType[] = ['StalePosition', 'RouteDeviation', 'EtaExceeded', 'UnexpectedStop']
 
     // Position tick — every 1s
     const posInterval = setInterval(() => {

@@ -87,7 +87,7 @@ export interface AnomalyAlertDto {
     deliveryId: string
     driverId: string
     driverName: string
-    anomalyType: 'Stall' | 'RouteDeviation' | 'Delay'
+    anomalyType: 'EtaExceeded' | 'RouteDeviation' | 'StalePosition' | 'UnexpectedStop'
     reason: string
     districtId: string
     districtName: string
@@ -171,6 +171,21 @@ export interface ChatResponse {
     reply: string
 }
 
+// GET /api/analytics/district-volume
+export interface DistrictVolumeItemDto {
+    districtId: string
+    deliveries: number
+}
+
+export interface DistrictVolumeDto {
+    items: DistrictVolumeItemDto[]
+}
+
+export interface DistrictVolumeQueryParams {
+    from?: string
+    to?: string
+}
+
 // GET /api/forecast/{districtId}
 export interface ForecastDto {
     districtId: string
@@ -192,6 +207,7 @@ export type ApiEndpoint =
     | '/api/analytics/summary'
     | '/api/analytics/trends'
     | '/api/analytics/h3-density'
+    | '/api/analytics/district-volume'
     | '/api/forecast/{districtId}'
     | '/api/export/csv'
     | '/api/analysis/chat'

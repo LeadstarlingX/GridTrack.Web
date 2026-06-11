@@ -3,12 +3,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
 import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
+import { useForecast } from '@/lib/api/queries/useForecast'
+
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
 
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
     const recommendationMock = useMapStore((s) => s.recommendationMock)
     const setMode = useMapStore((s) => s.setSidePanelMode)
+
+    const { data: forecast } = useForecast(USE_MOCK ? null : boundaryId)
 
     if (!boundaryId) return null
 
@@ -20,9 +25,10 @@ export default function DistrictPanel() {
     const neighborhood = getMockNeighborhoodStats(boundaryId, boundaryName)
     const districtStats = getMockDistrictStats(boundaryId, boundaryName)
     const displayName = boundaryName ?? boundaryId
-    const expectedDemand = recommendationMock?.[boundaryId] ?? neighborhood.expectedDemand
+    const expectedDemand = forecast?.forecastedDemand ?? (recommendationMock?.[boundaryId] ?? neighborhood.expectedDemand)
     const activeDrivers = neighborhood.activeDrivers
-    const staffingRatio = Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
+    const staffingRatio = forecast?.staffingRatio ?? Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
+    const driverRecommendation = forecast?.driverRecommendation
     const anomalyRate = districtStats.anomalyRate
 
     return (
@@ -54,6 +60,12 @@ export default function DistrictPanel() {
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Anomaly Rate</CardTitle></CardHeader>
                     <CardContent><p className="text-2xl font-bold">{(anomalyRate * 100).toFixed(1)}%</p></CardContent>
                 </Card>
+                {driverRecommendation !== undefined && (
+                    <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm">Recommended Drivers</CardTitle></CardHeader>
+                        <CardContent><p className="text-2xl font-bold">{driverRecommendation}</p></CardContent>
+                    </Card>
+                )}
             </div>
         </div>
     )

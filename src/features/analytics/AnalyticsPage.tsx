@@ -5,6 +5,7 @@ import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
 import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
+import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
 import { PAGE_CONFIG } from '@/config/pages.config'
 import { apiClient } from '@/lib/api/client'
 import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
@@ -99,6 +100,9 @@ export default function AnalyticsPage() {
 
     const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary()
     const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
+    const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
+        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
+    )
 
     // In mock mode, fall back to static mock data
     const summary = USE_MOCK ? MOCK_ANALYTICS : summaryData
@@ -289,7 +293,17 @@ export default function AnalyticsPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <DistrictVolumeChart data={MOCK_DISTRICT_VOLUME} isLoading={false} />
+                                <DistrictVolumeChart
+                                    data={
+                                        USE_MOCK
+                                            ? MOCK_DISTRICT_VOLUME
+                                            : (districtVolumeData?.items.map((item) => ({
+                                                  district: item.districtId,
+                                                  deliveries: item.deliveries,
+                                              })) ?? [])
+                                    }
+                                    isLoading={!USE_MOCK && districtVolumeLoading}
+                                />
                             </CardContent>
                         </Card>
                     </section>

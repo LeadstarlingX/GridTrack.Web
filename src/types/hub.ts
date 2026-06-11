@@ -1,6 +1,6 @@
 // import type { DeliveryStatus } from './delivery'
 
-export type AnomalyType = 'Stall' | 'RouteDeviation' | 'Delay'
+export type AnomalyType = 'EtaExceeded' | 'RouteDeviation' | 'StalePosition' | 'UnexpectedStop'
 
 export interface AnomalyAlert {
     id: string

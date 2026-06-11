@@ -91,6 +91,7 @@ export const APP_CONFIG = {
         analyticsSummaryPath: '/api/analytics/summary',
         analyticsTrendsPath: '/api/analytics/trends',
         analyticsH3DensityPath: '/api/analytics/h3-density',
+        analyticsDistrictVolumePath: '/api/analytics/district-volume',
         forecastPath: '/api/forecast/{districtId}',
         exportCsvPath: '/api/export/csv',
         analysisChatPath: '/api/analysis/chat',

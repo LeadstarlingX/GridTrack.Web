@@ -4,6 +4,8 @@ import { APP_CONFIG } from '@/config/app.config'
 import { getMockRecommendationRatio, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useMapStore } from '@/store/mapStore'
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR === 'true'
+
 type ComputeRatio = (boundaryId: string, boundaryName?: string) => number
 
 interface RecommendationOverlayProps {
@@ -28,8 +30,12 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
     const enabled = useMapStore((s) => s.recommendationEnabled)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
     const recommendationMock = useMapStore((s) => s.recommendationMock)
-    // computeRatio may be provided for unit tests; otherwise use local stub that prefers loaded mock forecasts
+    const districtForecasts = useMapStore((s) => s.districtForecasts)
+    // computeRatio may be provided for unit tests; otherwise prefer real forecast data in real mode
     const computeLocal = (boundaryId: string, boundaryName?: string) => {
+        if (!USE_MOCK && districtForecasts[boundaryId] !== undefined) {
+            return districtForecasts[boundaryId].staffingRatio
+        }
         if (recommendationMock && recommendationMock[boundaryId] !== undefined) {
             const expected = recommendationMock[boundaryId]
             const seeded = getMockNeighborhoodStats(boundaryId, boundaryName)

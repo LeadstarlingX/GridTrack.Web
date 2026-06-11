@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
+import { useQueryClient } from '@tanstack/react-query'
 import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
@@ -30,6 +31,8 @@ interface ForecastOverlayUpdatedPayload {
 }
 
 export function useSignalR() {
+    const queryClient = useQueryClient()
+
     useEffect(() => {
         // In mock mode the mock emitter handles position/delivery updates
         if (import.meta.env.VITE_USE_MOCK_SIGNALR === 'true') return
@@ -79,9 +82,8 @@ export function useSignalR() {
             useLiveStore.getState().pushAnomaly(alert)
         })
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        connection.on('ForecastOverlayUpdated', (_payload: ForecastOverlayUpdatedPayload) => {
-            // TODO: wire to recommendation store when forecast overlay connects to real API
+        connection.on('ForecastOverlayUpdated', (payload: ForecastOverlayUpdatedPayload) => {
+            queryClient.invalidateQueries({ queryKey: ['forecast', payload.districtId] })
         })
 
         connection
@@ -92,5 +94,5 @@ export function useSignalR() {
         return () => {
             connection.stop()
         }
-    }, [])
+    }, [queryClient])
 }
