@@ -15,6 +15,7 @@ interface LiveStore {
     updateDriverPosition: (id: string, lat: number, lng: number, districtId: string) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
     pushAnomaly: (alert: AnomalyAlert) => void
+    markStall: (id: string, stalledSince: string) => void
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
@@ -26,9 +27,15 @@ export const useLiveStore = create<LiveStore>()((set) => ({
         set((s) => ({
             drivers: {
                 ...s.drivers,
-                [id]: { ...s.drivers[id], lat, lng, districtId },
+                [id]: { ...s.drivers[id], lat, lng, districtId, stalledSince: null },
             },
         })),
+
+    markStall: (id, stalledSince) =>
+        set((s) => {
+            if (!s.drivers[id] || s.drivers[id].stalledSince) return s
+            return { drivers: { ...s.drivers, [id]: { ...s.drivers[id], stalledSince } } }
+        }),
 
     patchDelivery: (id, partial) =>
         set((s) => ({

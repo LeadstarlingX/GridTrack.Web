@@ -27,6 +27,7 @@ export const MOCK_DRIVERS: DriverState[] = driverNames.map((name, i) => {
         status: i < 12 ? 'in-transit' : 'available',
         routeIndex: routeIdx,
         pointIndex: ptIdx,
+        stalledSince: null,
     }
 })
 

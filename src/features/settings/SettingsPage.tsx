@@ -27,6 +27,7 @@ export default function SettingsPage() {
     const hexResolution = useMapStore((s) => s.hexResolution)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
     const hubStatus = useMapStore((s) => s.hubStatus)
+    const hubRtt = useMapStore((s) => s.hubRtt)
     const [latency, setLatency] = useState<LatencyResponse | null>(null)
     const [pinging, setPinging] = useState(false)
     const [pingError, setPingError] = useState<string | null>(null)
@@ -200,6 +201,27 @@ export default function SettingsPage() {
                     {/* ── Connection ── */}
                     {section === 'connection' && (
                         <div className="space-y-4">
+                            {/* Total latency summary */}
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-3">End-to-End Latency</p>
+                                <div className="flex items-end gap-3 mb-3">
+                                    <span className={cn(
+                                        'text-4xl font-bold tabular-nums',
+                                        hubRtt == null ? 'text-[hsl(var(--foreground-muted))]'
+                                            : hubRtt < 100 ? 'text-green-500'
+                                            : hubRtt < 300 ? 'text-amber-500'
+                                            : 'text-red-500'
+                                    )}>
+                                        {hubRtt != null ? `${hubRtt}` : '—'}
+                                    </span>
+                                    <span className="text-sm text-[hsl(var(--foreground-muted))] mb-1.5">ms  SignalR round-trip</span>
+                                </div>
+                                <p className="text-[11px] text-[hsl(var(--foreground-subtle))] leading-relaxed">
+                                    Measured browser → hub → browser every 5 s. This is what live map updates cost.
+                                    Service dependencies (Postgres, Redis, etc.) are additional per-request overhead — shown below.
+                                </p>
+                            </div>
+
                             <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
                                 <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">SignalR</p>
                                 <SettingRow label="Status" description="Current hub connection state.">

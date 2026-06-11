@@ -4,8 +4,47 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useMapStore } from '@/store/mapStore'
 import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useForecast } from '@/lib/api/queries/useForecast'
+import { useDistrictSparkline } from '@/lib/api/queries/useDistrictSparkline'
+import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts'
+import { format } from 'date-fns'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
+
+function SparklineChart({ districtId }: { districtId: string }) {
+    const { data, isLoading } = useDistrictSparkline(USE_MOCK ? null : districtId)
+
+    if (USE_MOCK || isLoading || !data?.length) {
+        const mockPoints = Array.from({ length: 6 }, (_, i) => ({
+            hour: `${i + 1}h`,
+            count: Math.floor(Math.random() * 8 + 2),
+        }))
+        return (
+            <ResponsiveContainer width="100%" height={56}>
+                <AreaChart data={mockPoints} margin={{ top: 4, bottom: 0, left: 0, right: 0 }}>
+                    <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} dot={false} />
+                </AreaChart>
+            </ResponsiveContainer>
+        )
+    }
+
+    const chartData = data.map((p) => ({
+        hour: format(new Date(p.hour), 'HH:mm'),
+        count: p.count,
+    }))
+
+    return (
+        <ResponsiveContainer width="100%" height={56}>
+            <AreaChart data={chartData} margin={{ top: 4, bottom: 0, left: 0, right: 0 }}>
+                <XAxis dataKey="hour" hide />
+                <Tooltip
+                    contentStyle={{ background: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', borderRadius: 6, fontSize: 11 }}
+                    formatter={(v: number) => [`${v} deliveries`, '']}
+                />
+                <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} dot={false} />
+            </AreaChart>
+        </ResponsiveContainer>
+    )
+}
 
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)
@@ -41,12 +80,15 @@ export default function DistrictPanel() {
             </div>
             <div className="space-y-3">
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Boundary ID</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{boundaryId}</p></CardContent>
+                    <CardHeader className="pb-1"><CardTitle className="text-sm">Demand (last 6 h)</CardTitle></CardHeader>
+                    <CardContent className="pt-0 pb-3">
+                        <p className="text-2xl font-bold mb-2">{expectedDemand}</p>
+                        <SparklineChart districtId={boundaryId} />
+                    </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Expected Demand</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{expectedDemand}</p></CardContent>
+                    <CardHeader className="pb-2"><CardTitle className="text-sm">Boundary ID</CardTitle></CardHeader>
+                    <CardContent><p className="text-2xl font-bold">{boundaryId}</p></CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Active Drivers</CardTitle></CardHeader>

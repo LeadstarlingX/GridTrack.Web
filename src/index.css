@@ -2,6 +2,14 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
 
+@keyframes stall-ring {
+  0%   { opacity: 0.7; transform: scale(1); }
+  100% { opacity: 0;   transform: scale(2); }
+}
+.driver-stall-ring {
+  animation: stall-ring 1.4s ease-out infinite;
+}
+
 
 .cn-toast {
 	background-color: hsl(var(--map-overlay));

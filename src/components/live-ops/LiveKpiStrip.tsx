@@ -12,7 +12,9 @@ export default function LiveKpiStrip() {
     const deliveries = useLiveStore((s) => s.deliveries)
     const alerts = useLiveStore((s) => s.anomalyQueue)
 
-    const activeDrivers = Object.values(drivers).filter((d) => d.status !== 'offline').length
+    const driverList = Object.values(drivers)
+    const activeDrivers = driverList.filter((d) => d.status !== 'offline').length
+    const stalledDrivers = driverList.filter((d) => d.stalledSince !== null).length
     const inTransit = Object.values(deliveries).filter((d) => d.status === 'InTransit')
     const avgEta = inTransit.length > 0
         ? Math.round(inTransit.reduce((sum, d) => sum + (d.etaSeconds ?? 0), 0) / inTransit.length)
@@ -20,10 +22,11 @@ export default function LiveKpiStrip() {
     const unresolvedAlerts = alerts.length
 
     const chips: { label: string; value: string | number; accent?: string }[] = [
-        { label: 'Active drivers',       value: activeDrivers,             accent: 'text-[hsl(var(--foreground))]' },
-        { label: 'In-transit',           value: inTransit.length,          accent: 'text-[hsl(var(--foreground))]' },
-        { label: 'Avg ETA',              value: avgEta != null ? formatEta(avgEta) : '—' },
-        { label: 'Unresolved alerts',    value: unresolvedAlerts,          accent: unresolvedAlerts > 0 ? 'text-amber-500' : undefined },
+        { label: 'Active drivers', value: activeDrivers },
+        { label: 'In-transit',     value: inTransit.length },
+        { label: 'Avg ETA',        value: avgEta != null ? formatEta(avgEta) : '—' },
+        { label: 'Stalled',        value: stalledDrivers,   accent: stalledDrivers > 0 ? 'text-orange-500' : undefined },
+        { label: 'Alerts',         value: unresolvedAlerts, accent: unresolvedAlerts > 0 ? 'text-amber-500' : undefined },
     ]
 
     return (

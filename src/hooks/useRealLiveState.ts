@@ -64,6 +64,7 @@ export function useRealLiveState() {
                         status: normalizeDriverStatus(d.status),
                         routeIndex: 0,
                         pointIndex: 0,
+                        stalledSince: null,
                     }
                 }
 

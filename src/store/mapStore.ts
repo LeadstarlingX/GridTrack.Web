@@ -47,10 +47,13 @@ interface MapStore {
     setRecommendationMock: (data: Record<string, number> | null) => void
     setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
+    hubRtt: number | null
+    setHubRtt: (ms: number | null) => void
 }
 
 export const useMapStore = create<MapStore>()((set) => ({
     hubStatus: 'disconnected',
+    hubRtt: null,
     hexGridEnabled: false,
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
@@ -94,4 +97,5 @@ export const useMapStore = create<MapStore>()((set) => ({
     setDistrictForecast: (districtId, forecast) =>
         set((s) => ({ districtForecasts: { ...s.districtForecasts, [districtId]: forecast } })),
     setHubStatus: (status) => set({ hubStatus: status }),
+    setHubRtt: (ms) => set({ hubRtt: ms }),
 }))

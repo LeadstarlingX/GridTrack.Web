@@ -50,17 +50,8 @@ export function useSignalR() {
             .configureLogging(LogLevel.Warning)
             .build()
 
-        connection.onreconnecting(() => {
-            useMapStore.getState().setHubStatus('reconnecting')
-        })
-
-        connection.onreconnected(() => {
-            useMapStore.getState().setHubStatus('connected')
-        })
-
-        connection.onclose(() => {
-            useMapStore.getState().setHubStatus('disconnected')
-        })
+        connection.onreconnecting(() => useMapStore.getState().setHubStatus('reconnecting'))
+        connection.onclose(() => { useMapStore.getState().setHubStatus('disconnected'); useMapStore.getState().setHubRtt(null) })
 
         connection.on('DriverPositionUpdated', (payload: DriverPositionPayload) => {
             useLiveStore.getState().updateDriverPosition(
@@ -91,12 +82,46 @@ export function useSignalR() {
             queryClient.invalidateQueries({ queryKey: ['forecast', payload.districtId] })
         })
 
+        connection.on('StallDetected', (payload: { driverId: string; driverName: string; districtId: string; stalledSince: string }) => {
+            useLiveStore.getState().markStall(payload.driverId, payload.stalledSince)
+        })
+
+        let rttTimer: ReturnType<typeof setInterval> | null = null
+
         connection
             .start()
-            .then(() => useMapStore.getState().setHubStatus('connected'))
+            .then(() => {
+                useMapStore.getState().setHubStatus('connected')
+                // Measure RTT every 5s while connected
+                const measureRtt = async () => {
+                    try {
+                        const sent = Date.now()
+                        await connection.invoke<number>('Ping', sent)
+                        useMapStore.getState().setHubRtt(Date.now() - sent)
+                    } catch {
+                        useMapStore.getState().setHubRtt(null)
+                    }
+                }
+                measureRtt()
+                rttTimer = setInterval(measureRtt, 5_000)
+            })
             .catch(() => useMapStore.getState().setHubStatus('disconnected'))
 
+        connection.onreconnected(() => {
+            useMapStore.getState().setHubStatus('connected')
+            if (!rttTimer) rttTimer = setInterval(async () => {
+                try {
+                    const sent = Date.now()
+                    await connection.invoke<number>('Ping', sent)
+                    useMapStore.getState().setHubRtt(Date.now() - sent)
+                } catch {
+                    useMapStore.getState().setHubRtt(null)
+                }
+            }, 5_000)
+        })
+
         return () => {
+            if (rttTimer) clearInterval(rttTimer)
             connection.stop()
         }
     }, [queryClient])

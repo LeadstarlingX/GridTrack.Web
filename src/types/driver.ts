@@ -7,4 +7,5 @@ export interface DriverState {
     status: 'available' | 'in-transit' | 'offline'
     routeIndex: number
     pointIndex: number
+    stalledSince: string | null
 }
