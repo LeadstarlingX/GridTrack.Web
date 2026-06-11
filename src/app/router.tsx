@@ -13,7 +13,11 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
     const { isLoaded, isSignedIn } = useAuth()
-    if (!isLoaded) return null
+    if (!isLoaded) return (
+        <div className="flex h-screen w-screen items-center justify-center bg-[hsl(var(--background))]">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-[hsl(var(--primary))] border-t-transparent" />
+        </div>
+    )
     if (!isSignedIn) return <Navigate to="/sign-in" replace />
     return <>{children}</>
 }
