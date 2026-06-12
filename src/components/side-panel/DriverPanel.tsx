@@ -1,12 +1,16 @@
 import { useState, useEffect } from 'react'
-import { Car, Phone, X } from 'lucide-react'
+import { Car, Loader2, Phone, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useDriverDetail } from '@/lib/api/queries/useDriverDetail'
-import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
+import { useDriverStats } from '@/lib/api/queries/useDriverStats'
+import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { apiClient } from '@/lib/api/client'
+import { APP_CONFIG } from '@/config/app.config'
+import type { DeliveryDetailDto } from '@/types/api'
 
 function useStallTimer(stalledSince: string | null) {
     const [elapsed, setElapsed] = useState(0)
@@ -26,23 +30,39 @@ export default function DriverPanel() {
     const driverId = useMapStore((s) => s.selectedDriverId)
     const setMode = useMapStore((s) => s.setSidePanelMode)
     const driver = useLiveStore((s) => s.drivers[driverId ?? ''])
+    const activeDelivery = useLiveStore((s) =>
+        Object.values(s.deliveries).find(
+            (d) => d.assignedDriverId === (driverId ?? '') && d.status === 'InTransit',
+        ) ?? null,
+    )
     const { data: detail } = useDriverDetail(driverId)
+    const { data: stats } = useDriverStats(driverId)
+    const { data: districts } = useDistricts()
+    const [following, setFollowing] = useState(false)
 
     if (!driver) return null
 
     const stallTimer = useStallTimer(driver.stalledSince ?? null)
     const statusColor = driver.status === 'in-transit' ? 'default' : driver.status === 'available' ? 'secondary' : 'outline'
-
-    const deliveries = Object.values(useLiveStore.getState().deliveries)
-    const activeDelivery = deliveries.find((d) => d.assignedDriverId === driver.id && d.status === 'InTransit')
+    const districtName = districts?.find((d) => d.id === driver.districtId)?.name ?? driver.districtId
     const canFollow = Boolean(activeDelivery)
 
-    const handleFollow = () => {
-        if (!activeDelivery) return
-        const routeIdx = (driver as any).routeIndex ?? 0
-        const polyline = DAMASCUS_ROUTES[routeIdx] ?? []
-        useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, polyline, activeDelivery.etaSeconds ?? 420)
-        setMode('focus')
+    const handleFollow = async () => {
+        if (!activeDelivery || following) return
+        setFollowing(true)
+        try {
+            const resp = await apiClient.get<DeliveryDetailDto>(
+                APP_CONFIG.api.deliveryDetailPath.replace('{id}', activeDelivery.id)
+            )
+            const polyline: [number, number][] = resp.data.routePolyline ?? []
+            useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, polyline, activeDelivery.etaSeconds ?? 420)
+            setMode('focus')
+        } catch {
+            useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], activeDelivery.etaSeconds ?? 420)
+            setMode('focus')
+        } finally {
+            setFollowing(false)
+        }
     }
 
     return (
@@ -65,8 +85,8 @@ export default function DriverPanel() {
                     <Badge variant={statusColor}>{driver.status}</Badge>
                 </div>
                 <div className="flex justify-between">
-                    <span className="text-muted-foreground">ID</span>
-                    <span className="text-xs font-mono">{driver.id.slice(0, 8)}…</span>
+                    <span className="text-muted-foreground">District</span>
+                    <span className="capitalize">{districtName}</span>
                 </div>
                 <div className="flex justify-between">
                     <span className="text-muted-foreground">Position</span>
@@ -84,7 +104,29 @@ export default function DriverPanel() {
                         <span className="text-xs">{detail.phoneNumber}</span>
                     </div>
                 )}
-                <Button className="w-full mt-4" onClick={handleFollow} disabled={!canFollow}>
+                {stats && (
+                    <>
+                        <div className="my-3 border-t border-[hsl(var(--border))]" />
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="rounded-md bg-[hsl(var(--surface-raised,var(--surface)))] p-2 text-center">
+                                <p className="text-[hsl(var(--foreground-muted))]">On-time</p>
+                                <p className={`font-semibold tabular-nums ${stats.onTimeRatePct >= 80 ? 'text-green-400' : stats.onTimeRatePct >= 60 ? 'text-amber-400' : 'text-red-400'}`}>
+                                    {stats.onTimeRatePct.toFixed(0)}%
+                                </p>
+                            </div>
+                            <div className="rounded-md bg-[hsl(var(--surface-raised,var(--surface)))] p-2 text-center">
+                                <p className="text-[hsl(var(--foreground-muted))]">Today</p>
+                                <p className="font-semibold tabular-nums">{stats.completedToday}</p>
+                            </div>
+                            <div className="rounded-md bg-[hsl(var(--surface-raised,var(--surface)))] p-2 text-center">
+                                <p className="text-[hsl(var(--foreground-muted))]">Active</p>
+                                <p className="font-semibold tabular-nums">{stats.activeDeliveries}</p>
+                            </div>
+                        </div>
+                    </>
+                )}
+                <Button className="w-full mt-4" onClick={handleFollow} disabled={!canFollow || following}>
+                    {following ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
                     {canFollow ? 'Follow Driver' : 'No Active Delivery'}
                 </Button>
             </div>

@@ -1,4 +1,4 @@
-import { Marker } from 'react-leaflet'
+import { Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
@@ -70,7 +70,17 @@ export default function DriverMarkers() {
                         icon={icon}
                         zIndexOffset={isFocused ? 1000 : isStalled ? 500 : 0}
                         eventHandlers={{ click: () => toggleDriverPanel(d.id) }}
-                    />
+                    >
+                        <Tooltip
+                            direction="top"
+                            offset={[0, -8]}
+                            opacity={0.92}
+                            className="!border-0 !bg-[hsl(var(--surface))] !text-[hsl(var(--foreground))] !text-xs !px-2 !py-1 !shadow-md !rounded-md"
+                        >
+                            <span className="font-medium">{d.name}</span>
+                            <span className="ml-1 text-[hsl(var(--foreground-muted))]">· {d.status}</span>
+                        </Tooltip>
+                    </Marker>
                 )
             })}
         </>

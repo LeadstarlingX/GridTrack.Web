@@ -16,8 +16,6 @@ export default function DriverTrailLayer() {
     const drivers = useLiveStore((s) => s.drivers)
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
 
-    if (!trailEnabled) return null
-
     return (
         <>
             {Object.entries(trails).map(([id, points]) => {
@@ -27,6 +25,8 @@ export default function DriverTrailLayer() {
 
                 const isFocused = id === focusedDriverId
                 const isDimmed = focusedDriverId !== null && !isFocused
+                // Always show focused driver's trail; hide others when toggle is off
+                if (!trailEnabled && !isFocused) return null
                 const color = statusColor(driver.status, driver.stalledSince !== null)
 
                 const n = points.length
