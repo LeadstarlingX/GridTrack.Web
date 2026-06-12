@@ -58,8 +58,10 @@ export default function StatusBreakdownChart({ data, isLoading }: Props) {
                     ))}
                 </Pie>
                 <Tooltip
-                    formatter={(value: number, name: string) => [
-                        `${value.toLocaleString()} (${pct(value, total)})`,
+                    formatter={(value, name) => [
+                        typeof value === 'number'
+                            ? `${value.toLocaleString()} (${pct(value, total)})`
+                            : String(value),
                         name,
                     ]}
                     contentStyle={{

@@ -30,7 +30,7 @@ export const useLiveStore = create<LiveStore>()((set) => ({
     updateDriverPosition: (id, lat, lng, districtId) =>
         set((s) => {
             const prevTrail = s.trails[id] ?? []
-            const trail: [number, number][] = [...prevTrail, [lat, lng]].slice(-TRAIL_MAX_POINTS)
+            const trail: [number, number][] = [...prevTrail, [lat, lng] as [number, number]].slice(-TRAIL_MAX_POINTS)
             return {
                 drivers: {
                     ...s.drivers,
