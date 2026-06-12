@@ -216,6 +216,17 @@ export interface ChatResponse {
     reply: string
 }
 
+// GET /api/analytics/status-breakdown
+export interface StatusBreakdownItemDto {
+    status: number
+    label: string
+    count: number
+}
+
+export interface StatusBreakdownDto {
+    items: StatusBreakdownItemDto[]
+}
+
 // GET /api/analytics/district-volume
 export interface DistrictVolumeItemDto {
     districtId: string

@@ -4,6 +4,7 @@ import L from 'leaflet'
 import DriverMarkers from './DriverMarker'
 import DriverTrailLayer from './DriverTrailLayer'
 import DistrictBoundaryLayer from './DistrictBoundaryLayer'
+import DistrictDeliveryBadges from './DistrictDeliveryBadges'
 import HexGridLayer from './HexGridLayer'
 import HeatmapLayer from './HeatmapLayer'
 import HistoricalHeatmapLayer from './HistoricalHeatmapLayer'
@@ -70,6 +71,7 @@ export default function LiveMap({ onMapReady }: Props) {
             <AutoFollowController />
             <DriverTrailLayer />
             <DriverMarkers />
+            <DistrictDeliveryBadges />
             <HexGridLayer />
             <HeatmapLayer />
             <HistoricalHeatmapLayer />

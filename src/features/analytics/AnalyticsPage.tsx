@@ -3,6 +3,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Skel
 import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
 import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
+import StatusBreakdownChart from '@/components/charts/StatusBreakdownChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
 import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
@@ -10,6 +11,7 @@ import { PAGE_CONFIG } from '@/config/pages.config'
 import { apiClient } from '@/lib/api/client'
 import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
 import { useAnalyticsTrends } from '@/lib/api/queries/useAnalyticsTrends'
+import { useStatusBreakdown } from '@/lib/api/queries/useStatusBreakdown'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 import ChatbotPanel from './chatbot/ChatbotPanel'
 
@@ -98,9 +100,14 @@ export default function AnalyticsPage() {
         [appliedRange],
     )
 
-    const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary()
+    const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary(
+        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to }
+    )
     const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
     const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
+        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
+    )
+    const { data: statusBreakdownData, isLoading: statusBreakdownLoading } = useStatusBreakdown(
         USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
     )
 
@@ -227,27 +234,27 @@ export default function AnalyticsPage() {
                 <div className="flex flex-col gap-6">
                     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <MetricCard
-                            label="Deliveries Today"
+                            label="Total Deliveries"
                             value={(summary?.totalDeliveriesToday ?? 0).toLocaleString()}
-                            helper="Created in last 24 hours"
+                            helper={`Created ${appliedRange.from} – ${appliedRange.to}`}
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Completion Rate"
                             value={formatPercent(summary?.completionRate ?? 0)}
-                            helper="Delivered vs created today"
+                            helper="Delivered vs created in range"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Active Drivers"
                             value={(summary?.activeDrivers ?? 0).toString()}
-                            helper="Online and available"
+                            helper="Online right now"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Anomaly Rate"
                             value={formatPercent(summary?.anomalyRate ?? 0)}
-                            helper="Flagged across all deliveries"
+                            helper="Flagged deliveries in range"
                             isLoading={isLoading}
                         />
                     </section>
@@ -255,19 +262,19 @@ export default function AnalyticsPage() {
                         <MetricCard
                             label="Pending Deliveries"
                             value={(summary?.pendingDeliveries ?? 0).toString()}
-                            helper="Unassigned, awaiting pickup"
+                            helper="Unassigned right now"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Avg Delivery Time"
                             value={`${(summary?.avgDeliveryMinutes ?? 0).toFixed(1)} min`}
-                            helper="Pickup to delivery, today"
+                            helper="Pickup → delivered in range"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="On-Time Rate"
                             value={`${(summary?.onTimeRatePct ?? 0).toFixed(1)}%`}
-                            helper="Delivered before ETA, today"
+                            helper="Delivered before ETA in range"
                             isLoading={isLoading}
                         />
                     </section>
@@ -302,14 +309,14 @@ export default function AnalyticsPage() {
                         </Card>
                     </section>
 
-                    <section className="grid gap-4">
+                    <section className="grid gap-4 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
                                     District Volume
                                 </CardTitle>
                                 <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Deliveries by district.
+                                    Deliveries by district in range.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -323,6 +330,23 @@ export default function AnalyticsPage() {
                                               })) ?? [])
                                     }
                                     isLoading={!USE_MOCK && districtVolumeLoading}
+                                />
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                    Status Breakdown
+                                </CardTitle>
+                                <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                    Deliveries by status in range.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <StatusBreakdownChart
+                                    data={USE_MOCK ? [] : (statusBreakdownData?.items ?? [])}
+                                    isLoading={!USE_MOCK && statusBreakdownLoading}
                                 />
                             </CardContent>
                         </Card>

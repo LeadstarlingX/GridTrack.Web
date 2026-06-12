@@ -92,6 +92,7 @@ export const APP_CONFIG = {
         driverAvailabilityPath: '/api/drivers/{id}/availability',
         alertsPath: '/api/alerts',
         analyticsSummaryPath: '/api/analytics/summary',
+        analyticsStatusBreakdownPath: '/api/analytics/status-breakdown',
         analyticsTrendsPath: '/api/analytics/trends',
         analyticsH3DensityPath: '/api/analytics/h3-density',
         analyticsDistrictVolumePath: '/api/analytics/district-volume',
