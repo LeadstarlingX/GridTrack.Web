@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Clock, Layers, Search, Thermometer, Users } from 'lucide-react'
+import { Clock, Layers, Route, Search, Thermometer, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMapStore } from '@/store/mapStore'
 import { APP_CONFIG } from '@/config/app.config'
@@ -9,6 +9,7 @@ export default function MapControls() {
     const hexEnabled = useMapStore((s) => s.hexGridEnabled)
     const heatEnabled = useMapStore((s) => s.heatmapEnabled)
     const recommendationEnabled = useMapStore((s) => s.recommendationEnabled)
+    const trailEnabled = useMapStore((s) => s.trailEnabled)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const historicalEnabled = useMapStore((s) => s.historicalHeatmapEnabled)
     const historicalRange = useMapStore((s) => s.historicalHeatmapRange)
@@ -18,6 +19,7 @@ export default function MapControls() {
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
     const toggleHistorical = useMapStore((s) => s.toggleHistoricalHeatmap)
     const toggleRecommendation = useMapStore((s) => s.toggleRecommendation)
+    const toggleTrail = useMapStore((s) => s.toggleTrail)
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
     const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
@@ -35,6 +37,9 @@ export default function MapControls() {
         ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
         : undefined
     const recommendationGlowStyle = recommendationEnabled
+        ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
+        : undefined
+    const trailGlowStyle = trailEnabled
         ? { boxShadow: '0 0 0 3px hsl(var(--map-btn-glow-primary) / 0.45), 0 0 18px hsl(var(--map-btn-glow-primary) / 0.45)' }
         : undefined
     const listEnabled = sidePanelMode === 'district' && districtPanelView === 'browse'
@@ -108,6 +113,16 @@ export default function MapControls() {
                     <Users className="h-8 w-8" />
                 </Button>
                 <Button
+                    variant={trailEnabled ? 'default' : 'secondary'}
+                    size="icon-lg"
+                    onClick={toggleTrail}
+                    title="Toggle driver trails"
+                    className="transition-shadow duration-150"
+                    style={trailGlowStyle}
+                >
+                    <Route className="h-8 w-8" />
+                </Button>
+                <Button
                     variant={listEnabled ? 'default' : 'secondary'}
                     size="icon-lg"
                     onClick={() => {
@@ -134,7 +149,7 @@ export default function MapControls() {
                 <span className="text-[11px] text-[hsl(var(--foreground))]">R{hexResolution}</span>
             </div>
             <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1 text-[11px] text-[hsl(var(--foreground-muted))]">
-                Hex {hexEnabled ? 'On' : 'Off'} · Heat {heatEnabled ? 'On' : 'Off'}
+                Hex {hexEnabled ? 'On' : 'Off'} · Heat {heatEnabled ? 'On' : 'Off'} · Trail {trailEnabled ? 'On' : 'Off'}
             </div>
             {historicalEnabled && historicalRange && (
                 <div className="flex flex-col items-end gap-2 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-2">

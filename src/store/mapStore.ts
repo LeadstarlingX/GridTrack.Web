@@ -11,6 +11,7 @@ interface MapStore {
     heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
     recommendationEnabled: boolean
+    trailEnabled: boolean
     hexResolution: number
     selectedDistrictId: string | null
     selectedDriverId: string | null
@@ -33,6 +34,7 @@ interface MapStore {
     toggleHeatmap: () => void
     toggleHistoricalHeatmap: () => void
     toggleRecommendation: () => void
+    toggleTrail: () => void
     setHexResolution: (resolution: number) => void
     selectDistrict: (id: string | null) => void
     selectDriver: (id: string | null) => void
@@ -58,6 +60,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
     recommendationEnabled: false,
+    trailEnabled: false,
     hexResolution: APP_CONFIG.map.hexResolution.default,
     selectedDistrictId: null,
     selectedDriverId: null,
@@ -73,6 +76,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     toggleHistoricalHeatmap: () => set((s) => ({ historicalHeatmapEnabled: !s.historicalHeatmapEnabled })),
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
+    toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),
     setHexResolution: (resolution) => set({ hexResolution: resolution }),
     selectDistrict: (id) => set({ selectedDistrictId: id }),
     selectDriver: (id) => set({ selectedDriverId: id }),

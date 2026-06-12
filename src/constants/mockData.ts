@@ -77,6 +77,9 @@ export const MOCK_ANALYTICS = {
     completionRate: 0.87,
     activeDrivers: 12,
     anomalyRate: 0.038,
+    pendingDeliveries: 8,
+    avgDeliveryMinutes: 22.4,
+    onTimeRatePct: 83.5,
 }
 
 export const MOCK_ANALYTICS_TRENDS = [

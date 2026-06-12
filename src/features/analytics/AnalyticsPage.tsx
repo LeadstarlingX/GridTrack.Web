@@ -225,29 +225,49 @@ export default function AnalyticsPage() {
 
             {activeTab === 'overview' ? (
                 <div className="flex flex-col gap-6">
-                    <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <MetricCard
                             label="Deliveries Today"
                             value={(summary?.totalDeliveriesToday ?? 0).toLocaleString()}
-                            helper="Last 24 hours"
+                            helper="Created in last 24 hours"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Completion Rate"
                             value={formatPercent(summary?.completionRate ?? 0)}
-                            helper="Delivered vs created"
+                            helper="Delivered vs created today"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Active Drivers"
                             value={(summary?.activeDrivers ?? 0).toString()}
-                            helper="Currently in transit"
+                            helper="Online and available"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Anomaly Rate"
                             value={formatPercent(summary?.anomalyRate ?? 0)}
-                            helper="Last 7 days"
+                            helper="Flagged across all deliveries"
+                            isLoading={isLoading}
+                        />
+                    </section>
+                    <section className="grid gap-4 sm:grid-cols-3">
+                        <MetricCard
+                            label="Pending Deliveries"
+                            value={(summary?.pendingDeliveries ?? 0).toString()}
+                            helper="Unassigned, awaiting pickup"
+                            isLoading={isLoading}
+                        />
+                        <MetricCard
+                            label="Avg Delivery Time"
+                            value={`${(summary?.avgDeliveryMinutes ?? 0).toFixed(1)} min`}
+                            helper="Pickup to delivery, today"
+                            isLoading={isLoading}
+                        />
+                        <MetricCard
+                            label="On-Time Rate"
+                            value={`${(summary?.onTimeRatePct ?? 0).toFixed(1)}%`}
+                            helper="Delivered before ETA, today"
                             isLoading={isLoading}
                         />
                     </section>

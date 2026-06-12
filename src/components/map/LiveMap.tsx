@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { MapContainer, TileLayer, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import DriverMarkers from './DriverMarker'
+import DriverTrailLayer from './DriverTrailLayer'
 import DistrictBoundaryLayer from './DistrictBoundaryLayer'
 import HexGridLayer from './HexGridLayer'
 import HeatmapLayer from './HeatmapLayer'
@@ -67,6 +68,7 @@ export default function LiveMap({ onMapReady }: Props) {
             />
             <MapRefCapture setMap={(m) => stableRef.current(m)} />
             <AutoFollowController />
+            <DriverTrailLayer />
             <DriverMarkers />
             <HexGridLayer />
             <HeatmapLayer />

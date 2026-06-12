@@ -7,6 +7,8 @@ import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_DISTRICTS } from '@/constants/mockData'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
+import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
+import { Clock } from 'lucide-react'
 
 type StatusFilter = DeliveryListItemDto['status'] | 'all'
 
@@ -22,6 +24,7 @@ function toIsoDate(date: Date) {
 
 export default function DeliveriesPage() {
     const navigate = useNavigate()
+    const [timelineId, setTimelineId] = useState<string | null>(null)
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>('all')
     const [range, setRange] = useState<DateRangeValue>(() => {
@@ -82,6 +85,21 @@ export default function DeliveriesPage() {
             header: 'Created',
             cell: (row) => formatTimestamp(row.createdAt),
         },
+        {
+            key: 'timeline',
+            header: '',
+            cell: (row) => (
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+                    onClick={(e) => { e.stopPropagation(); setTimelineId(row.id) }}
+                >
+                    <Clock size={12} className="mr-1" />
+                    Timeline
+                </Button>
+            ),
+        },
     ]
 
     return (
@@ -136,6 +154,11 @@ export default function DeliveriesPage() {
                 onRowClick={(row) => navigate('/', { state: { focusDeliveryId: row.id } })}
                 emptyTitle={isLoading ? 'Loading...' : 'No deliveries'}
                 emptyDescription={isLoading ? '' : 'Try a different status or date range.'}
+            />
+
+            <DeliveryTimelineDrawer
+                deliveryId={timelineId}
+                onClose={() => setTimelineId(null)}
             />
         </div>
     )

@@ -7,10 +7,13 @@ import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
+const TRAIL_MAX_POINTS = 40
+
 interface LiveStore {
     drivers: Record<string, DriverState>
     deliveries: Record<string, DeliveryState>
     anomalyQueue: AnomalyAlert[]
+    trails: Record<string, [number, number][]>
 
     updateDriverPosition: (id: string, lat: number, lng: number, districtId: string) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
@@ -22,14 +25,20 @@ export const useLiveStore = create<LiveStore>()((set) => ({
     drivers: USE_MOCK ? Object.fromEntries(MOCK_DRIVERS.map((d) => [d.id, d])) : {},
     deliveries: USE_MOCK ? Object.fromEntries(MOCK_DELIVERIES.map((d) => [d.id, d])) : {},
     anomalyQueue: [],
+    trails: {},
 
     updateDriverPosition: (id, lat, lng, districtId) =>
-        set((s) => ({
-            drivers: {
-                ...s.drivers,
-                [id]: { ...s.drivers[id], lat, lng, districtId, stalledSince: null },
-            },
-        })),
+        set((s) => {
+            const prevTrail = s.trails[id] ?? []
+            const trail: [number, number][] = [...prevTrail, [lat, lng]].slice(-TRAIL_MAX_POINTS)
+            return {
+                drivers: {
+                    ...s.drivers,
+                    [id]: { ...s.drivers[id], lat, lng, districtId, stalledSince: null },
+                },
+                trails: { ...s.trails, [id]: trail },
+            }
+        }),
 
     markStall: (id, stalledSince) =>
         set((s) => {

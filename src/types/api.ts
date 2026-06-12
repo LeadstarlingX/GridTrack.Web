@@ -52,6 +52,45 @@ export interface DeliveriesQueryParams {
     pageSize?: number
 }
 
+// GET /api/deliveries/{id}/timeline
+export interface DeliveryTimelineEventDto {
+    type: 'Created' | 'Assigned' | 'PickedUp' | 'InTransit' | 'Delivered' | 'Cancelled' | 'AnomalyFlagged'
+    label: string
+    at: string | null
+    note: string | null
+}
+
+export interface DeliveryTimelineDto {
+    deliveryId: string
+    events: DeliveryTimelineEventDto[]
+}
+
+// GET /api/drivers/{id}
+export interface DriverDetailDto {
+    id: string
+    name: string
+    shortName: string
+    districtId: string
+    isActive: boolean
+    carType?: string | null
+    licensePlate?: string | null
+    phoneNumber?: string | null
+    lat: number
+    lng: number
+    lastSeen: string
+}
+
+// GET /api/drivers/{id}/stats
+export interface DriverStatsDto {
+    driverId: string
+    name: string
+    totalCompleted: number
+    completedToday: number
+    totalCancelled: number
+    activeDeliveries: number
+    onTimeRatePct: number
+}
+
 // GET /api/drivers
 export interface DriverListItemDto {
     id: string
@@ -61,6 +100,9 @@ export interface DriverListItemDto {
     districtName: string
     lat: number
     lng: number
+    carType?: string | null
+    licensePlate?: string | null
+    phoneNumber?: string | null
 }
 
 // PATCH /api/drivers/{id}/availability
@@ -111,6 +153,9 @@ export interface AnalyticsSummaryDto {
     completionRate: number
     activeDrivers: number
     anomalyRate: number
+    pendingDeliveries: number
+    avgDeliveryMinutes: number
+    onTimeRatePct: number
     updatedAt: string
 }
 

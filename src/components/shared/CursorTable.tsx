@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { Fragment, type ReactNode } from 'react'
 import { Button, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui'
 
 export interface CursorColumn<T> {
@@ -18,6 +18,8 @@ interface CursorTableProps<T> {
     onRowClick?: (row: T) => void
     emptyTitle?: string
     emptyDescription?: string
+    expandedId?: string | null
+    renderExpanded?: (row: T) => ReactNode
 }
 
 export default function CursorTable<T>({
@@ -30,6 +32,8 @@ export default function CursorTable<T>({
     onRowClick,
     emptyTitle = 'No results',
     emptyDescription = 'Try adjusting the filters to see more results.',
+    expandedId,
+    renderExpanded,
 }: CursorTableProps<T>) {
     return (
         <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))]">
@@ -52,19 +56,31 @@ export default function CursorTable<T>({
                             </TableCell>
                         </TableRow>
                     ) : (
-                        rows.map((row) => (
-                            <TableRow
-                                key={getRowId(row)}
-                                className={onRowClick ? 'cursor-pointer' : undefined}
-                                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                            >
-                                {columns.map((column) => (
-                                    <TableCell key={column.key} className={column.className}>
-                                        {column.cell(row)}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        ))
+                        rows.map((row) => {
+                            const id = getRowId(row)
+                            const isExpanded = expandedId === id
+                            return (
+                                <Fragment key={id}>
+                                    <TableRow
+                                        className={onRowClick ? 'cursor-pointer' : undefined}
+                                        onClick={onRowClick ? () => onRowClick(row) : undefined}
+                                    >
+                                        {columns.map((column) => (
+                                            <TableCell key={column.key} className={column.className}>
+                                                {column.cell(row)}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                    {isExpanded && renderExpanded && (
+                                        <TableRow>
+                                            <TableCell colSpan={columns.length} className="bg-[hsl(var(--surface-raised,var(--surface)))] p-0">
+                                                {renderExpanded(row)}
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </Fragment>
+                            )
+                        })
                     )}
                 </TableBody>
             </Table>
