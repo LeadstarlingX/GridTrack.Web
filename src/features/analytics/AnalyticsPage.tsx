@@ -100,7 +100,9 @@ export default function AnalyticsPage() {
         [appliedRange],
     )
 
-    const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary()
+    const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary(
+        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
+    )
     const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
     const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
         USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
@@ -232,15 +234,15 @@ export default function AnalyticsPage() {
                 <div className="flex flex-col gap-6">
                     <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                         <MetricCard
-                            label="Deliveries Today"
+                            label="Total Deliveries"
                             value={(summary?.totalDeliveriesToday ?? 0).toLocaleString()}
-                            helper="Created in last 24 hours"
+                            helper="Created in selected range"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="Completion Rate"
                             value={formatPercent(summary?.completionRate ?? 0)}
-                            helper="Delivered vs created today"
+                            helper="Delivered vs created in range"
                             isLoading={isLoading}
                         />
                         <MetricCard
@@ -252,7 +254,7 @@ export default function AnalyticsPage() {
                         <MetricCard
                             label="Anomaly Rate"
                             value={formatPercent(summary?.anomalyRate ?? 0)}
-                            helper="Flagged deliveries today"
+                            helper="Flagged deliveries in range"
                             isLoading={isLoading}
                         />
                     </section>
@@ -266,13 +268,13 @@ export default function AnalyticsPage() {
                         <MetricCard
                             label="Avg Delivery Time"
                             value={`${(summary?.avgDeliveryMinutes ?? 0).toFixed(1)} min`}
-                            helper="Pickup → delivered today"
+                            helper="Pickup → delivered in range"
                             isLoading={isLoading}
                         />
                         <MetricCard
                             label="On-Time Rate"
                             value={`${(summary?.onTimeRatePct ?? 0).toFixed(1)}%`}
-                            helper="Delivered before ETA today"
+                            helper="Delivered before ETA in range"
                             isLoading={isLoading}
                         />
                     </section>
