@@ -4,6 +4,7 @@ import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
 import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
 import StatusBreakdownChart from '@/components/charts/StatusBreakdownChart'
+import UrgencyTrendChart from '@/components/charts/UrgencyTrendChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
 import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
@@ -130,6 +131,11 @@ export default function AnalyticsPage() {
         }
         return trendsData?.anomalyTrend.map((p) => ({ bucket: p.bucket, anomalies: p.value })) ?? []
     }, [USE_MOCK, rangeDays, trendsData])
+
+    const urgencyTrend = useMemo(() => {
+        if (USE_MOCK) return []
+        return trendsData?.urgencyTrend.map((p) => ({ bucket: p.bucket, avgScore: p.value })) ?? []
+    }, [trendsData])
 
     const downloadCsv = async (mode: 'range' | 'full') => {
         const payload = { mode, from: range.from, to: range.to, days: activeDays, fromHour: hourStart, toHour: hourEnd }
@@ -347,6 +353,25 @@ export default function AnalyticsPage() {
                                 <StatusBreakdownChart
                                     data={USE_MOCK ? [] : (statusBreakdownData?.items ?? [])}
                                     isLoading={!USE_MOCK && statusBreakdownLoading}
+                                />
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <section className="grid gap-4 lg:grid-cols-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                    Avg Urgency Score
+                                </CardTitle>
+                                <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                    Mean AI urgency score (1–10) per day for anomalous deliveries.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <UrgencyTrendChart
+                                    data={urgencyTrend}
+                                    isLoading={!USE_MOCK && trendsLoading}
                                 />
                             </CardContent>
                         </Card>

@@ -168,6 +168,7 @@ export interface TimePointDto {
 export interface AnalyticsTrendDto {
     deliveryTrend: TimePointDto[]
     anomalyTrend: TimePointDto[]
+    urgencyTrend: TimePointDto[]
 }
 
 export interface TrendsQueryParams {
