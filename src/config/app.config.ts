@@ -104,6 +104,7 @@ export const APP_CONFIG = {
         analyticsDistrictVolumePath: '/api/analytics/district-volume',
         forecastPath: '/api/forecast/{districtId}',
         exportCsvPath: '/api/export/csv',
+        analyticsDriversPath: '/api/analytics/drivers',
         analysisChatPath: '/api/analysis/chat',
         deliveryAutoAssignPath: '/api/deliveries/{id}/auto-assign',
         aiDeliveryRecommendationPath: '/api/ai/delivery/{id}/recommendation',

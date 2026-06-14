@@ -303,7 +303,33 @@ export interface DistrictSummaryDto {
     cachedAt: string | null
 }
 
+// GET /api/analytics/drivers
+export interface HourlyOnTimePointDto {
+    hour: number
+    onTimeRatePct: number
+    sampleCount: number
+}
+
+export interface DriverAnalyticsItemDto {
+    driverId: string
+    name: string
+    carType: string | null
+    districtId: string
+    totalLast7Days: number
+    completedLast7Days: number
+    onTimeRatePct: number | null
+    anomalyRate: number
+    avgDurationSeconds: number
+    districtAvgDurationSeconds: number
+    onTimeByHour: HourlyOnTimePointDto[]
+}
+
+export interface DriverAnalyticsResponseDto {
+    drivers: DriverAnalyticsItemDto[]
+}
+
 export type ApiEndpoint =
+    | '/api/analytics/drivers'
     | '/api/districts'
     | '/api/districts/boundaries'
     | '/api/deliveries'
