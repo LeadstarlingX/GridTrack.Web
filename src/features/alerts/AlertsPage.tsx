@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import { MOCK_URGENCY_ALERTS, type UrgencyAlert } from '@/constants/mockData'
 import { useAlerts } from '@/lib/api/queries/useAlerts'
+import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import { useMapStore } from '@/store/mapStore'
 import type { AnomalyAlertDto } from '@/types/api'
 
@@ -41,10 +42,48 @@ function formatTime(ts: string) {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
+function AlertAiChip({ deliveryId, urgencyColor }: { deliveryId: string; urgencyColor: string }) {
+    const [enabled, setEnabled] = useState(false)
+    const { data, isLoading } = useDeliveryRecommendation(deliveryId, enabled)
+
+    const note = data
+        ? data.aiAvailable && data.recommendedAction
+            ? `${data.recommendedAction}${data.reason ? ` — ${data.reason}` : ''}`
+            : 'AI offline · top candidates available'
+        : null
+
+    if (note) {
+        return (
+            <div
+                className="rounded-md px-3 py-2 text-xs leading-relaxed"
+                style={{
+                    background: `color-mix(in srgb, ${urgencyColor} 10%, transparent)`,
+                    border: `1px solid color-mix(in srgb, ${urgencyColor} 25%, transparent)`,
+                    color: urgencyColor,
+                }}
+            >
+                ⚡ {note}
+            </div>
+        )
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={() => setEnabled(true)}
+            disabled={isLoading}
+            className="self-start text-[11px] px-2.5 py-1 rounded-md border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border-strong))] transition-colors disabled:opacity-50"
+        >
+            {isLoading ? '⚡ Loading…' : '⚡ AI insight'}
+        </button>
+    )
+}
+
 interface AlertCardProps {
     type: string
     driverName: string
     driverId: string
+    deliveryId?: string
     districtName: string
     reason: string
     urgency: number
@@ -52,7 +91,7 @@ interface AlertCardProps {
     time: string
 }
 
-function AlertCard({ type, driverName, driverId, districtName, reason, urgency, aiNote, time }: AlertCardProps) {
+function AlertCard({ type, driverName, driverId, deliveryId, districtName, reason, urgency, aiNote, time }: AlertCardProps) {
     const navigate = useNavigate()
     const selectDriver = useMapStore((s) => s.selectDriver)
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
@@ -91,7 +130,7 @@ function AlertCard({ type, driverName, driverId, districtName, reason, urgency, 
                 {/* Reason */}
                 <p className="text-sm text-[hsl(var(--foreground-muted))] mb-2">{reason}</p>
 
-                {/* AI note */}
+                {/* AI note — static (mock) or lazy-fetched (API) */}
                 {aiNote && (
                     <div className="rounded-md px-3 py-2 text-xs leading-relaxed"
                         style={{
@@ -101,6 +140,9 @@ function AlertCard({ type, driverName, driverId, districtName, reason, urgency, 
                         }}>
                         ⚡ {aiNote}
                     </div>
+                )}
+                {!aiNote && deliveryId && (
+                    <AlertAiChip deliveryId={deliveryId} urgencyColor={color} />
                 )}
             </div>
 
@@ -190,6 +232,7 @@ function ApiAlertsList({ filter }: { filter: UrgencyFilter }) {
                         type={a.anomalyType}
                         driverName={a.driverName}
                         driverId={a.driverId}
+                        deliveryId={a.deliveryId}
                         districtName={a.districtName}
                         reason={a.reason}
                         urgency={urgencyFromType(a.anomalyType)}

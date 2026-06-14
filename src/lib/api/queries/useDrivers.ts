@@ -3,7 +3,7 @@ import { apiClient } from '../client'
 import { APP_CONFIG } from '@/config/app.config'
 import type { PagedResponse, DriverListItemDto, DriversQueryParams } from '@/types/api'
 
-export function useDrivers(params: Omit<DriversQueryParams, 'cursor'>) {
+export function useDrivers(params: Omit<DriversQueryParams, 'cursor'>, options?: { enabled?: boolean }) {
     return useInfiniteQuery({
         queryKey: ['drivers', params],
         queryFn: ({ pageParam }) =>
@@ -14,5 +14,6 @@ export function useDrivers(params: Omit<DriversQueryParams, 'cursor'>) {
                 .then((r) => r.data),
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        enabled: options?.enabled ?? true,
     })
 }
