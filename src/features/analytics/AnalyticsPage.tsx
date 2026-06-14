@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Skeleton } from '@/components/ui'
 import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
@@ -8,6 +9,8 @@ import UrgencyTrendChart from '@/components/charts/UrgencyTrendChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
 import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
+import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useDriverAnalytics } from '@/lib/api/queries/useDriverAnalytics'
 import { PAGE_CONFIG } from '@/config/pages.config'
 import { apiClient } from '@/lib/api/client'
 import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
@@ -79,6 +82,7 @@ function sliceMockTrends(days: number) {
 }
 
 export default function AnalyticsPage() {
+    const navigate = useNavigate()
     const chatbotEnabled = PAGE_CONFIG.analyticsChatbot.enabled
     const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview')
     const [activeDays, setActiveDays] = useState<DayKey[]>(DAY_OPTIONS.map((d) => d.key))
@@ -108,6 +112,22 @@ export default function AnalyticsPage() {
     const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
         USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
     )
+    const { data: districtsData } = useDistricts()
+    const districtNameMap = useMemo(
+        () => Object.fromEntries((districtsData ?? []).map((d) => [d.id, d.name])),
+        [districtsData],
+    )
+
+    const { data: driverAnalyticsData } = useDriverAnalytics()
+
+    const driversAtRisk = useMemo(() => {
+        if (!driverAnalyticsData) return []
+        return driverAnalyticsData.drivers
+            .filter((d) => d.anomalyRate > 0.15 || (d.onTimeRatePct !== null && d.onTimeRatePct < 60))
+            .sort((a, b) => b.anomalyRate - a.anomalyRate)
+            .slice(0, 5)
+    }, [driverAnalyticsData])
+
     const { data: statusBreakdownData, isLoading: statusBreakdownLoading } = useStatusBreakdown(
         USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
     )
@@ -288,12 +308,23 @@ export default function AnalyticsPage() {
                     <section className="grid gap-4 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
-                                    Delivery Trend
-                                </CardTitle>
-                                <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Volume across the selected range.
-                                </CardDescription>
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                            Delivery Trend
+                                        </CardTitle>
+                                        <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                            Volume across the selected range.
+                                        </CardDescription>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/deliveries')}
+                                        className="shrink-0 text-[11px] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--primary))] transition-colors"
+                                    >
+                                        View all →
+                                    </button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <DeliveryTrendChart data={deliveryTrend} isLoading={USE_MOCK ? false : trendsLoading} />
@@ -302,12 +333,23 @@ export default function AnalyticsPage() {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
-                                    Anomaly Rate
-                                </CardTitle>
-                                <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Anomaly counts across the selected range.
-                                </CardDescription>
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                            Anomaly Rate
+                                        </CardTitle>
+                                        <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                            Anomaly counts across the selected range.
+                                        </CardDescription>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/alerts')}
+                                        className="shrink-0 text-[11px] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--primary))] transition-colors"
+                                    >
+                                        View alerts →
+                                    </button>
+                                </div>
                             </CardHeader>
                             <CardContent>
                                 <AnomalyRateChart data={anomalyTrend} isLoading={USE_MOCK ? false : trendsLoading} />
@@ -322,7 +364,7 @@ export default function AnalyticsPage() {
                                     District Volume
                                 </CardTitle>
                                 <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                                    Deliveries by district in range.
+                                    Deliveries by district in range. Click a bar to drillthrough.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
@@ -331,11 +373,13 @@ export default function AnalyticsPage() {
                                         USE_MOCK
                                             ? MOCK_DISTRICT_VOLUME
                                             : (districtVolumeData?.items.map((item) => ({
-                                                  district: item.districtId,
+                                                  district: districtNameMap[item.districtId] ?? item.districtId,
+                                                  districtId: item.districtId,
                                                   deliveries: item.deliveries,
                                               })) ?? [])
                                     }
                                     isLoading={!USE_MOCK && districtVolumeLoading}
+                                    onBarClick={(districtId) => navigate('/deliveries', { state: { districtId } })}
                                 />
                             </CardContent>
                         </Card>
@@ -375,6 +419,52 @@ export default function AnalyticsPage() {
                                 />
                             </CardContent>
                         </Card>
+
+                        {driversAtRisk.length > 0 && (
+                            <Card>
+                                <CardHeader>
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div>
+                                            <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                                Drivers at Risk
+                                            </CardTitle>
+                                            <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                                High anomaly rate or &lt;60% on-time over the last 7 days.
+                                            </CardDescription>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => navigate('/drivers')}
+                                            className="shrink-0 text-[11px] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--primary))] transition-colors"
+                                        >
+                                            View all →
+                                        </button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex flex-col divide-y divide-[hsl(var(--border))]">
+                                        {driversAtRisk.map((d) => (
+                                            <div key={d.driverId} className="flex items-center gap-3 py-2.5">
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="truncate text-sm font-medium text-[hsl(var(--foreground))]">{d.name}</p>
+                                                    <p className="text-[11px] text-[hsl(var(--foreground-muted))]">{d.districtId}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3 text-xs tabular-nums shrink-0">
+                                                    <span className={d.anomalyRate >= 0.15 ? 'text-red-400' : 'text-amber-400'}>
+                                                        {(d.anomalyRate * 100).toFixed(0)}% anomaly
+                                                    </span>
+                                                    {d.onTimeRatePct !== null && (
+                                                        <span className={d.onTimeRatePct < 60 ? 'text-red-400' : 'text-amber-400'}>
+                                                            {d.onTimeRatePct.toFixed(0)}% on-time
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
                     </section>
                 </div>
             ) : (

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Badge, Button } from '@/components/ui'
+import { cn } from '@/lib/utils'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
 import { APP_CONFIG } from '@/config/app.config'
@@ -8,7 +9,7 @@ import { MOCK_DISTRICTS } from '@/constants/mockData'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
-import { Clock } from 'lucide-react'
+import { Clock, X } from 'lucide-react'
 
 type StatusFilter = DeliveryListItemDto['status'] | 'all'
 
@@ -24,9 +25,14 @@ function toIsoDate(date: Date) {
 
 export default function DeliveriesPage() {
     const navigate = useNavigate()
-    const [timelineId, setTimelineId] = useState<string | null>(null)
+    const location = useLocation()
+    const [timelineId, setTimelineId] = useState<string | null>(
+        () => (location.state as { openTimelineId?: string } | null)?.openTimelineId ?? null,
+    )
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
-    const [districtFilter, setDistrictFilter] = useState<string>('all')
+    const [districtFilter, setDistrictFilter] = useState<string>(
+        () => (location.state as { districtId?: string } | null)?.districtId ?? 'all',
+    )
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
@@ -71,7 +77,18 @@ export default function DeliveriesPage() {
             key: 'driver',
             header: 'Driver',
             cell: (row) =>
-                row.assignedDriverName ?? (
+                row.assignedDriverId ? (
+                    <button
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            navigate('/drivers', { state: { expandDriverId: row.assignedDriverId } })
+                        }}
+                        className="font-medium text-[hsl(var(--foreground))] hover:text-[hsl(var(--primary))] hover:underline transition-colors"
+                    >
+                        {row.assignedDriverName}
+                    </button>
+                ) : (
                     <span className="text-[hsl(var(--foreground-muted))]">Unassigned</span>
                 ),
         },
@@ -110,19 +127,29 @@ export default function DeliveriesPage() {
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Track all delivery activity.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
+                        <span className="mr-1 text-xs text-[hsl(var(--foreground-muted))]">Status</span>
+                        {STATUS_OPTIONS.map((status) => (
+                            <button
+                                key={status}
+                                type="button"
+                                onClick={() => setStatusFilter(status)}
+                                className={cn(
+                                    'px-2.5 py-1 rounded-md border text-xs font-medium transition-colors',
+                                    statusFilter === status
+                                        ? status === 'Anomalous'
+                                            ? 'border-red-500 bg-red-500/10 text-red-400'
+                                            : status === 'Delivered'
+                                              ? 'border-green-500 bg-green-500/10 text-green-400'
+                                              : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
+                                        : 'border-transparent text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]',
+                                )}
+                            >
+                                {status === 'all' ? 'All' : status}
+                            </button>
+                        ))}
+                    </div>
                     <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
-                        <label className="text-xs text-[hsl(var(--foreground-muted))]">Status</label>
-                        <select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-                            className="h-7 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
-                        >
-                            {STATUS_OPTIONS.map((status) => (
-                                <option key={status} value={status}>
-                                    {status === 'all' ? 'All' : status}
-                                </option>
-                            ))}
-                        </select>
                         <label className="text-xs text-[hsl(var(--foreground-muted))]">District</label>
                         <select
                             value={districtFilter}
@@ -143,6 +170,20 @@ export default function DeliveriesPage() {
                     </Button>
                 </div>
             </header>
+
+            {districtFilter !== 'all' && (
+                <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--primary)/0.05)] px-4 py-2.5 text-xs text-[hsl(var(--primary))]">
+                    <span>Filtered by district: <span className="font-semibold">{districtFilter}</span></span>
+                    <button
+                        type="button"
+                        onClick={() => setDistrictFilter('all')}
+                        className="ml-auto flex items-center gap-1 rounded px-2 py-0.5 hover:bg-[hsl(var(--primary)/0.1)] transition-colors"
+                    >
+                        <X size={11} />
+                        Clear
+                    </button>
+                </div>
+            )}
 
             <CursorTable
                 columns={columns}

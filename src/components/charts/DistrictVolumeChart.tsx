@@ -4,11 +4,13 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, Skeleton } from '@/c
 export interface DistrictVolumePoint {
     district: string
     deliveries: number
+    districtId?: string
 }
 
 interface DistrictVolumeChartProps {
     data: DistrictVolumePoint[]
     isLoading?: boolean
+    onBarClick?: (districtId: string) => void
 }
 
 const chartConfig = {
@@ -18,7 +20,7 @@ const chartConfig = {
     },
 }
 
-export default function DistrictVolumeChart({ data, isLoading }: DistrictVolumeChartProps) {
+export default function DistrictVolumeChart({ data, isLoading, onBarClick }: DistrictVolumeChartProps) {
     if (isLoading) {
         return <Skeleton className="h-56 w-full" />
     }
@@ -36,7 +38,13 @@ export default function DistrictVolumeChart({ data, isLoading }: DistrictVolumeC
                     width={90}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="deliveries" fill="var(--color-deliveries)" radius={[0, 4, 4, 0]} />
+                <Bar
+                    dataKey="deliveries"
+                    fill="var(--color-deliveries)"
+                    radius={[0, 4, 4, 0]}
+                    cursor={onBarClick ? 'pointer' : undefined}
+                    onClick={onBarClick ? (payload: DistrictVolumePoint) => onBarClick(payload.districtId ?? payload.district) : undefined}
+                />
             </BarChart>
         </ChartContainer>
     )

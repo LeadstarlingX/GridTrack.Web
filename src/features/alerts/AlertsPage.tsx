@@ -11,6 +11,15 @@ import type { AnomalyAlertDto } from '@/types/api'
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type UrgencyFilter = 'all' | 'critical' | 'high' | 'low'
+type AnomalyTypeFilter = 'all' | AnomalyAlertDto['anomalyType']
+
+const TYPE_OPTIONS: { value: AnomalyTypeFilter; label: string }[] = [
+    { value: 'all', label: 'All types' },
+    { value: 'EtaExceeded', label: 'ETA Exceeded' },
+    { value: 'RouteDeviation', label: 'Route Deviation' },
+    { value: 'StalePosition', label: 'Stale Position' },
+    { value: 'UnexpectedStop', label: 'Unexpected Stop' },
+]
 
 function urgencyFromType(type: AnomalyAlertDto['anomalyType']): number {
     if (type === 'StalePosition') return 9
@@ -147,26 +156,37 @@ function AlertCard({ type, driverName, driverId, deliveryId, districtName, reaso
             </div>
 
             {/* Actions */}
-            <div className="flex shrink-0 items-start">
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
                 <button
                     type="button"
                     onClick={handleViewOnMap}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors whitespace-nowrap"
                 >
                     View on map
                 </button>
+                {deliveryId && (
+                    <button
+                        type="button"
+                        onClick={() => navigate('/deliveries', { state: { openTimelineId: deliveryId } })}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors whitespace-nowrap"
+                    >
+                        Timeline
+                    </button>
+                )}
             </div>
         </div>
     )
 }
 
-function MockAlertsList({ filter }: { filter: UrgencyFilter }) {
+function MockAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
     const alerts = useMemo<UrgencyAlert[]>(() => {
-        if (filter === 'all') return MOCK_URGENCY_ALERTS
-        if (filter === 'critical') return MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 8)
-        if (filter === 'high') return MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 6 && a.urgency < 8)
-        return MOCK_URGENCY_ALERTS.filter((a) => a.urgency < 6)
-    }, [filter])
+        let list = MOCK_URGENCY_ALERTS
+        if (typeFilter !== 'all') list = list.filter((a) => a.type === typeFilter)
+        if (filter === 'critical') return list.filter((a) => a.urgency >= 8)
+        if (filter === 'high') return list.filter((a) => a.urgency >= 6 && a.urgency < 8)
+        if (filter === 'low') return list.filter((a) => a.urgency < 6)
+        return list
+    }, [filter, typeFilter])
 
     const criticalCount = MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 8).length
 
@@ -188,7 +208,7 @@ function MockAlertsList({ filter }: { filter: UrgencyFilter }) {
     )
 }
 
-function ApiAlertsList({ filter }: { filter: UrgencyFilter }) {
+function ApiAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
     const today = new Date()
     const weekAgo = new Date()
     weekAgo.setDate(today.getDate() - 6)
@@ -197,6 +217,7 @@ function ApiAlertsList({ filter }: { filter: UrgencyFilter }) {
         from: weekAgo.toISOString().slice(0, 10),
         to: today.toISOString().slice(0, 10),
         pageSize: 20,
+        anomalyType: typeFilter !== 'all' ? typeFilter : undefined,
     })
 
     const allRows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
@@ -259,8 +280,9 @@ function ApiAlertsList({ filter }: { filter: UrgencyFilter }) {
 
 export default function AlertsPage() {
     const [filter, setFilter] = useState<UrgencyFilter>('all')
+    const [typeFilter, setTypeFilter] = useState<AnomalyTypeFilter>('all')
 
-    const filterOptions: { value: UrgencyFilter; label: string }[] = [
+    const urgencyOptions: { value: UrgencyFilter; label: string }[] = [
         { value: 'all', label: 'All' },
         { value: 'critical', label: 'Critical' },
         { value: 'high', label: 'High' },
@@ -274,26 +296,40 @@ export default function AlertsPage() {
                     <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Alerts</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">AI-triaged anomaly queue · sorted by urgency</p>
                 </div>
-                <div className="flex gap-1.5">
-                    {filterOptions.map((opt) => (
-                        <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => setFilter(opt.value)}
-                            className={cn(
-                                'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
-                                filter === opt.value
-                                    ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
-                                    : 'border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))]'
-                            )}
-                        >
-                            {opt.label}
-                        </button>
-                    ))}
+                <div className="flex flex-wrap items-center gap-2">
+                    <select
+                        value={typeFilter}
+                        onChange={(e) => setTypeFilter(e.target.value as AnomalyTypeFilter)}
+                        className="h-8 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground-muted))]"
+                    >
+                        {TYPE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                    </select>
+                    <div className="flex gap-1.5">
+                        {urgencyOptions.map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => setFilter(opt.value)}
+                                className={cn(
+                                    'px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors',
+                                    filter === opt.value
+                                        ? 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
+                                        : 'border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))]'
+                                )}
+                            >
+                                {opt.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </header>
 
-            {USE_MOCK ? <MockAlertsList filter={filter} /> : <ApiAlertsList filter={filter} />}
+            {USE_MOCK
+                ? <MockAlertsList filter={filter} typeFilter={typeFilter} />
+                : <ApiAlertsList filter={filter} typeFilter={typeFilter} />
+            }
         </div>
     )
 }
