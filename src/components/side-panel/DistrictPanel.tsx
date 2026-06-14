@@ -5,6 +5,7 @@ import { useMapStore } from '@/store/mapStore'
 import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useForecast } from '@/lib/api/queries/useForecast'
 import { useDistrictSparkline } from '@/lib/api/queries/useDistrictSparkline'
+import { useDistrictSummary } from '@/lib/api/queries/useDistrictSummary'
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts'
 import { format } from 'date-fns'
 
@@ -46,6 +47,13 @@ function SparklineChart({ districtId }: { districtId: string }) {
     )
 }
 
+function formatStaleness(cachedAt: string) {
+    const diffMin = Math.floor((Date.now() - new Date(cachedAt).getTime()) / 60_000)
+    if (diffMin < 1) return 'just now'
+    if (diffMin === 1) return '1 min ago'
+    return `${diffMin} min ago`
+}
+
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
@@ -53,6 +61,7 @@ export default function DistrictPanel() {
     const setMode = useMapStore((s) => s.setSidePanelMode)
 
     const { data: forecast } = useForecast(USE_MOCK ? null : boundaryId)
+    const { data: districtSummary } = useDistrictSummary(USE_MOCK ? null : boundaryId)
 
     if (!boundaryId) return null
 
@@ -106,6 +115,25 @@ export default function DistrictPanel() {
                     <Card>
                         <CardHeader className="pb-2"><CardTitle className="text-sm">Recommended Drivers</CardTitle></CardHeader>
                         <CardContent><p className="text-2xl font-bold">{driverRecommendation}</p></CardContent>
+                    </Card>
+                )}
+                {districtSummary && (
+                    <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm flex items-center justify-between gap-2">
+                                <span>AI Summary</span>
+                                {districtSummary.cachedAt && (
+                                    <span className="text-[10px] font-normal text-[hsl(var(--foreground-muted))] shrink-0">
+                                        Stale · {formatStaleness(districtSummary.cachedAt)}
+                                    </span>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-xs text-[hsl(var(--foreground-muted))] leading-relaxed">
+                                {districtSummary.summary}
+                            </p>
+                        </CardContent>
                     </Card>
                 )}
             </div>
