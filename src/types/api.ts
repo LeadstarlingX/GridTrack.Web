@@ -26,10 +26,21 @@ export interface DistrictBoundaryProperties {
     name: string
 }
 
+export type DeliveryStatus =
+    | 'Created'
+    | 'Assigned'
+    | 'PickedUp'
+    | 'InTransit'
+    | 'Delivered'
+    | 'Cancelled'
+    | 'Anomalous'
+
+export type AnomalyType = 'EtaExceeded' | 'RouteDeviation' | 'StalePosition' | 'UnexpectedStop'
+
 // GET /api/deliveries
 export interface DeliveryListItemDto {
     id: string
-    status: 'Created' | 'Assigned' | 'InTransit' | 'Delivered' | 'Anomalous'
+    status: DeliveryStatus
     districtId: string
     assignedDriverId: string | null
     assignedDriverName: string | null
@@ -253,11 +264,51 @@ export interface ForecastDto {
     updatedAt: string
 }
 
+// POST /api/deliveries/{id}/auto-assign
+export interface DispatchCandidateDto {
+    driverId: string
+    name: string
+    shortName: string
+    districtId: string
+    distanceM: number
+    onTimeRatePct: number | null
+    activeDeliveries: number
+    shiftScore: number
+    score: number
+}
+
+export interface AutoAssignResponseDto {
+    autoAssigned: boolean
+    assignedDriverId: string | null
+    topCandidates: DispatchCandidateDto[]
+}
+
+// GET /api/ai/delivery/{id}/recommendation
+export interface DeliveryRecommendationDto {
+    deliveryId: string
+    districtId: string
+    topCandidates: DispatchCandidateDto[]
+    recommendedAction: string | null
+    recommendedDriverId: string | null
+    reason: string | null
+    urgencyScore: number | null
+    aiAvailable: boolean
+}
+
+// GET /api/ai/district-summary/{id}
+export interface DistrictSummaryDto {
+    districtId: string
+    summary: string
+    generatedAt: string
+    cachedAt: string | null
+}
+
 export type ApiEndpoint =
     | '/api/districts'
     | '/api/districts/boundaries'
     | '/api/deliveries'
     | '/api/deliveries/{id}'
+    | '/api/deliveries/{id}/auto-assign'
     | '/api/drivers'
     | '/api/drivers/{id}/availability'
     | '/api/alerts'
@@ -268,3 +319,5 @@ export type ApiEndpoint =
     | '/api/forecast/{districtId}'
     | '/api/export/csv'
     | '/api/analysis/chat'
+    | '/api/ai/delivery/{id}/recommendation'
+    | '/api/ai/district-summary/{id}'
