@@ -420,5 +420,8 @@ export type ApiEndpoint =
     | '/api/forecast/{districtId}'
     | '/api/export/csv'
     | '/api/analysis/chat'
+    | '/api/analysis/chat/stream'
+    | '/api/analysis/transcribe'
+    | '/api/forecast/staffing'
     | '/api/ai/delivery/{id}/recommendation'
     | '/api/ai/district-summary/{id}'

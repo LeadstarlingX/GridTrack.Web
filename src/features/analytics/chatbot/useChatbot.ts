@@ -13,6 +13,7 @@ interface ChatbotState {
     sendMessage: (text: string) => Promise<void>
     loadCsvForRange: (from: string, to: string, days: string[], fromHour: number, toHour: number) => Promise<void>
     clearConversation: () => void
+    transcribeAudio: (blob: Blob, mimeType: string) => Promise<string | null>
 }
 
 function trimCsvForContext(csvData: string) {
@@ -144,8 +145,28 @@ export function useChatbot(): ChatbotState {
         setMessages([])
     }, [])
 
+    const transcribeAudio = useCallback(async (blob: Blob, mimeType: string): Promise<string | null> => {
+        try {
+            const token = await getAuthToken()
+            const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+            const ext = mimeType.includes('webm') ? 'webm' : mimeType.includes('mp4') ? 'mp4' : 'ogg'
+            const form = new FormData()
+            form.append('file', blob, `recording.${ext}`)
+            const res = await fetch(`${baseUrl}${APP_CONFIG.api.analysisTranscribePath}`, {
+                method: 'POST',
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                body: form,
+            })
+            if (!res.ok) return null
+            const json = await res.json() as { text: string }
+            return json.text ?? null
+        } catch {
+            return null
+        }
+    }, [])
+
     return useMemo(
-        () => ({ messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation }),
-        [messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation],
+        () => ({ messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation, transcribeAudio }),
+        [messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation, transcribeAudio],
     )
 }
