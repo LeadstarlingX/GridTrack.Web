@@ -14,3 +14,19 @@ export interface AnomalyAlert {
     lng: number
     timestamp: string
 }
+
+export interface DemandSurge {
+    districtId: string
+    currentCount: number
+    historicalMean: number
+    deviations: number
+    detectedAt: string
+}
+
+export interface AnomalyIncident {
+    districtId: string
+    anomalyCount: number
+    windowMinutes: number
+    summary: string
+    detectedAt: string
+}
