@@ -22,6 +22,7 @@ import { useAnalyticsTrends } from '@/lib/api/queries/useAnalyticsTrends'
 import { useStatusBreakdown } from '@/lib/api/queries/useStatusBreakdown'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 import ChatbotPanel from './chatbot/ChatbotPanel'
+import StaffingWidget from './staffing/StaffingWidget'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
@@ -705,32 +706,35 @@ export default function AnalyticsPage() {
                     </section>
                 </div>
             ) : (
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
-                            AI Analysis
-                        </CardTitle>
-                        <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
-                            Load a date range to start a conversation about the export.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {chatbotEnabled ? (
-                            <ChatbotPanel
-                                range={range}
-                                activeDays={activeDays}
-                                hourStart={hourStart}
-                                hourEnd={hourEnd}
-                            />
-                        ) : (
-                            <div className="rounded-lg border border-dashed border-[hsl(var(--border-strong))] bg-[hsl(var(--surface))] p-6">
-                                <p className="text-xs text-[hsl(var(--foreground-subtle))] italic">
-                                    {PAGE_CONFIG.analyticsChatbot.disabledMessage}
-                                </p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                <div className="flex flex-col gap-6">
+                    <StaffingWidget />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                AI Analysis
+                            </CardTitle>
+                            <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                Load a date range to start a conversation about the export.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {chatbotEnabled ? (
+                                <ChatbotPanel
+                                    range={range}
+                                    activeDays={activeDays}
+                                    hourStart={hourStart}
+                                    hourEnd={hourEnd}
+                                />
+                            ) : (
+                                <div className="rounded-lg border border-dashed border-[hsl(var(--border-strong))] bg-[hsl(var(--surface))] p-6">
+                                    <p className="text-xs text-[hsl(var(--foreground-subtle))] italic">
+                                        {PAGE_CONFIG.analyticsChatbot.disabledMessage}
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             )}
         </div>
     )

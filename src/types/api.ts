@@ -388,6 +388,21 @@ export interface AnomalyBreakdownDto {
     byDistrict: AnomalyDistrictCountDto[]
 }
 
+// GET /api/forecast/staffing
+export interface StaffingForecastResponse {
+    districtId: string
+    targetAt: string
+    recommendedDrivers: number
+    confidence: 'high' | 'medium' | 'low'
+    reasoning: string
+    historicalAvgDeliveries: number
+}
+
+// POST /api/analysis/transcribe
+export interface TranscribeResponse {
+    text: string
+}
+
 export type ApiEndpoint =
     | '/api/analytics/drivers'
     | '/api/districts'
