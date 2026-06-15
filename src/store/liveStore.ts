@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { DriverState } from '@/types/driver'
 import type { DeliveryState } from '@/types/delivery'
-import type { AnomalyAlert } from '@/types/hub'
+import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import { APP_CONFIG } from '@/config/app.config'
 import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
 
@@ -13,18 +13,24 @@ interface LiveStore {
     drivers: Record<string, DriverState>
     deliveries: Record<string, DeliveryState>
     anomalyQueue: AnomalyAlert[]
+    surgeAlerts: DemandSurge[]
+    incidents: AnomalyIncident[]
     trails: Record<string, [number, number][]>
 
     updateDriverPosition: (id: string, lat: number, lng: number, districtId: string) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
     pushAnomaly: (alert: AnomalyAlert) => void
     markStall: (id: string, stalledSince: string) => void
+    pushSurge: (alert: DemandSurge) => void
+    pushIncident: (incident: AnomalyIncident) => void
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
     drivers: USE_MOCK ? Object.fromEntries(MOCK_DRIVERS.map((d) => [d.id, d])) : {},
     deliveries: USE_MOCK ? Object.fromEntries(MOCK_DELIVERIES.map((d) => [d.id, d])) : {},
     anomalyQueue: [],
+    surgeAlerts: [],
+    incidents: [],
     trails: {},
 
     updateDriverPosition: (id, lat, lng, districtId) =>
@@ -64,4 +70,14 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 anomalyQueue: [alert, ...s.anomalyQueue].slice(0, APP_CONFIG.store.anomalyQueueLimit),
             }
         }),
+
+    pushSurge: (alert) =>
+        set((s) => ({
+            surgeAlerts: [alert, ...s.surgeAlerts].slice(0, 20),
+        })),
+
+    pushIncident: (incident) =>
+        set((s) => ({
+            incidents: [incident, ...s.incidents].slice(0, 20),
+        })),
 }))
