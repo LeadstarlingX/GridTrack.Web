@@ -1,11 +1,12 @@
 import { useEffect } from 'react'
 import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
 import { getAuthToken } from '@/lib/api/authBridge'
-import type { AnomalyAlert } from '@/types/hub'
+import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import type { DeliveryStatus } from '@/types/delivery'
 
 interface DriverPositionPayload {
@@ -84,6 +85,18 @@ export function useSignalR() {
 
         connection.on('StallDetected', (payload: { driverId: string; driverName: string; districtId: string; stalledSince: string }) => {
             useLiveStore.getState().markStall(payload.driverId, payload.stalledSince)
+        })
+
+        connection.on('DemandSurge', (payload: DemandSurge) => {
+            useLiveStore.getState().pushSurge(payload)
+            toast.warning(`Demand surge · ${payload.districtId}`, {
+                description: `${payload.deviations.toFixed(1)}σ above baseline (${payload.currentCount} vs ${payload.historicalMean.toFixed(1)} avg)`,
+                duration: APP_CONFIG.toast.anomalyDurationMs,
+            })
+        })
+
+        connection.on('AnomalyIncident', (payload: AnomalyIncident) => {
+            useLiveStore.getState().pushIncident(payload)
         })
 
         let rttTimer: ReturnType<typeof setInterval> | null = null

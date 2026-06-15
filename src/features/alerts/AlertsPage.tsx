@@ -6,6 +6,7 @@ import { MOCK_URGENCY_ALERTS, type UrgencyAlert } from '@/constants/mockData'
 import { useAlerts } from '@/lib/api/queries/useAlerts'
 import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import { useMapStore } from '@/store/mapStore'
+import { useLiveStore } from '@/store/liveStore'
 import type { AnomalyAlertDto } from '@/types/api'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
@@ -49,6 +50,37 @@ function urgencyLabel(u: number) {
 
 function formatTime(ts: string) {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+function IncidentAlertsBanner() {
+    const incidents = useLiveStore((s) => s.incidents)
+    if (incidents.length === 0) return null
+
+    return (
+        <div className="flex flex-col gap-2">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-[hsl(var(--foreground-muted))]">
+                Live Incident Clusters
+            </p>
+            {incidents.slice(0, 5).map((incident, i) => (
+                <div
+                    key={`${incident.districtId}-${incident.detectedAt}-${i}`}
+                    className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/5 p-3"
+                >
+                    <span className="text-base leading-none mt-0.5">⚠</span>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-semibold text-red-400">{incident.districtId}</span>
+                            <Badge variant="destructive" className="text-[11px] py-0">{incident.anomalyCount} anomalies</Badge>
+                            <span className="ml-auto text-[11px] font-mono text-[hsl(var(--foreground-muted))]">
+                                {formatTime(incident.detectedAt)}
+                            </span>
+                        </div>
+                        <p className="text-xs text-[hsl(var(--foreground-muted))]">{incident.summary}</p>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
 }
 
 function AlertAiChip({ deliveryId, urgencyColor }: { deliveryId: string; urgencyColor: string }) {
@@ -325,6 +357,8 @@ export default function AlertsPage() {
                     </div>
                 </div>
             </header>
+
+                <IncidentAlertsBanner />
 
             {USE_MOCK
                 ? <MockAlertsList filter={filter} typeFilter={typeFilter} />
