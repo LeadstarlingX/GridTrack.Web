@@ -328,6 +328,66 @@ export interface DriverAnalyticsResponseDto {
     drivers: DriverAnalyticsItemDto[]
 }
 
+// GET /api/analytics/cancellations
+export interface CancellationReasonDto {
+    reason: string
+    count: number
+}
+
+export interface CancellationAnalyticsDto {
+    totalCancelled: number
+    lateCancellations: number
+    cancellationRate: number
+    reasons: CancellationReasonDto[]
+}
+
+// GET /api/analytics/delivery-performance
+export interface DistrictPerformanceDto {
+    districtId: string
+    deliveredCount: number
+    avgActualDurationSeconds: number
+    avgExpectedDurationSeconds: number
+    onTimeRate: number
+}
+
+export interface DeliveryPerformanceDto {
+    deliveredCount: number
+    overallOnTimeRate: number
+    overallAvgDurationSeconds: number
+    districts: DistrictPerformanceDto[]
+}
+
+// GET /api/analytics/driver-utilization
+export interface DriverThroughputItemDto {
+    driverId: string
+    name: string
+    completedToday: number
+    activeDeliveries: number
+}
+
+export interface DriverUtilizationDto {
+    activeDrivers: number
+    inactiveDrivers: number
+    avgActiveDeliveriesPerActiveDriver: number
+    topDrivers: DriverThroughputItemDto[]
+}
+
+// GET /api/analytics/anomaly-breakdown
+export interface AnomalyTypeCountDto {
+    anomalyType: string
+    count: number
+}
+
+export interface AnomalyDistrictCountDto {
+    districtId: string
+    count: number
+}
+
+export interface AnomalyBreakdownDto {
+    byType: AnomalyTypeCountDto[]
+    byDistrict: AnomalyDistrictCountDto[]
+}
+
 export type ApiEndpoint =
     | '/api/analytics/drivers'
     | '/api/districts'
