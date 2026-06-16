@@ -1,5 +1,7 @@
+import { memo } from 'react'
 import { Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
+import { useShallow } from 'zustand/react/shallow'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useMapStore } from '@/store/mapStore'
@@ -50,45 +52,65 @@ function buildIcon(opts: { isFocused: boolean; isDimmed: boolean; isStalled: boo
     })
 }
 
+// Subscribes to a single driver — only re-renders when that driver's data changes.
+const DriverMarkerItem = memo(function DriverMarkerItem({
+    id,
+    focusedDriverId,
+    toggleDriverPanel,
+}: {
+    id: string
+    focusedDriverId: string | null
+    toggleDriverPanel: (id: string) => void
+}) {
+    const d = useLiveStore((s) => s.drivers[id])
+    if (!d) return null
+
+    const isFocused = id === focusedDriverId
+    const isDimmed = focusedDriverId !== null && !isFocused
+    const isStalled = d.stalledSince !== null
+    const icon = buildIcon({ isFocused, isDimmed, isStalled, status: d.status })
+
+    return (
+        <Marker
+            position={[d.lat, d.lng]}
+            icon={icon}
+            zIndexOffset={isFocused ? 1000 : isStalled ? 500 : 0}
+            eventHandlers={{
+                click: () => {
+                    toggleDriverPanel(id)
+                    getMapRef()?.flyTo([d.lat, d.lng], 15, { animate: true, duration: 0.6 })
+                },
+            }}
+        >
+            <Tooltip
+                direction="top"
+                offset={[0, -8]}
+                opacity={0.92}
+                className="!border-0 !bg-[hsl(var(--surface))] !text-[hsl(var(--foreground))] !text-xs !px-2 !py-1 !shadow-md !rounded-md"
+            >
+                <span className="font-medium">{d.name}</span>
+                <span className="ml-1 text-[hsl(var(--foreground-muted))]">· {d.status}</span>
+            </Tooltip>
+        </Marker>
+    )
+})
+
+// Subscribes to driver IDs only — stable when positions change, re-renders only on join/leave.
 export default function DriverMarkers() {
-    const drivers = useLiveStore((s) => s.drivers)
+    const driverIds = useLiveStore(useShallow((s) => Object.keys(s.drivers)))
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
     const toggleDriverPanel = useMapStore((s) => s.toggleDriverPanel)
 
     return (
         <>
-            {Object.values(drivers).map((d) => {
-                const isFocused = d.id === focusedDriverId
-                const isDimmed = focusedDriverId !== null && !isFocused
-                const isStalled = d.stalledSince !== null
-
-                const icon = buildIcon({ isFocused, isDimmed, isStalled, status: d.status })
-
-                return (
-                    <Marker
-                        key={d.id}
-                        position={[d.lat, d.lng]}
-                        icon={icon}
-                        zIndexOffset={isFocused ? 1000 : isStalled ? 500 : 0}
-                        eventHandlers={{
-                            click: () => {
-                                toggleDriverPanel(d.id)
-                                getMapRef()?.flyTo([d.lat, d.lng], 15, { animate: true, duration: 0.6 })
-                            },
-                        }}
-                    >
-                        <Tooltip
-                            direction="top"
-                            offset={[0, -8]}
-                            opacity={0.92}
-                            className="!border-0 !bg-[hsl(var(--surface))] !text-[hsl(var(--foreground))] !text-xs !px-2 !py-1 !shadow-md !rounded-md"
-                        >
-                            <span className="font-medium">{d.name}</span>
-                            <span className="ml-1 text-[hsl(var(--foreground-muted))]">· {d.status}</span>
-                        </Tooltip>
-                    </Marker>
-                )
-            })}
+            {driverIds.map((id) => (
+                <DriverMarkerItem
+                    key={id}
+                    id={id}
+                    focusedDriverId={focusedDriverId}
+                    toggleDriverPanel={toggleDriverPanel}
+                />
+            ))}
         </>
     )
 }

@@ -6,11 +6,15 @@ import Sidebar from './Sidebar'
 import { cn } from '@/lib/utils'
 import { useAnomalyToasts } from '@/hooks/useAnomalyToasts'
 import { useKeepAlive } from '@/hooks/useKeepAlive'
+import { useSignalR } from '@/hooks/useSignalR'
+import { useRealLiveState } from '@/hooks/useRealLiveState'
 
 export default function AppShell() {
     const [navOpen, setNavOpen] = useState<boolean>(APP_CONFIG.layout.sidebarOpenDefault)
     useAnomalyToasts()
     useKeepAlive()
+    useSignalR()
+    useRealLiveState()
 
     return (
         <div id="ui-shell" className="relative z-10 flex h-screen w-screen overflow-hidden pointer-events-none">

@@ -8,8 +8,6 @@ import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
-import { useSignalR } from '@/hooks/useSignalR'
-import { useRealLiveState } from '@/hooks/useRealLiveState'
 import { setMapRef } from '@/lib/mapRef'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
@@ -73,8 +71,6 @@ export default function LiveOpsPage() {
 
     useFocusMode(mapRef)
     useStallDetector()
-    useSignalR()
-    useRealLiveState()
 
     useEffect(() => {
         const fileName = `/h3-damascus-r${heatmapResolution}.geojson`

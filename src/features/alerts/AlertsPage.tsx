@@ -14,11 +14,17 @@ type AnomalyTypeFilter = 'all' | AnomalyAlertDto['anomalyType']
 
 const TYPE_OPTIONS: { value: AnomalyTypeFilter; label: string }[] = [
     { value: 'all', label: 'All types' },
-    { value: 'EtaExceeded', label: 'ETA Exceeded' },
+    { value: 'EtaExceeded', label: 'Delay' },
     { value: 'RouteDeviation', label: 'Route Deviation' },
-    { value: 'StalePosition', label: 'Stale Position' },
+    { value: 'StalePosition', label: 'Stall' },
     { value: 'UnexpectedStop', label: 'Unexpected Stop' },
 ]
+
+const TYPE_LABEL_MAP = Object.fromEntries(TYPE_OPTIONS.map((o) => [o.value, o.label]))
+
+function anomalyTypeLabel(type: string): string {
+    return TYPE_LABEL_MAP[type] ?? type
+}
 
 function urgencyFromType(type: AnomalyAlertDto['anomalyType']): number {
     if (type === 'StalePosition') return 9
@@ -125,7 +131,7 @@ function AlertCard({ type, driverName, driverId, deliveryId, districtName, reaso
                     <span className="text-xl font-extrabold font-mono leading-none" style={{ color }}>{urgency}</span>
                     <span className="text-xs text-[hsl(var(--foreground-muted))]">/ 10</span>
                     <Badge variant={urgencyBadgeVariant(urgency)}>{urgencyLabel(urgency)}</Badge>
-                    <Badge variant="outline">{type}</Badge>
+                    <Badge variant="outline">{anomalyTypeLabel(type)}</Badge>
                     <span className="ml-auto text-[11px] font-mono text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]">{time}</span>
                 </div>
 
