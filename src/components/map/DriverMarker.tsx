@@ -3,6 +3,7 @@ import L from 'leaflet'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useMapStore } from '@/store/mapStore'
+import { getMapRef } from '@/lib/mapRef'
 
 function buildIcon(opts: { isFocused: boolean; isDimmed: boolean; isStalled: boolean; status: string }) {
     const { isFocused, isDimmed, isStalled, status } = opts
@@ -69,7 +70,12 @@ export default function DriverMarkers() {
                         position={[d.lat, d.lng]}
                         icon={icon}
                         zIndexOffset={isFocused ? 1000 : isStalled ? 500 : 0}
-                        eventHandlers={{ click: () => toggleDriverPanel(d.id) }}
+                        eventHandlers={{
+                            click: () => {
+                                toggleDriverPanel(d.id)
+                                getMapRef()?.flyTo([d.lat, d.lng], 15, { animate: true, duration: 0.6 })
+                            },
+                        }}
                     >
                         <Tooltip
                             direction="top"

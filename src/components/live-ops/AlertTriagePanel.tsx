@@ -29,7 +29,7 @@ export default function AlertTriagePanel() {
 
     return (
         <div className={cn(
-            'absolute top-16 right-2 z-[900] flex flex-col transition-all duration-200',
+            'absolute top-4 left-2 z-[900] flex flex-col transition-all duration-200',
             collapsed ? 'w-9' : 'w-64',
         )}>
             {/* Toggle tab */}
@@ -37,7 +37,7 @@ export default function AlertTriagePanel() {
                 type="button"
                 onClick={() => setCollapsed((c) => !c)}
                 className={cn(
-                    'self-end flex items-center gap-1 px-2 py-1 rounded-t-lg text-[10px] font-semibold uppercase tracking-wide',
+                    'self-start flex items-center gap-1 px-2 py-1 rounded-t-lg text-[10px] font-semibold uppercase tracking-wide',
                     'bg-[hsl(var(--surface))] border border-b-0 border-[hsl(var(--border))] text-[hsl(var(--foreground-muted))]',
                     hasAlerts && !collapsed && 'text-amber-500',
                 )}
@@ -47,11 +47,11 @@ export default function AlertTriagePanel() {
                         Alerts{alerts.length > 0 && <span className="ml-1 tabular-nums">{alerts.length}</span>}
                     </span>
                 )}
-                {collapsed ? <ChevronLeft size={12} /> : <ChevronRight size={12} />}
+                {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
             </button>
 
             {!collapsed && (
-                <div className="rounded-b-lg rounded-tl-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-lg overflow-hidden">
+                <div className="rounded-b-lg rounded-tr-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-lg overflow-hidden">
                     {preview.length === 0 ? (
                         <p className="px-3 py-3 text-xs text-[hsl(var(--foreground-muted))]">No active alerts</p>
                     ) : (

@@ -10,6 +10,7 @@ import { useDriverStats } from '@/lib/api/queries/useDriverStats'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { apiClient } from '@/lib/api/client'
 import { APP_CONFIG } from '@/config/app.config'
+
 import type { DeliveryDetailDto } from '@/types/api'
 
 function useStallTimer(stalledSince: string | null) {
@@ -45,20 +46,24 @@ export default function DriverPanel() {
     const stallTimer = useStallTimer(driver.stalledSince ?? null)
     const statusColor = driver.status === 'in-transit' ? 'default' : driver.status === 'available' ? 'secondary' : 'outline'
     const districtName = districts?.find((d) => d.id === driver.districtId)?.name ?? driver.districtId
-    const canFollow = Boolean(activeDelivery)
 
     const handleFollow = async () => {
-        if (!activeDelivery || following) return
+        if (following) return
         setFollowing(true)
         try {
-            const resp = await apiClient.get<DeliveryDetailDto>(
-                APP_CONFIG.api.deliveryDetailPath.replace('{id}', activeDelivery.id)
-            )
-            const polyline: [number, number][] = resp.data.routePolyline ?? []
-            useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, polyline, activeDelivery.etaSeconds ?? 420)
-            setMode('focus')
-        } catch {
-            useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], activeDelivery.etaSeconds ?? 420)
+            if (activeDelivery) {
+                try {
+                    const resp = await apiClient.get<DeliveryDetailDto>(
+                        APP_CONFIG.api.deliveryDetailPath.replace('{id}', activeDelivery.id),
+                    )
+                    const route: [number, number][] = resp.data.routePolyline ?? []
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, activeDelivery.etaSeconds ?? 420)
+                } catch {
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], activeDelivery.etaSeconds ?? 420)
+                }
+            } else {
+                useFocusStore.getState().enterFocusMode(`patrol-${driver.id}`, driver.id, [], 0)
+            }
             setMode('focus')
         } finally {
             setFollowing(false)
@@ -125,9 +130,9 @@ export default function DriverPanel() {
                         </div>
                     </>
                 )}
-                <Button className="w-full mt-4" onClick={handleFollow} disabled={!canFollow || following}>
+                <Button className="w-full mt-4" onClick={handleFollow} disabled={following}>
                     {following ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
-                    {canFollow ? 'Follow Driver' : 'No Active Delivery'}
+                    Follow Driver
                 </Button>
             </div>
         </div>

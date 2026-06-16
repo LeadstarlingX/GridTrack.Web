@@ -4,8 +4,6 @@ import { useEffect } from 'react'
 const INTERVAL_MS = 10 * 60 * 1000
 export function useKeepAlive() {
     useEffect(() => {
-        if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false') return
-
         const ping = () => {
             const base = import.meta.env.VITE_API_BASE_URL ?? ''
             fetch(`${base}/health`, { signal: AbortSignal.timeout(10_000) }).catch(() => {})

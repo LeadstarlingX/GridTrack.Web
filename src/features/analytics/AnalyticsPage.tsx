@@ -7,7 +7,7 @@ import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
 import StatusBreakdownChart from '@/components/charts/StatusBreakdownChart'
 import UrgencyTrendChart from '@/components/charts/UrgencyTrendChart'
 import { APP_CONFIG } from '@/config/app.config'
-import { MOCK_ANALYTICS, MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME } from '@/constants/mockData'
+import { MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME, getMockAnalyticsForRange } from '@/constants/mockData'
 import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { useDriverAnalytics } from '@/lib/api/queries/useDriverAnalytics'
@@ -81,9 +81,10 @@ function getRangeDays(from: string, to: string) {
 }
 
 function sliceMockTrends(days: number) {
-    const total = MOCK_ANALYTICS_TRENDS.length
-    const target = days <= 7 ? 8 : days <= 14 ? 10 : total
-    return MOCK_ANALYTICS_TRENDS.slice(Math.max(0, total - target))
+    // Full-day (24h) data — show active hours for short ranges, full day for longer
+    if (days <= 1) return MOCK_ANALYTICS_TRENDS.slice(5, 23)  // 05:00–22:00
+    if (days <= 7) return MOCK_ANALYTICS_TRENDS.slice(4)       // 04:00–23:00
+    return MOCK_ANALYTICS_TRENDS                                // all 24 hours
 }
 
 export default function AnalyticsPage() {
@@ -150,8 +151,8 @@ export default function AnalyticsPage() {
     )
     const { data: driverUtilizationData, isLoading: driverUtilizationLoading } = useDriverUtilization()
 
-    // In mock mode, fall back to static mock data
-    const summary = USE_MOCK ? MOCK_ANALYTICS : summaryData
+    // In mock mode, scale KPI totals by selected date range so changing the range feels live
+    const summary = USE_MOCK ? getMockAnalyticsForRange(appliedRange.from, appliedRange.to) : summaryData
     const isLoading = USE_MOCK ? false : summaryLoading
 
     const rangeDays = useMemo(() => getRangeDays(appliedRange.from, appliedRange.to), [appliedRange])

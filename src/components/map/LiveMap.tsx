@@ -5,11 +5,11 @@ import DriverMarkers from './DriverMarker'
 import DriverTrailLayer from './DriverTrailLayer'
 import DistrictBoundaryLayer from './DistrictBoundaryLayer'
 import DistrictDeliveryBadges from './DistrictDeliveryBadges'
-import HexGridLayer from './HexGridLayer'
 import HeatmapLayer from './HeatmapLayer'
 import HistoricalHeatmapLayer from './HistoricalHeatmapLayer'
 import RecommendationOverlay from './RecommendationOverlay'
 import RoutePolyline from './RoutePolyline'
+import DeliveryRoutesLayer from './DeliveryRoutesLayer'
 import { APP_CONFIG } from '@/config/app.config'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
@@ -30,9 +30,7 @@ function AutoFollowController() {
     useEffect(() => {
         if (!autoFollow) return
         const onMoveStart = (e: any) => {
-            if (e.originalEvent) {
-                useFocusStore.getState().toggleAutoFollow()
-            }
+            if (e.originalEvent) useFocusStore.getState().toggleAutoFollow()
         }
         map.on('movestart', onMoveStart)
         return () => { map.off('movestart', onMoveStart) }
@@ -69,10 +67,10 @@ export default function LiveMap({ onMapReady }: Props) {
             />
             <MapRefCapture setMap={(m) => stableRef.current(m)} />
             <AutoFollowController />
+            <DeliveryRoutesLayer />
             <DriverTrailLayer />
             <DriverMarkers />
             <DistrictDeliveryBadges />
-            <HexGridLayer />
             <HeatmapLayer />
             <HistoricalHeatmapLayer />
             <RecommendationOverlay />

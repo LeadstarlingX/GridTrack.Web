@@ -106,7 +106,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                         )} />
                     </span>
                     <span className="text-xs text-[hsl(var(--foreground-muted))]">
-                        {hubStatus === 'connected' ? 'SignalR connected' : hubStatus === 'reconnecting' ? 'Reconnecting…' : 'Disconnected'}
+                        {hubStatus === 'connected' ? 'Service connected' : hubStatus === 'reconnecting' ? 'Reconnecting…' : 'Disconnected'}
                     </span>
                 </div>
                 <p className="mt-1 text-[11px] text-[hsl(var(--foreground-subtle,var(--foreground-muted)))] opacity-70">

@@ -6,14 +6,18 @@ import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
 import { getAuthToken } from '@/lib/api/authBridge'
+import { apiClient } from '@/lib/api/client'
 import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import type { DeliveryStatus } from '@/types/delivery'
+import type { DriverListItemDto, PagedResponse } from '@/types/api'
 
 interface DriverPositionPayload {
     driverId: string
     lat: number
     lng: number
     districtId: string
+    deliveryId?: string | null
+    routeAhead?: [number, number][] | null
 }
 
 interface DeliveryUpdatedPayload {
@@ -35,9 +39,6 @@ export function useSignalR() {
     const queryClient = useQueryClient()
 
     useEffect(() => {
-        // In mock mode the mock emitter handles position/delivery updates
-        if (import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false') return
-
         const connection = new HubConnectionBuilder()
             .withUrl(import.meta.env.VITE_HUB_URL ?? '', {
                 accessTokenFactory: () => getAuthToken().then((t) => t ?? ''),
@@ -60,6 +61,7 @@ export function useSignalR() {
                 payload.lat,
                 payload.lng,
                 payload.districtId,
+                payload.routeAhead ?? undefined,
             )
         })
 
@@ -101,10 +103,34 @@ export function useSignalR() {
 
         let rttTimer: ReturnType<typeof setInterval> | null = null
 
+        const hydrateDrivers = async () => {
+            try {
+                const res = await apiClient.get<PagedResponse<DriverListItemDto>>(
+                    APP_CONFIG.api.driversPath,
+                    { params: { pageSize: 200 } },
+                )
+                const drivers = res.data.items.map((d) => ({
+                    id: d.id,
+                    name: d.name,
+                    lat: d.lat,
+                    lng: d.lng,
+                    districtId: d.districtId,
+                    status: d.status,
+                    routeIndex: 0,
+                    pointIndex: 0,
+                    stalledSince: null as string | null,
+                }))
+                if (drivers.length > 0) useLiveStore.getState().initDrivers(drivers)
+            } catch {
+                // Non-fatal — store stays empty and fills from position updates
+            }
+        }
+
         connection
             .start()
             .then(() => {
                 useMapStore.getState().setHubStatus('connected')
+                void hydrateDrivers()
                 // Measure RTT every 5s while connected
                 const measureRtt = async () => {
                     try {

@@ -7,41 +7,35 @@ export type HubStatus = 'connected' | 'reconnecting' | 'disconnected'
 
 interface MapStore {
     hubStatus: HubStatus
-    hexGridEnabled: boolean
+    hubRtt: number | null
     heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
     recommendationEnabled: boolean
     trailEnabled: boolean
+    routesEnabled: boolean
     hexResolution: number
     selectedDistrictId: string | null
     selectedDriverId: string | null
     sidePanelMode: SidePanelMode
     districtPanelView: 'details' | 'browse'
-    hexGeoJSON: GeoJSON.FeatureCollection | null
     heatmapGeoJSON: GeoJSON.FeatureCollection | null
     districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
-    historicalHeatmapRange: {
-        from: string
-        to: string
-        fromHour: number
-        toHour: number
-    } | null
+    historicalHeatmapRange: { from: string; to: string; fromHour: number; toHour: number } | null
     historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
     recommendationMock: Record<string, number> | null
     districtForecasts: Record<string, ForecastDto>
 
-    toggleHexGrid: () => void
     toggleHeatmap: () => void
     toggleHistoricalHeatmap: () => void
     toggleRecommendation: () => void
     toggleTrail: () => void
+    toggleRoutes: () => void
     setHexResolution: (resolution: number) => void
     selectDistrict: (id: string | null) => void
     selectDriver: (id: string | null) => void
     toggleDriverPanel: (id: string) => void
     setSidePanelMode: (mode: SidePanelMode) => void
     setDistrictPanelView: (view: 'details' | 'browse') => void
-    setHexGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
@@ -49,34 +43,34 @@ interface MapStore {
     setRecommendationMock: (data: Record<string, number> | null) => void
     setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
-    hubRtt: number | null
     setHubRtt: (ms: number | null) => void
 }
 
 export const useMapStore = create<MapStore>()((set) => ({
     hubStatus: 'disconnected',
     hubRtt: null,
-    hexGridEnabled: false,
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
     recommendationEnabled: false,
-    trailEnabled: false,
+    trailEnabled: true,
+    routesEnabled: true,
     hexResolution: APP_CONFIG.map.hexResolution.default,
     selectedDistrictId: null,
     selectedDriverId: null,
     sidePanelMode: 'idle',
     districtPanelView: 'browse',
-    hexGeoJSON: null,
     heatmapGeoJSON: null,
     districtBoundariesGeoJSON: null,
     historicalHeatmapRange: null,
     historicalHeatmapData: null,
+    recommendationMock: null,
+    districtForecasts: {},
 
-    toggleHexGrid: () => set((s) => ({ hexGridEnabled: !s.hexGridEnabled })),
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     toggleHistoricalHeatmap: () => set((s) => ({ historicalHeatmapEnabled: !s.historicalHeatmapEnabled })),
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
     toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),
+    toggleRoutes: () => set((s) => ({ routesEnabled: !s.routesEnabled })),
     setHexResolution: (resolution) => set({ hexResolution: resolution }),
     selectDistrict: (id) => set({ selectedDistrictId: id }),
     selectDriver: (id) => set({ selectedDriverId: id }),
@@ -90,13 +84,10 @@ export const useMapStore = create<MapStore>()((set) => ({
         }),
     setSidePanelMode: (mode) => set({ sidePanelMode: mode }),
     setDistrictPanelView: (view) => set({ districtPanelView: view }),
-    setHexGeoJSON: (data) => set({ hexGeoJSON: data }),
     setHeatmapGeoJSON: (data) => set({ heatmapGeoJSON: data }),
     setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),
     setHistoricalHeatmapRange: (range) => set({ historicalHeatmapRange: range }),
     setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
-    recommendationMock: null,
-    districtForecasts: {},
     setRecommendationMock: (data) => set({ recommendationMock: data }),
     setDistrictForecast: (districtId, forecast) =>
         set((s) => ({ districtForecasts: { ...s.districtForecasts, [districtId]: forecast } })),

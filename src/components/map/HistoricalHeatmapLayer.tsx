@@ -2,10 +2,7 @@ import { GeoJSON } from 'react-leaflet'
 import { useMemo } from 'react'
 import { useMapStore } from '@/store/mapStore'
 import { useH3Density } from '@/lib/api/queries/useH3Density'
-import { getMockHistoricalHeatmapCount } from '@/constants/mockData'
 import type { H3DensityQueryParams } from '@/types/api'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 function percentile(values: number[], p: number) {
     if (values.length === 0) return 0
@@ -26,14 +23,14 @@ export default function HistoricalHeatmapLayer() {
     const range = useMapStore((s) => s.historicalHeatmapRange)
     const hexResolution = useMapStore((s) => s.hexResolution)
 
-    const densityParams: H3DensityQueryParams | null = !USE_MOCK && range
+    const densityParams: H3DensityQueryParams | null = range
         ? { from: range.from, to: range.to, resolution: hexResolution, fromHour: range.fromHour, toHour: range.toHour }
         : null
 
     const { data: densityData } = useH3Density(densityParams)
 
     const countMap = useMemo<Record<string, number>>(() => {
-        if (USE_MOCK || !densityData) return {}
+        if (!densityData) return {}
         return Object.fromEntries(densityData.cells.map((c) => [c.h3Index, c.deliveryCount]))
     }, [densityData])
 
@@ -43,9 +40,7 @@ export default function HistoricalHeatmapLayer() {
         const features = heatmapGeoJSON.features.map((feature) => {
             if (feature.geometry.type !== 'Polygon') return feature
             const h3Index = feature.properties?.h3Index ?? ''
-            const intensity = USE_MOCK
-                ? getMockHistoricalHeatmapCount(h3Index, range)
-                : (countMap[h3Index] ?? 0)
+            const intensity = countMap[h3Index] ?? 0
             return { ...feature, properties: { ...feature.properties, intensity } }
         })
 

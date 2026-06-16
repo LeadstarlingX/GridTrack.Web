@@ -1,18 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Badge, Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
 import { APP_CONFIG } from '@/config/app.config'
-import { MOCK_DISTRICTS } from '@/constants/mockData'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
+import { useMapStore } from '@/store/mapStore'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
-import { Clock, X } from 'lucide-react'
+import { Clock, X, ChevronDown } from 'lucide-react'
 
 type StatusFilter = DeliveryListItemDto['status'] | 'all'
-
 const STATUS_OPTIONS: StatusFilter[] = ['all', 'Created', 'Assigned', 'InTransit', 'Delivered', 'Anomalous']
 
 function formatTimestamp(value: string) {
@@ -21,6 +20,86 @@ function formatTimestamp(value: string) {
 
 function toIsoDate(date: Date) {
     return date.toISOString().slice(0, 10)
+}
+
+// ── Searchable district picker ──────────────────────────────────────────────
+function DistrictPicker({ districts, value, onChange }: { districts: { id: string; name: string }[]; value: string; onChange: (v: string) => void }) {
+    const [open, setOpen] = useState(false)
+    const [search, setSearch] = useState('')
+    const ref = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+        }
+        document.addEventListener('mousedown', handler)
+        return () => document.removeEventListener('mousedown', handler)
+    }, [])
+
+    const filtered = useMemo(
+        () => districts.filter((d) =>
+            d.name.includes(search) || d.id.toLowerCase().includes(search.toLowerCase())
+        ),
+        [districts, search],
+    )
+
+    const selected = districts.find((d) => d.id === value)
+    const label = value === 'all' ? 'الكل' : (selected?.name ?? value)
+
+    return (
+        <div ref={ref} className="relative" dir="rtl">
+            <button
+                type="button"
+                onClick={() => setOpen((o) => !o)}
+                className="flex h-7 min-w-[120px] items-center justify-between gap-1.5 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
+            >
+                <span className="truncate">{label}</span>
+                <ChevronDown className="h-3 w-3 shrink-0 text-[hsl(var(--foreground-muted))]" />
+            </button>
+
+            {open && (
+                <div className="absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] shadow-lg">
+                    <div className="p-1.5">
+                        <input
+                            autoFocus
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="بحث…"
+                            className="w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] px-2 py-1 text-xs text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--foreground-muted))]"
+                        />
+                    </div>
+                    <div className="max-h-52 overflow-y-auto">
+                        <button
+                            type="button"
+                            onClick={() => { onChange('all'); setOpen(false); setSearch('') }}
+                            className={cn(
+                                'w-full px-3 py-1.5 text-right text-xs transition-colors hover:bg-[hsl(var(--surface-raised))]',
+                                value === 'all' && 'text-[hsl(var(--primary))] font-medium',
+                            )}
+                        >
+                            الكل
+                        </button>
+                        {filtered.map((d) => (
+                            <button
+                                key={d.id}
+                                type="button"
+                                onClick={() => { onChange(d.id); setOpen(false); setSearch('') }}
+                                className={cn(
+                                    'w-full px-3 py-1.5 text-right text-xs transition-colors hover:bg-[hsl(var(--surface-raised))]',
+                                    value === d.id && 'text-[hsl(var(--primary))] font-medium',
+                                )}
+                            >
+                                {d.name}
+                            </button>
+                        ))}
+                        {filtered.length === 0 && (
+                            <p className="px-3 py-2 text-center text-xs text-[hsl(var(--foreground-muted))]">لا توجد نتائج</p>
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    )
 }
 
 export default function DeliveriesPage() {
@@ -33,6 +112,30 @@ export default function DeliveriesPage() {
     const [districtFilter, setDistrictFilter] = useState<string>(
         () => (location.state as { districtId?: string } | null)?.districtId ?? 'all',
     )
+
+    const districtBoundariesGeoJSON = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const setDistrictBoundariesGeoJSON = useMapStore((s) => s.setDistrictBoundariesGeoJSON)
+
+    useEffect(() => {
+        if (districtBoundariesGeoJSON) return
+        fetch(APP_CONFIG.map.districtBoundariesFile)
+            .then((r) => r.json())
+            .then(setDistrictBoundariesGeoJSON)
+            .catch(console.warn)
+    }, [districtBoundariesGeoJSON, setDistrictBoundariesGeoJSON])
+
+    const districts = useMemo(() => {
+        if (!districtBoundariesGeoJSON) return []
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return (districtBoundariesGeoJSON.features as any[])
+            .map((f) => ({
+                id: String(f.properties?.boundaryId ?? f.properties?.osm_id ?? ''),
+                name: String(f.properties?.displayName ?? f.properties?.name_fixed ?? ''),
+            }))
+            .filter((d) => d.id && d.name)
+            .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
+    }, [districtBoundariesGeoJSON])
+
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
@@ -53,6 +156,8 @@ export default function DeliveriesPage() {
 
     const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 
+    const selectedDistrictName = districts.find((d) => d.id === districtFilter)?.name ?? districtFilter
+
     const columns: CursorColumn<DeliveryListItemDto>[] = [
         {
             key: 'id',
@@ -71,7 +176,10 @@ export default function DeliveriesPage() {
         {
             key: 'district',
             header: 'District',
-            cell: (row) => row.districtId,
+            cell: (row) => {
+                const name = districts.find((d) => d.id === row.districtId)?.name ?? row.districtId
+                return <span dir="rtl">{name}</span>
+            },
         },
         {
             key: 'driver',
@@ -151,18 +259,7 @@ export default function DeliveriesPage() {
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
                         <label className="text-xs text-[hsl(var(--foreground-muted))]">District</label>
-                        <select
-                            value={districtFilter}
-                            onChange={(e) => setDistrictFilter(e.target.value)}
-                            className="h-7 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
-                        >
-                            <option value="all">All</option>
-                            {MOCK_DISTRICTS.map((district) => (
-                                <option key={district.id} value={district.id}>
-                                    {district.name}
-                                </option>
-                            ))}
-                        </select>
+                        <DistrictPicker districts={districts} value={districtFilter} onChange={setDistrictFilter} />
                     </div>
                     <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
                     <Button variant="outline" size="sm" onClick={() => setAppliedRange({ ...appliedRange })}>
@@ -173,7 +270,7 @@ export default function DeliveriesPage() {
 
             {districtFilter !== 'all' && (
                 <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--primary)/0.05)] px-4 py-2.5 text-xs text-[hsl(var(--primary))]">
-                    <span>Filtered by district: <span className="font-semibold">{districtFilter}</span></span>
+                    <span>Filtered by district: <span className="font-semibold" dir="rtl">{selectedDistrictName}</span></span>
                     <button
                         type="button"
                         onClick={() => setDistrictFilter('all')}

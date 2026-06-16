@@ -35,13 +35,9 @@ interface PagedResponse<T> {
     totalCount?: number | null
 }
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
-
-// Hydrates liveStore from REST on mount (real mode only); SignalR deltas take over after.
+// Hydrates liveStore from REST on mount; SignalR deltas take over after.
 export function useRealLiveState() {
     useEffect(() => {
-        if (USE_MOCK) return
-
         let cancelled = false
 
         async function load() {

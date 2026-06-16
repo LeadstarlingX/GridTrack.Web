@@ -3,24 +3,18 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import L from 'leaflet'
 import LiveMap from '@/components/map/LiveMap'
 import ConnectionStatus from '@/components/map/ConnectionStatus'
-import MapControls from '@/components/map/MapControls'
+import LiveOpsBar from '@/components/live-ops/LiveOpsBar'
 import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
-import { startMockEmitter } from '@/lib/signalr/mockEmitter'
 import { useSignalR } from '@/hooks/useSignalR'
 import { useRealLiveState } from '@/hooks/useRealLiveState'
-import { useDistrictBoundaries } from '@/lib/api/queries/useDistrictBoundaries'
 import { setMapRef } from '@/lib/mapRef'
-import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
 import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
-import LiveKpiStrip from '@/components/live-ops/LiveKpiStrip'
-import AlertTriagePanel from '@/components/live-ops/AlertTriagePanel'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
+import { useStallDetector } from '@/hooks/useStallDetector'
 
 function normalizeGeoJson(data: GeoJSON.FeatureCollection) {
     const first =
@@ -84,9 +78,7 @@ function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
 
 export default function LiveOpsPage() {
     const mapRef = useRef<L.Map | null>(null)
-    const setHexGeoJSON = useMapStore((s) => s.setHexGeoJSON)
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
-    const hexResolution = useMapStore((s) => s.hexResolution)
     const heatmapResolution = APP_CONFIG.map.heatmapResolution
     const location = useLocation()
     const navigate = useNavigate()
@@ -94,24 +86,9 @@ export default function LiveOpsPage() {
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
 
     useFocusMode(mapRef)
-
-    // Guards against mock mode internally; no-op when VITE_USE_MOCK_SIGNALR=true
+    useStallDetector()
     useSignalR()
-    // Fetches initial drivers/deliveries from REST API in real mode; no-op in mock mode
     useRealLiveState()
-
-    // H3 hex grid — always loaded from public/ files
-    useEffect(() => {
-        const fileName = `/h3-damascus-r${hexResolution}.geojson`
-        setHexGeoJSON(null)
-        fetch(`${fileName}?v=${hexResolution}`)
-            .then((r) => {
-                if (!r.ok) throw new Error(`Missing H3 file: ${fileName}`)
-                return r.json()
-            })
-            .then((data) => setHexGeoJSON(normalizeGeoJson(data)))
-            .catch((err) => console.warn(err))
-    }, [setHexGeoJSON, hexResolution])
 
     useEffect(() => {
         const fileName = `/h3-damascus-r${heatmapResolution}.geojson`
@@ -122,13 +99,10 @@ export default function LiveOpsPage() {
             })
             .then((data) => setHeatmapGeoJSON(normalizeGeoJson(data)))
             .catch((err) => console.warn(err))
-    }, [setHeatmapGeoJSON])
+    }, [setHeatmapGeoJSON, heatmapResolution])
 
-    // District boundaries — local file in mock mode, API in real mode
-    const { data: apiBoundaries } = useDistrictBoundaries({ enabled: !USE_MOCK })
-
+    // Always use local GeoJSON — has Arabic names (name_fixed) and full boundary data
     useEffect(() => {
-        if (!USE_MOCK) return
         fetch(APP_CONFIG.map.districtBoundariesFile)
             .then((r) => {
                 if (!r.ok) throw new Error(`Missing district boundaries file`)
@@ -136,19 +110,6 @@ export default function LiveOpsPage() {
             })
             .then(applyBoundaryToStore)
             .catch((err) => console.warn(err))
-    }, [])
-
-    useEffect(() => {
-        if (USE_MOCK || !apiBoundaries) return
-        applyBoundaryToStore(apiBoundaries)
-    }, [apiBoundaries])
-
-    // Mock emitter — only in mock mode
-    useEffect(() => {
-        if (!USE_MOCK) return
-        useMapStore.getState().setHubStatus('connected')
-        const cleanup = startMockEmitter()
-        return cleanup
     }, [])
 
     // Deep-link focus mode from DeliveriesPage
@@ -160,13 +121,10 @@ export default function LiveOpsPage() {
         const delivery = useLiveStore.getState().deliveries[focusDeliveryId]
         if (!delivery || !delivery.assignedDriverId) return
 
-        const driver = useLiveStore.getState().drivers[delivery.assignedDriverId]
-        const routeIndex = driver?.routeIndex ?? 0
-        const polyline = DAMASCUS_ROUTES[routeIndex] ?? []
         enterFocusMode(
             delivery.id,
             delivery.assignedDriverId,
-            polyline,
+            [],
             delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds,
         )
         setSidePanelMode('focus')
@@ -175,7 +133,7 @@ export default function LiveOpsPage() {
 
     return (
         <div className="flex flex-col h-full">
-            <LiveKpiStrip />
+            <LiveOpsBar />
             <div className="relative flex-1">
                 <LiveMap
                     onMapReady={(m) => {
@@ -184,8 +142,6 @@ export default function LiveOpsPage() {
                     }}
                 />
                 <ConnectionStatus />
-                <MapControls />
-                <AlertTriagePanel />
                 <SidePanel />
             </div>
         </div>

@@ -4,6 +4,21 @@ import { Search } from 'lucide-react'
 import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
+import { getMockNeighborhoodStats } from '@/constants/mockData'
+
+function StaffingBadge({ boundaryId, displayName }: { boundaryId: string; displayName: string }) {
+    const { activeDrivers, expectedDemand, staffingRatio } = getMockNeighborhoodStats(boundaryId, displayName)
+    const isUnder = staffingRatio < 0.7
+    const isOver = staffingRatio > 1.3
+    const color = isUnder ? '#ef4444' : isOver ? '#f59e0b' : '#22c55e'
+    const label = isUnder ? 'Under' : isOver ? 'Over' : 'OK'
+    return (
+        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-white/50">
+            <span style={{ color }} className="font-semibold">{label}</span>
+            <span>{activeDrivers} drivers / {expectedDemand} demand</span>
+        </div>
+    )
+}
 
 export default function NeighborhoodListPanel() {
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
@@ -72,6 +87,7 @@ export default function NeighborhoodListPanel() {
                             >
                                 <div className="text-sm font-medium text-white">{item.displayName}</div>
                                 <div className="text-[11px] text-white/45">{item.boundaryId}</div>
+                                <StaffingBadge boundaryId={item.boundaryId} displayName={item.displayName} />
                             </button>
                             <div className="mt-2 flex justify-end">
                                 <button

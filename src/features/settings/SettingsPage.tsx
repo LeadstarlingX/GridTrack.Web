@@ -22,8 +22,6 @@ export default function SettingsPage() {
     const toggleToasts = useSettingsStore((s) => s.toggleToasts)
     const [section, setSection] = useState<Section>('appearance')
 
-    const hexGridEnabled = useMapStore((s) => s.hexGridEnabled)
-    const toggleHexGrid = useMapStore((s) => s.toggleHexGrid)
     const hexResolution = useMapStore((s) => s.hexResolution)
     const setHexResolution = useMapStore((s) => s.setHexResolution)
     const hubStatus = useMapStore((s) => s.hubStatus)
@@ -177,9 +175,6 @@ export default function SettingsPage() {
                     {section === 'map' && (
                         <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
                             <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Map Defaults</p>
-                            <SettingRow label="Hex grid" description="Show hexagonal demand overlay on the live map.">
-                                <ToggleSwitch checked={hexGridEnabled} onCheckedChange={() => toggleHexGrid()} aria-label="Hex Grid" />
-                            </SettingRow>
                             <SettingRow label="H3 resolution" description={`R${hexResolution} — lower is larger cells.`}>
                                 <div className="flex items-center gap-3">
                                     <input

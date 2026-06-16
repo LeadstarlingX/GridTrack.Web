@@ -3,9 +3,6 @@ import type { DriverState } from '@/types/driver'
 import type { DeliveryState } from '@/types/delivery'
 import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import { APP_CONFIG } from '@/config/app.config'
-import { MOCK_DRIVERS, MOCK_DELIVERIES } from '@/constants/mockData'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 const TRAIL_MAX_POINTS = 40
 
@@ -16,33 +13,45 @@ interface LiveStore {
     surgeAlerts: DemandSurge[]
     incidents: AnomalyIncident[]
     trails: Record<string, [number, number][]>
+    driverRoutes: Record<string, [number, number][]>
 
-    updateDriverPosition: (id: string, lat: number, lng: number, districtId: string) => void
+    updateDriverPosition: (id: string, lat: number, lng: number, districtId: string, routeAhead?: [number, number][]) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
     pushAnomaly: (alert: AnomalyAlert) => void
     markStall: (id: string, stalledSince: string) => void
     pushSurge: (alert: DemandSurge) => void
     pushIncident: (incident: AnomalyIncident) => void
+    initDrivers: (drivers: DriverState[]) => void
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
-    drivers: USE_MOCK ? Object.fromEntries(MOCK_DRIVERS.map((d) => [d.id, d])) : {},
-    deliveries: USE_MOCK ? Object.fromEntries(MOCK_DELIVERIES.map((d) => [d.id, d])) : {},
+    drivers: {},
+    deliveries: {},
     anomalyQueue: [],
     surgeAlerts: [],
     incidents: [],
     trails: {},
+    driverRoutes: {},
 
-    updateDriverPosition: (id, lat, lng, districtId) =>
+    updateDriverPosition: (id, lat, lng, districtId, routeAhead) =>
         set((s) => {
+            const existing = s.drivers[id]
             const prevTrail = s.trails[id] ?? []
             const trail: [number, number][] = [...prevTrail, [lat, lng] as [number, number]].slice(-TRAIL_MAX_POINTS)
+            const driverRoutes = routeAhead
+                ? { ...s.driverRoutes, [id]: routeAhead }
+                : routeAhead === null
+                    ? { ...s.driverRoutes, [id]: [] }
+                    : s.driverRoutes
             return {
                 drivers: {
                     ...s.drivers,
-                    [id]: { ...s.drivers[id], lat, lng, districtId, stalledSince: null },
+                    [id]: existing
+                        ? { ...existing, lat, lng, districtId, stalledSince: null }
+                        : { id, name: id.slice(-8), lat, lng, districtId, status: 'in-transit' as const, routeIndex: 0, pointIndex: 0, stalledSince: null },
                 },
                 trails: { ...s.trails, [id]: trail },
+                driverRoutes,
             }
         }),
 
@@ -56,7 +65,9 @@ export const useLiveStore = create<LiveStore>()((set) => ({
         set((s) => ({
             deliveries: {
                 ...s.deliveries,
-                [id]: s.deliveries[id] ? { ...s.deliveries[id], ...partial } : s.deliveries[id],
+                [id]: s.deliveries[id]
+                    ? { ...s.deliveries[id], ...partial }
+                    : { id, status: 'Created' as const, assignedDriverId: null, districtId: '', etaSeconds: null, createdAt: new Date().toISOString(), ...partial },
             },
         })),
 
@@ -80,4 +91,17 @@ export const useLiveStore = create<LiveStore>()((set) => ({
         set((s) => ({
             incidents: [incident, ...s.incidents].slice(0, 20),
         })),
+
+    initDrivers: (drivers) =>
+        set((s) => {
+            const updates: Record<string, DriverState> = {}
+            for (const d of drivers) {
+                const existing = s.drivers[d.id]
+                // If we already have live position from SignalR, keep it; just enrich name/status
+                updates[d.id] = existing
+                    ? { ...existing, name: d.name, status: d.status }
+                    : d
+            }
+            return { drivers: { ...s.drivers, ...updates } }
+        }),
 }))
