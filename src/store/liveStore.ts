@@ -16,6 +16,7 @@ interface LiveStore {
     driverRoutes: Record<string, [number, number][]>
 
     updateDriverPosition: (id: string, lat: number, lng: number, districtId: string, routeAhead?: [number, number][]) => void
+    batchUpdateDriverPositions: (updates: Array<{ id: string; lat: number; lng: number; districtId: string; routeAhead?: [number, number][] | null }>) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
     pushAnomaly: (alert: AnomalyAlert) => void
     markStall: (id: string, stalledSince: string) => void
@@ -53,6 +54,25 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 trails: { ...s.trails, [id]: trail },
                 driverRoutes,
             }
+        }),
+
+    batchUpdateDriverPositions: (updates) =>
+        set((s) => {
+            const drivers = { ...s.drivers }
+            const trails = { ...s.trails }
+            const driverRoutes = { ...s.driverRoutes }
+            for (const u of updates) {
+                const existing = drivers[u.id]
+                const prevTrail = trails[u.id] ?? []
+                trails[u.id] = [...prevTrail, [u.lat, u.lng] as [number, number]].slice(-TRAIL_MAX_POINTS)
+                drivers[u.id] = existing
+                    ? { ...existing, lat: u.lat, lng: u.lng, districtId: u.districtId, stalledSince: null }
+                    : { id: u.id, name: u.id.slice(-8), lat: u.lat, lng: u.lng, districtId: u.districtId, status: 'in-transit' as const, routeIndex: 0, pointIndex: 0, stalledSince: null }
+                if (u.routeAhead !== undefined) {
+                    driverRoutes[u.id] = u.routeAhead ?? []
+                }
+            }
+            return { drivers, trails, driverRoutes }
         }),
 
     markStall: (id, stalledSince) =>

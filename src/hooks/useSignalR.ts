@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { HubConnectionBuilder, LogLevel } from '@microsoft/signalr'
+import { HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { APP_CONFIG } from '@/config/app.config'
@@ -41,6 +41,8 @@ export function useSignalR() {
     useEffect(() => {
         const connection = new HubConnectionBuilder()
             .withUrl(import.meta.env.VITE_HUB_URL ?? '', {
+                skipNegotiation: true,
+                transport: HttpTransportType.WebSockets,
                 accessTokenFactory: () => getAuthToken().then((t) => t ?? ''),
             })
             .withAutomaticReconnect({
@@ -62,6 +64,18 @@ export function useSignalR() {
                 payload.lng,
                 payload.districtId,
                 payload.routeAhead ?? undefined,
+            )
+        })
+
+        connection.on('DriverPositionBatch', (positions: DriverPositionPayload[]) => {
+            useLiveStore.getState().batchUpdateDriverPositions(
+                positions.map((p) => ({
+                    id: p.driverId,
+                    lat: p.lat,
+                    lng: p.lng,
+                    districtId: p.districtId,
+                    routeAhead: p.routeAhead,
+                }))
             )
         })
 
