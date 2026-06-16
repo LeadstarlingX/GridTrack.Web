@@ -1,7 +1,21 @@
 import { GeoJSON } from 'react-leaflet'
+import { useMemo } from 'react'
 import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
-import { MOCK_DELIVERIES, getDistrictForCoords } from '@/constants/mockData'
+import { useLiveStore } from '@/store/liveStore'
+import { useDistricts } from '@/lib/api/queries/useDistricts'
+import type { DistrictDto } from '@/types/api'
+
+function nearestDistrict(lat: number, lng: number, districts: DistrictDto[]): string {
+    if (districts.length === 0) return ''
+    let best = districts[0]
+    let bestDist = Infinity
+    for (const d of districts) {
+        const dist = Math.hypot(lat - d.centroid.lat, lng - d.centroid.lng)
+        if (dist < bestDist) { bestDist = dist; best = d }
+    }
+    return best.id
+}
 
 function getColor(value: number): string {
     if (value > APP_CONFIG.heatmap.highThreshold) return APP_CONFIG.heatmap.colors.extreme
@@ -13,41 +27,44 @@ function getColor(value: number): string {
 export default function HeatmapLayer() {
     const heatmapGeoJSON = useMapStore((s) => s.heatmapGeoJSON)
     const enabled = useMapStore((s) => s.heatmapEnabled)
+    const deliveries = useLiveStore((s) => s.deliveries)
+    const { data: allDistricts = [] } = useDistricts()
 
-    if (!enabled || !heatmapGeoJSON) return null
+    const deliveryCounts = useMemo(() => {
+        const counts: Record<string, number> = {}
+        for (const d of Object.values(deliveries)) {
+            if (d.districtId) counts[d.districtId] = (counts[d.districtId] ?? 0) + 1
+        }
+        return counts
+    }, [deliveries])
 
-    const deliveryCounts = MOCK_DELIVERIES.reduce<Record<string, number>>((acc, delivery) => {
-        acc[delivery.districtId] = (acc[delivery.districtId] ?? 0) + 1
-        return acc
-    }, {})
+    const colored = useMemo(() => {
+        if (!heatmapGeoJSON) return null
+        return {
+            ...heatmapGeoJSON,
+            features: heatmapGeoJSON.features.map((f) => ({
+                ...f,
+                properties: {
+                    ...f.properties,
+                    intensity: (() => {
+                        if (f.geometry.type !== 'Polygon') return 0
+                        const coords = f.geometry.coordinates[0][0] as number[]
+                        const districtId = nearestDistrict(coords[1], coords[0], allDistricts)
+                        return deliveryCounts[districtId] ?? 0
+                    })(),
+                },
+            })),
+        }
+    }, [heatmapGeoJSON, deliveryCounts, allDistricts])
 
-    const colored = {
-        ...heatmapGeoJSON,
-        features: heatmapGeoJSON.features.map((f) => ({
-            ...f,
-            properties: {
-                ...f.properties,
-                intensity: (() => {
-                    if (f.geometry.type !== 'Polygon') return 0
-                    const coords = f.geometry.coordinates[0][0]
-                    const district = getDistrictForCoords(coords[1], coords[0])
-                    return deliveryCounts[district.id] ?? 0
-                })(),
-            },
-        })),
-    }
+    if (!enabled || !colored) return null
 
     return (
         <GeoJSON
             data={colored}
             style={(feature) => {
                 const v = feature?.properties?.intensity ?? 0
-                return {
-                    color: 'transparent',
-                    weight: 0,
-                    fillColor: getColor(v),
-                    fillOpacity: 0.55,
-                }
+                return { color: 'transparent', weight: 0, fillColor: getColor(v), fillOpacity: 0.55 }
             }}
             interactive={false}
         />

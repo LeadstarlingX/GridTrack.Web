@@ -37,6 +37,7 @@
 }
 
 :root {
+	color-scheme: light;
 	--background: 0 0% 98%;
 	--surface: 0 0% 100%;
 	--surface-raised: 0 0% 96%;
@@ -62,6 +63,7 @@
 }
 
 .dark {
+	color-scheme: dark;
 	--background: 222 25% 8%;
 	--surface: 222 23% 11%;
 	--surface-raised: 222 20% 14%;

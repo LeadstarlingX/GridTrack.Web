@@ -6,7 +6,7 @@ import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
 import { APP_CONFIG } from '@/config/app.config'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
-import { useMapStore } from '@/store/mapStore'
+import { useDistricts } from '@/lib/api/queries/useDistricts'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
 import { Clock, X, ChevronDown } from 'lucide-react'
@@ -113,29 +113,6 @@ export default function DeliveriesPage() {
         () => (location.state as { districtId?: string } | null)?.districtId ?? 'all',
     )
 
-    const districtBoundariesGeoJSON = useMapStore((s) => s.districtBoundariesGeoJSON)
-    const setDistrictBoundariesGeoJSON = useMapStore((s) => s.setDistrictBoundariesGeoJSON)
-
-    useEffect(() => {
-        if (districtBoundariesGeoJSON) return
-        fetch(APP_CONFIG.map.districtBoundariesFile)
-            .then((r) => r.json())
-            .then(setDistrictBoundariesGeoJSON)
-            .catch(console.warn)
-    }, [districtBoundariesGeoJSON, setDistrictBoundariesGeoJSON])
-
-    const districts = useMemo(() => {
-        if (!districtBoundariesGeoJSON) return []
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (districtBoundariesGeoJSON.features as any[])
-            .map((f) => ({
-                id: String(f.properties?.boundaryId ?? f.properties?.osm_id ?? ''),
-                name: String(f.properties?.displayName ?? f.properties?.name_fixed ?? ''),
-            }))
-            .filter((d) => d.id && d.name)
-            .sort((a, b) => a.name.localeCompare(b.name, 'ar'))
-    }, [districtBoundariesGeoJSON])
-
     const [range, setRange] = useState<DateRangeValue>(() => {
         const end = new Date()
         const start = new Date()
@@ -153,10 +130,15 @@ export default function DeliveriesPage() {
     }), [statusFilter, districtFilter, appliedRange])
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDeliveries(queryParams)
+    const { data: allDistricts = [] } = useDistricts()
+    const districtNameMap = useMemo(
+        () => Object.fromEntries(allDistricts.map((d) => [d.id, d.name])),
+        [allDistricts],
+    )
 
     const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 
-    const selectedDistrictName = districts.find((d) => d.id === districtFilter)?.name ?? districtFilter
+    const selectedDistrictName = districtNameMap[districtFilter] ?? districtFilter
 
     const columns: CursorColumn<DeliveryListItemDto>[] = [
         {
@@ -176,10 +158,7 @@ export default function DeliveriesPage() {
         {
             key: 'district',
             header: 'District',
-            cell: (row) => {
-                const name = districts.find((d) => d.id === row.districtId)?.name ?? row.districtId
-                return <span dir="rtl">{name}</span>
-            },
+            cell: (row) => <span dir="rtl">{districtNameMap[row.districtId] ?? row.districtId}</span>,
         },
         {
             key: 'driver',
@@ -259,7 +238,7 @@ export default function DeliveriesPage() {
                     </div>
                     <div className="flex items-center gap-2 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
                         <label className="text-xs text-[hsl(var(--foreground-muted))]">District</label>
-                        <DistrictPicker districts={districts} value={districtFilter} onChange={setDistrictFilter} />
+                        <DistrictPicker districts={allDistricts} value={districtFilter} onChange={setDistrictFilter} />
                     </div>
                     <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
                     <Button variant="outline" size="sm" onClick={() => setAppliedRange({ ...appliedRange })}>

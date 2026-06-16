@@ -22,7 +22,6 @@ interface MapStore {
     districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
     historicalHeatmapRange: { from: string; to: string; fromHour: number; toHour: number } | null
     historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
-    recommendationMock: Record<string, number> | null
     districtForecasts: Record<string, ForecastDto>
 
     toggleHeatmap: () => void
@@ -40,7 +39,6 @@ interface MapStore {
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
-    setRecommendationMock: (data: Record<string, number> | null) => void
     setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
     setHubRtt: (ms: number | null) => void
@@ -63,7 +61,6 @@ export const useMapStore = create<MapStore>()((set) => ({
     districtBoundariesGeoJSON: null,
     historicalHeatmapRange: null,
     historicalHeatmapData: null,
-    recommendationMock: null,
     districtForecasts: {},
 
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
@@ -88,7 +85,6 @@ export const useMapStore = create<MapStore>()((set) => ({
     setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),
     setHistoricalHeatmapRange: (range) => set({ historicalHeatmapRange: range }),
     setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
-    setRecommendationMock: (data) => set({ recommendationMock: data }),
     setDistrictForecast: (districtId, forecast) =>
         set((s) => ({ districtForecasts: { ...s.districtForecasts, [districtId]: forecast } })),
     setHubStatus: (status) => set({ hubStatus: status }),

@@ -1,31 +1,23 @@
 import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useMapStore } from '@/store/mapStore'
-import { getMockDistrictStats, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useForecast } from '@/lib/api/queries/useForecast'
 import { useDistrictSparkline } from '@/lib/api/queries/useDistrictSparkline'
 import { useDistrictSummary } from '@/lib/api/queries/useDistrictSummary'
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts'
 import { format } from 'date-fns'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
-
 function SparklineChart({ districtId }: { districtId: string }) {
-    const { data, isLoading } = useDistrictSparkline(USE_MOCK ? null : districtId)
+    const { data, isLoading } = useDistrictSparkline(districtId)
 
-    if (USE_MOCK || isLoading || !data?.length) {
-        const mockPoints = Array.from({ length: 6 }, (_, i) => ({
-            hour: `${i + 1}h`,
-            count: Math.floor(Math.random() * 8 + 2),
-        }))
-        return (
-            <ResponsiveContainer width="100%" height={56}>
-                <AreaChart data={mockPoints} margin={{ top: 4, bottom: 0, left: 0, right: 0 }}>
-                    <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} dot={false} />
-                </AreaChart>
-            </ResponsiveContainer>
-        )
+    if (isLoading) {
+        return <Skeleton className="h-14 w-full" />
+    }
+
+    if (!data?.length) {
+        return <p className="py-3 text-center text-xs text-[hsl(var(--foreground-muted))]">No trend data yet.</p>
     }
 
     const chartData = data.map((p) => ({
@@ -57,11 +49,10 @@ function formatStaleness(cachedAt: string) {
 export default function DistrictPanel() {
     const boundaryId = useMapStore((s) => s.selectedDistrictId)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
-    const recommendationMock = useMapStore((s) => s.recommendationMock)
     const setMode = useMapStore((s) => s.setSidePanelMode)
 
-    const { data: forecast } = useForecast(USE_MOCK ? null : boundaryId)
-    const { data: districtSummary } = useDistrictSummary(USE_MOCK ? null : boundaryId)
+    const { data: forecast, isLoading: forecastLoading } = useForecast(boundaryId)
+    const { data: districtSummary } = useDistrictSummary(boundaryId)
 
     if (!boundaryId) return null
 
@@ -69,15 +60,12 @@ export default function DistrictPanel() {
         const featureId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
         return featureId === boundaryId
     })
-    const boundaryName = (boundaryMatch?.properties?.displayName ?? boundaryMatch?.properties?.name_fixed ?? boundaryMatch?.properties?.name) as string | undefined
-    const neighborhood = getMockNeighborhoodStats(boundaryId, boundaryName)
-    const districtStats = getMockDistrictStats(boundaryId, boundaryName)
-    const displayName = boundaryName ?? boundaryId
-    const expectedDemand = forecast?.forecastedDemand ?? (recommendationMock?.[boundaryId] ?? neighborhood.expectedDemand)
-    const activeDrivers = neighborhood.activeDrivers
-    const staffingRatio = forecast?.staffingRatio ?? Number((activeDrivers / Math.max(1, expectedDemand)).toFixed(2))
-    const driverRecommendation = forecast?.driverRecommendation
-    const anomalyRate = districtStats.anomalyRate
+    const displayName = (
+        boundaryMatch?.properties?.displayName ??
+        boundaryMatch?.properties?.name_fixed ??
+        boundaryMatch?.properties?.name ??
+        boundaryId
+    ) as string
 
     return (
         <div className="p-4">
@@ -91,30 +79,38 @@ export default function DistrictPanel() {
                 <Card>
                     <CardHeader className="pb-1"><CardTitle className="text-sm">Demand (last 6 h)</CardTitle></CardHeader>
                     <CardContent className="pt-0 pb-3">
-                        <p className="text-2xl font-bold mb-2">{expectedDemand}</p>
+                        {forecastLoading ? (
+                            <Skeleton className="mb-2 h-8 w-16" />
+                        ) : (
+                            <p className="text-2xl font-bold mb-2">{forecast?.forecastedDemand ?? '—'}</p>
+                        )}
                         <SparklineChart districtId={boundaryId} />
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="pb-2"><CardTitle className="text-sm">Boundary ID</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{boundaryId}</p></CardContent>
+                    <CardContent><p className="text-2xl font-bold font-mono text-sm">{boundaryId}</p></CardContent>
                 </Card>
-                <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Active Drivers</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{activeDrivers}</p></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Staffing Ratio</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{staffingRatio.toFixed(2)}</p></CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Anomaly Rate</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold">{(anomalyRate * 100).toFixed(1)}%</p></CardContent>
-                </Card>
-                {driverRecommendation !== undefined && (
+                {(forecast?.staffingRatio !== undefined || forecastLoading) && (
+                    <Card>
+                        <CardHeader className="pb-2"><CardTitle className="text-sm">Staffing Ratio</CardTitle></CardHeader>
+                        <CardContent>
+                            {forecastLoading
+                                ? <Skeleton className="h-8 w-16" />
+                                : <p className="text-2xl font-bold">{forecast!.staffingRatio.toFixed(2)}</p>
+                            }
+                        </CardContent>
+                    </Card>
+                )}
+                {(forecast?.driverRecommendation !== undefined || forecastLoading) && (
                     <Card>
                         <CardHeader className="pb-2"><CardTitle className="text-sm">Recommended Drivers</CardTitle></CardHeader>
-                        <CardContent><p className="text-2xl font-bold">{driverRecommendation}</p></CardContent>
+                        <CardContent>
+                            {forecastLoading
+                                ? <Skeleton className="h-8 w-12" />
+                                : <p className="text-2xl font-bold">{forecast!.driverRecommendation}</p>
+                            }
+                        </CardContent>
                     </Card>
                 )}
                 {districtSummary && (

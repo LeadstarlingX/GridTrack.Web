@@ -7,9 +7,8 @@ import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
 import StatusBreakdownChart from '@/components/charts/StatusBreakdownChart'
 import UrgencyTrendChart from '@/components/charts/UrgencyTrendChart'
 import { APP_CONFIG } from '@/config/app.config'
-import { MOCK_ANALYTICS_TRENDS, MOCK_DISTRICT_VOLUME, getMockAnalyticsForRange } from '@/constants/mockData'
-import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
 import { useDriverAnalytics } from '@/lib/api/queries/useDriverAnalytics'
 import { useAnomalyBreakdown } from '@/lib/api/queries/useAnomalyBreakdown'
 import { useCancellationAnalytics } from '@/lib/api/queries/useCancellationAnalytics'
@@ -23,8 +22,6 @@ import { useStatusBreakdown } from '@/lib/api/queries/useStatusBreakdown'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 import ChatbotPanel from './chatbot/ChatbotPanel'
 import StaffingWidget from './staffing/StaffingWidget'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type AnalyticsTab = 'overview' | 'performance' | 'ai'
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
@@ -80,13 +77,6 @@ function getRangeDays(from: string, to: string) {
     return Math.floor(diff / (1000 * 60 * 60 * 24)) + 1
 }
 
-function sliceMockTrends(days: number) {
-    // Full-day (24h) data — show active hours for short ranges, full day for longer
-    if (days <= 1) return MOCK_ANALYTICS_TRENDS.slice(5, 23)  // 05:00–22:00
-    if (days <= 7) return MOCK_ANALYTICS_TRENDS.slice(4)       // 04:00–23:00
-    return MOCK_ANALYTICS_TRENDS                                // all 24 hours
-}
-
 export default function AnalyticsPage() {
     const navigate = useNavigate()
     const chatbotEnabled = PAGE_CONFIG.analyticsChatbot.enabled
@@ -112,16 +102,11 @@ export default function AnalyticsPage() {
     )
 
     const { data: summaryData, isLoading: summaryLoading } = useAnalyticsSummary(
-        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
+        { from: appliedRange.from, to: appliedRange.to },
     )
     const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
     const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
-        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
-    )
-    const { data: districtsData } = useDistricts()
-    const districtNameMap = useMemo(
-        () => Object.fromEntries((districtsData ?? []).map((d) => [d.id, d.name])),
-        [districtsData],
+        { from: appliedRange.from, to: appliedRange.to },
     )
 
     const { data: driverAnalyticsData } = useDriverAnalytics()
@@ -135,46 +120,45 @@ export default function AnalyticsPage() {
     }, [driverAnalyticsData])
 
     const { data: statusBreakdownData, isLoading: statusBreakdownLoading } = useStatusBreakdown(
-        USE_MOCK ? undefined : { from: appliedRange.from, to: appliedRange.to },
+        { from: appliedRange.from, to: appliedRange.to },
     )
     const { data: anomalyBreakdownData, isLoading: anomalyBreakdownLoading } = useAnomalyBreakdown(
-        USE_MOCK ? undefined : appliedRange.from,
-        USE_MOCK ? undefined : appliedRange.to,
+        appliedRange.from,
+        appliedRange.to,
     )
     const { data: cancellationData, isLoading: cancellationLoading } = useCancellationAnalytics(
-        USE_MOCK ? undefined : appliedRange.from,
-        USE_MOCK ? undefined : appliedRange.to,
+        appliedRange.from,
+        appliedRange.to,
     )
     const { data: deliveryPerformanceData, isLoading: deliveryPerformanceLoading } = useDeliveryPerformance(
-        USE_MOCK ? undefined : appliedRange.from,
-        USE_MOCK ? undefined : appliedRange.to,
+        appliedRange.from,
+        appliedRange.to,
     )
     const { data: driverUtilizationData, isLoading: driverUtilizationLoading } = useDriverUtilization()
 
-    // In mock mode, scale KPI totals by selected date range so changing the range feels live
-    const summary = USE_MOCK ? getMockAnalyticsForRange(appliedRange.from, appliedRange.to) : summaryData
-    const isLoading = USE_MOCK ? false : summaryLoading
+    const { data: allDistricts = [] } = useDistricts()
+    const districtNameMap = useMemo(
+        () => Object.fromEntries(allDistricts.map((d) => [d.id, d.name])),
+        [allDistricts],
+    )
 
-    const rangeDays = useMemo(() => getRangeDays(appliedRange.from, appliedRange.to), [appliedRange])
+    const summary = summaryData
+    const isLoading = summaryLoading
 
-    const deliveryTrend = useMemo(() => {
-        if (USE_MOCK) {
-            return sliceMockTrends(rangeDays).map((item) => ({ bucket: item.bucket, deliveries: item.deliveries }))
-        }
-        return trendsData?.deliveryTrend.map((p) => ({ bucket: p.bucket, deliveries: p.value })) ?? []
-    }, [USE_MOCK, rangeDays, trendsData])
+    const deliveryTrend = useMemo(
+        () => trendsData?.deliveryTrend.map((p) => ({ bucket: p.bucket, deliveries: p.value })) ?? [],
+        [trendsData],
+    )
 
-    const anomalyTrend = useMemo(() => {
-        if (USE_MOCK) {
-            return sliceMockTrends(rangeDays).map((item) => ({ bucket: item.bucket, anomalies: item.anomalies }))
-        }
-        return trendsData?.anomalyTrend.map((p) => ({ bucket: p.bucket, anomalies: p.value })) ?? []
-    }, [USE_MOCK, rangeDays, trendsData])
+    const anomalyTrend = useMemo(
+        () => trendsData?.anomalyTrend.map((p) => ({ bucket: p.bucket, anomalies: p.value })) ?? [],
+        [trendsData],
+    )
 
-    const urgencyTrend = useMemo(() => {
-        if (USE_MOCK) return []
-        return trendsData?.urgencyTrend.map((p) => ({ bucket: p.bucket, avgScore: p.value })) ?? []
-    }, [trendsData])
+    const urgencyTrend = useMemo(
+        () => trendsData?.urgencyTrend.map((p) => ({ bucket: p.bucket, avgScore: p.value })) ?? [],
+        [trendsData],
+    )
 
     const downloadCsv = async (mode: 'range' | 'full') => {
         const payload = { mode, from: range.from, to: range.to, days: activeDays, fromHour: hourStart, toHour: hourEnd }
@@ -353,7 +337,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <DeliveryTrendChart data={deliveryTrend} isLoading={USE_MOCK ? false : trendsLoading} />
+                                <DeliveryTrendChart data={deliveryTrend} isLoading={trendsLoading} />
                             </CardContent>
                         </Card>
 
@@ -378,7 +362,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <AnomalyRateChart data={anomalyTrend} isLoading={USE_MOCK ? false : trendsLoading} />
+                                <AnomalyRateChart data={anomalyTrend} isLoading={trendsLoading} />
                             </CardContent>
                         </Card>
                     </section>
@@ -396,15 +380,13 @@ export default function AnalyticsPage() {
                             <CardContent>
                                 <DistrictVolumeChart
                                     data={
-                                        USE_MOCK
-                                            ? MOCK_DISTRICT_VOLUME
-                                            : (districtVolumeData?.items.map((item) => ({
-                                                  district: districtNameMap[item.districtId] ?? item.districtId,
-                                                  districtId: item.districtId,
-                                                  deliveries: item.deliveries,
-                                              })) ?? [])
+                                        districtVolumeData?.items.map((item) => ({
+                                            district: districtNameMap[item.districtId] ?? item.districtId,
+                                            districtId: item.districtId,
+                                            deliveries: item.deliveries,
+                                        })) ?? []
                                     }
-                                    isLoading={!USE_MOCK && districtVolumeLoading}
+                                    isLoading={districtVolumeLoading}
                                     onBarClick={(districtId) => navigate('/deliveries', { state: { districtId } })}
                                 />
                             </CardContent>
@@ -421,8 +403,8 @@ export default function AnalyticsPage() {
                             </CardHeader>
                             <CardContent>
                                 <StatusBreakdownChart
-                                    data={USE_MOCK ? [] : (statusBreakdownData?.items ?? [])}
-                                    isLoading={!USE_MOCK && statusBreakdownLoading}
+                                    data={statusBreakdownData?.items ?? []}
+                                    isLoading={statusBreakdownLoading}
                                 />
                             </CardContent>
                         </Card>
@@ -441,7 +423,7 @@ export default function AnalyticsPage() {
                             <CardContent>
                                 <UrgencyTrendChart
                                     data={urgencyTrend}
-                                    isLoading={!USE_MOCK && trendsLoading}
+                                    isLoading={trendsLoading}
                                 />
                             </CardContent>
                         </Card>
@@ -473,7 +455,7 @@ export default function AnalyticsPage() {
                                             <div key={d.driverId} className="flex items-center gap-3 py-2.5">
                                                 <div className="flex-1 min-w-0">
                                                     <p className="truncate text-sm font-medium text-[hsl(var(--foreground))]">{d.name}</p>
-                                                    <p className="text-[11px] text-[hsl(var(--foreground-muted))]">{d.districtId}</p>
+                                                    <p className="text-[11px] text-[hsl(var(--foreground-muted))]">{districtNameMap[d.districtId] ?? d.districtId}</p>
                                                 </div>
                                                 <div className="flex items-center gap-3 text-xs tabular-nums shrink-0">
                                                     <span className={d.anomalyRate >= 0.15 ? 'text-red-400' : 'text-amber-400'}>

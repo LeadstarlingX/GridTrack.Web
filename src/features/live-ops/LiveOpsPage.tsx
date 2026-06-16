@@ -11,7 +11,6 @@ import { useLiveStore } from '@/store/liveStore'
 import { useSignalR } from '@/hooks/useSignalR'
 import { useRealLiveState } from '@/hooks/useRealLiveState'
 import { setMapRef } from '@/lib/mapRef'
-import { getMockNeighborhoodStats } from '@/constants/mockData'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
 import { useStallDetector } from '@/hooks/useStallDetector'
@@ -46,16 +45,12 @@ function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
             const osmId = feature.properties?.osm_id ?? feature.properties?.osmId ?? feature.id
             const boundaryId = osmId != null ? String(osmId) : ''
             const displayName = (feature.properties?.name_fixed ?? feature.properties?.name ?? boundaryId) as string
-            const expected = getMockNeighborhoodStats(boundaryId, displayName)
             return {
                 ...feature,
                 properties: {
                     ...feature.properties,
                     boundaryId,
                     displayName,
-                    expectedDemand: expected.expectedDemand,
-                    activeDrivers: expected.activeDrivers,
-                    staffingRatio: expected.staffingRatio,
                 },
             }
         }),
@@ -65,15 +60,6 @@ function normalizeBoundaryGeoJson(data: GeoJSON.FeatureCollection) {
 function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
     const normalized = normalizeBoundaryGeoJson(raw)
     useMapStore.getState().setDistrictBoundariesGeoJSON(normalized)
-
-    const recommendationMap: Record<string, number> = {}
-    normalized.features.forEach((feature) => {
-        const boundaryId = feature.properties?.boundaryId
-        const expectedDemand = feature.properties?.expectedDemand
-        if (!boundaryId || typeof expectedDemand !== 'number') return
-        recommendationMap[boundaryId] = expectedDemand
-    })
-    useMapStore.getState().setRecommendationMock(recommendationMap)
 }
 
 export default function LiveOpsPage() {

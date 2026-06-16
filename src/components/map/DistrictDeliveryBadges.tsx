@@ -28,7 +28,7 @@ function buildBadgeIcon(count: number, hasAnomaly: boolean) {
 
 export default function DistrictDeliveryBadges() {
     const deliveries = useLiveStore((s) => s.deliveries)
-    const { data: districts } = useDistricts()
+    const { data: allDistricts = [] } = useDistricts()
 
     const countsByDistrict = useMemo(() => {
         const map: Record<string, { count: number; hasAnomaly: boolean }> = {}
@@ -43,11 +43,9 @@ export default function DistrictDeliveryBadges() {
         return map
     }, [deliveries])
 
-    if (!districts) return null
-
     return (
         <>
-            {districts.map((district) => {
+            {allDistricts.map((district) => {
                 const entry = countsByDistrict[district.id]
                 if (!entry || entry.count === 0) return null
                 const icon = buildBadgeIcon(entry.count, entry.hasAnomaly)

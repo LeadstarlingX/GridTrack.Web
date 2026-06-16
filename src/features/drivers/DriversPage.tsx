@@ -4,7 +4,7 @@ import { Badge, Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import { APP_CONFIG } from '@/config/app.config'
-import { MOCK_DISTRICTS } from '@/constants/mockData'
+import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { useDrivers } from '@/lib/api/queries/useDrivers'
 import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
 import type { DriverListItemDto } from '@/types/api'
@@ -34,6 +34,7 @@ export default function DriversPage() {
     })
 
     const { mutate: setAvailability, isPending } = useDriverAvailability()
+    const { data: allDistricts = [] } = useDistricts()
 
     const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 
@@ -158,7 +159,7 @@ export default function DriversPage() {
                             className="h-7 rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 text-xs text-[hsl(var(--foreground))]"
                         >
                             <option value="all">All</option>
-                            {MOCK_DISTRICTS.map((d) => (
+                            {allDistricts.map((d) => (
                                 <option key={d.id} value={d.id}>{d.name}</option>
                             ))}
                         </select>

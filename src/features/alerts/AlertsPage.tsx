@@ -2,15 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
-import { MOCK_URGENCY_ALERTS, type UrgencyAlert } from '@/constants/mockData'
 import { useAlerts } from '@/lib/api/queries/useAlerts'
 import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import type { AnomalyAlertDto } from '@/types/api'
 import type { AnomalyIncident } from '@/types/hub'
-
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
 
 type UrgencyFilter = 'all' | 'critical' | 'high' | 'low'
 type AnomalyTypeFilter = 'all' | AnomalyAlertDto['anomalyType']
@@ -215,36 +212,6 @@ function IncidentAlertsBanner() {
     )
 }
 
-function MockAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
-    const alerts = useMemo<UrgencyAlert[]>(() => {
-        let list = MOCK_URGENCY_ALERTS
-        if (typeFilter !== 'all') list = list.filter((a) => a.type === typeFilter)
-        if (filter === 'critical') return list.filter((a) => a.urgency >= 8)
-        if (filter === 'high') return list.filter((a) => a.urgency >= 6 && a.urgency < 8)
-        if (filter === 'low') return list.filter((a) => a.urgency < 6)
-        return list
-    }, [filter, typeFilter])
-
-    const criticalCount = MOCK_URGENCY_ALERTS.filter((a) => a.urgency >= 8).length
-
-    return (
-        <>
-            <div className="flex items-center gap-2 rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--primary)/0.08)] px-4 py-3 text-sm text-[hsl(var(--primary))]">
-                <span>⚡</span>
-                <span>AI ranked {MOCK_URGENCY_ALERTS.length} alerts by urgency · {criticalCount} require immediate action</span>
-            </div>
-            <div className="flex flex-col gap-3">
-                {alerts.map(({ id, ...a }) => (
-                    <AlertCard key={id} {...a} />
-                ))}
-                {alerts.length === 0 && (
-                    <p className="py-12 text-center text-sm text-[hsl(var(--foreground-muted))]">No alerts match this filter.</p>
-                )}
-            </div>
-        </>
-    )
-}
-
 function ApiAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
     const today = new Date()
     const weekAgo = new Date()
@@ -366,10 +333,7 @@ export default function AlertsPage() {
 
                 <IncidentAlertsBanner />
 
-            {USE_MOCK
-                ? <MockAlertsList filter={filter} typeFilter={typeFilter} />
-                : <ApiAlertsList filter={filter} typeFilter={typeFilter} />
-            }
+            <ApiAlertsList filter={filter} typeFilter={typeFilter} />
         </div>
     )
 }

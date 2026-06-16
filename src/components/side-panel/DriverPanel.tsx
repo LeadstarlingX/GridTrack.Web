@@ -38,14 +38,14 @@ export default function DriverPanel() {
     )
     const { data: detail } = useDriverDetail(driverId)
     const { data: stats } = useDriverStats(driverId)
-    const { data: districts } = useDistricts()
+    const { data: allDistricts = [] } = useDistricts()
     const [following, setFollowing] = useState(false)
 
     if (!driver) return null
 
     const stallTimer = useStallTimer(driver.stalledSince ?? null)
     const statusColor = driver.status === 'in-transit' ? 'default' : driver.status === 'available' ? 'secondary' : 'outline'
-    const districtName = districts?.find((d) => d.id === driver.districtId)?.name ?? driver.districtId
+    const districtName = allDistricts.find((d) => d.id === driver.districtId)?.name ?? driver.districtId
 
     const handleFollow = async () => {
         if (following) return

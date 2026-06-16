@@ -1,15 +1,10 @@
 import { GeoJSON } from 'react-leaflet'
 import { useMemo } from 'react'
 import { APP_CONFIG } from '@/config/app.config'
-import { getMockRecommendationRatio, getMockNeighborhoodStats } from '@/constants/mockData'
 import { useMapStore } from '@/store/mapStore'
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_SIGNALR !== 'false'
-
-type ComputeRatio = (boundaryId: string, boundaryName?: string) => number
-
 interface RecommendationOverlayProps {
-    computeRatio?: ComputeRatio
+    computeRatio?: (boundaryId: string) => number | null
 }
 
 const legendItems = [
@@ -29,19 +24,11 @@ function getRecommendationFill(ratio: number) {
 export default function RecommendationOverlay({ computeRatio }: RecommendationOverlayProps) {
     const enabled = useMapStore((s) => s.recommendationEnabled)
     const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
-    const recommendationMock = useMapStore((s) => s.recommendationMock)
     const districtForecasts = useMapStore((s) => s.districtForecasts)
-    // computeRatio may be provided for unit tests; otherwise prefer real forecast data in real mode
-    const computeLocal = (boundaryId: string, boundaryName?: string) => {
-        if (!USE_MOCK && districtForecasts[boundaryId] !== undefined) {
-            return districtForecasts[boundaryId].staffingRatio
-        }
-        if (recommendationMock && recommendationMock[boundaryId] !== undefined) {
-            const expected = recommendationMock[boundaryId]
-            const seeded = getMockNeighborhoodStats(boundaryId, boundaryName)
-            return Number((seeded.activeDrivers / Math.max(1, expected)).toFixed(2))
-        }
-        return getMockRecommendationRatio(boundaryId, boundaryName)
+
+    const computeLocal = (boundaryId: string): number | null => {
+        const forecast = districtForecasts[boundaryId]
+        return forecast !== undefined ? forecast.staffingRatio : null
     }
     const compute = computeRatio ?? computeLocal
 
@@ -52,8 +39,7 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
             ...boundaries,
             features: boundaries.features.map((feature) => {
                 const boundaryId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
-                const boundaryName = (feature.properties?.displayName ?? feature.properties?.name_fixed ?? feature.properties?.name) as string | undefined
-                const staffingRatio = compute(boundaryId, boundaryName)
+                const staffingRatio = compute(boundaryId)
 
                 return {
                     ...feature,
@@ -64,7 +50,7 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
                 }
             }),
         }
-    }, [boundaries, computeRatio])
+    }, [boundaries, computeRatio, districtForecasts])
 
     if (!enabled || !colored) return null
 
@@ -74,7 +60,8 @@ export default function RecommendationOverlay({ computeRatio }: RecommendationOv
                 data={colored}
                 interactive={false}
                 style={(feature) => {
-                    const staffingRatio = feature?.properties?.staffingRatio ?? 0
+                    const staffingRatio = feature?.properties?.staffingRatio
+                    if (staffingRatio == null) return { color: 'transparent', weight: 0, fillOpacity: 0 }
                     return {
                         color: 'transparent',
                         weight: 0,

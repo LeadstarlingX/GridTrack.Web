@@ -4,10 +4,11 @@ import { Search } from 'lucide-react'
 import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
-import { getMockNeighborhoodStats } from '@/constants/mockData'
+function StaffingBadge({ boundaryId }: { boundaryId: string }) {
+    const forecast = useMapStore((s) => s.districtForecasts[boundaryId])
+    if (!forecast) return null
 
-function StaffingBadge({ boundaryId, displayName }: { boundaryId: string; displayName: string }) {
-    const { activeDrivers, expectedDemand, staffingRatio } = getMockNeighborhoodStats(boundaryId, displayName)
+    const { staffingRatio, forecastedDemand } = forecast
     const isUnder = staffingRatio < 0.7
     const isOver = staffingRatio > 1.3
     const color = isUnder ? '#ef4444' : isOver ? '#f59e0b' : '#22c55e'
@@ -15,7 +16,7 @@ function StaffingBadge({ boundaryId, displayName }: { boundaryId: string; displa
     return (
         <div className="mt-1.5 flex items-center gap-2 text-[11px] text-white/50">
             <span style={{ color }} className="font-semibold">{label}</span>
-            <span>{activeDrivers} drivers / {expectedDemand} demand</span>
+            <span>{forecastedDemand} demand · {staffingRatio.toFixed(2)} ratio</span>
         </div>
     )
 }
@@ -87,7 +88,7 @@ export default function NeighborhoodListPanel() {
                             >
                                 <div className="text-sm font-medium text-white">{item.displayName}</div>
                                 <div className="text-[11px] text-white/45">{item.boundaryId}</div>
-                                <StaffingBadge boundaryId={item.boundaryId} displayName={item.displayName} />
+                                <StaffingBadge boundaryId={item.boundaryId} />
                             </button>
                             <div className="mt-2 flex justify-end">
                                 <button
