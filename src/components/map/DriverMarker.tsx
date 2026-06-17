@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { Marker, Tooltip } from 'react-leaflet'
 import L from 'leaflet'
 import { useShallow } from 'zustand/react/shallow'
@@ -63,12 +63,20 @@ const DriverMarkerItem = memo(function DriverMarkerItem({
     toggleDriverPanel: (id: string) => void
 }) {
     const d = useLiveStore((s) => s.drivers[id])
-    if (!d) return null
 
     const isFocused = id === focusedDriverId
     const isDimmed = focusedDriverId !== null && !isFocused
-    const isStalled = d.stalledSince !== null
-    const icon = buildIcon({ isFocused, isDimmed, isStalled, status: d.status })
+    const isStalled = d ? d.stalledSince !== null : false
+    const status = d ? d.status : 'in-transit'
+
+    // Memoize the icon so that L.divIcon + HTML string construction only runs
+    // when visual properties change — not on every lat/lng position update.
+    const icon = useMemo(
+        () => buildIcon({ isFocused, isDimmed, isStalled, status }),
+        [isFocused, isDimmed, isStalled, status],
+    )
+
+    if (!d) return null
 
     return (
         <Marker

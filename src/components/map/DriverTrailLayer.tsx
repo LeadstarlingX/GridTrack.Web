@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { Polyline } from 'react-leaflet'
 import { useLiveStore } from '@/store/liveStore'
 import { useFocusStore } from '@/store/focusStore'
@@ -14,20 +15,21 @@ export default function DriverTrailLayer() {
     const trailEnabled = useMapStore((s) => s.trailEnabled)
     const selectedDriverId = useMapStore((s) => s.selectedDriverId)
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
-    const trails = useLiveStore((s) => s.trails)
-    const drivers = useLiveStore((s) => s.drivers)
-
-    if (!trailEnabled) return null
-
-    // Show trail for the focused driver, or whichever is currently selected
     const activeId = focusedDriverId ?? selectedDriverId
-    if (!activeId) return null
 
-    const trail = trails[activeId]
-    if (!trail || trail.length < 2) return null
+    // Narrow selectors: only re-render when the active driver's specific data changes,
+    // not on every position batch for all drivers.
+    const trail = useLiveStore(useCallback((s) =>
+        activeId ? s.trails[activeId] : null,
+    [activeId]))
 
-    const driver = drivers[activeId]
-    const color = driver ? driverColor(driver.status, driver.stalledSince !== null) : '#3b82f6'
+    const color = useLiveStore(useCallback((s) => {
+        if (!activeId) return '#3b82f6'
+        const d = s.drivers[activeId]
+        return d ? driverColor(d.status, d.stalledSince !== null) : '#3b82f6'
+    }, [activeId]))
+
+    if (!trailEnabled || !activeId || !trail || trail.length < 2) return null
 
     return (
         <Polyline

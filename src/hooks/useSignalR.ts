@@ -68,6 +68,7 @@ export function useSignalR() {
         })
 
         connection.on('DriverPositionBatch', (positions: DriverPositionPayload[]) => {
+            performance.mark('gt-signalr-recv')
             useLiveStore.getState().batchUpdateDriverPositions(
                 positions.map((p) => ({
                     id: p.driverId,
@@ -77,6 +78,7 @@ export function useSignalR() {
                     routeAhead: p.routeAhead,
                 }))
             )
+            performance.measure('gt:signalr→store', 'gt-signalr-recv')
         })
 
         connection.on('DeliveryUpdated', (payload: DeliveryUpdatedPayload) => {

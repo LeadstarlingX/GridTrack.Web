@@ -56,7 +56,8 @@ export const useLiveStore = create<LiveStore>()((set) => ({
             }
         }),
 
-    batchUpdateDriverPositions: (updates) =>
+    batchUpdateDriverPositions: (updates) => {
+        performance.mark('gt-batch-start')
         set((s) => {
             const drivers = { ...s.drivers }
             const trails = { ...s.trails }
@@ -73,7 +74,9 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 }
             }
             return { drivers, trails, driverRoutes }
-        }),
+        })
+        performance.measure('gt:batch-update', 'gt-batch-start')
+    },
 
     markStall: (id, stalledSince) =>
         set((s) => {

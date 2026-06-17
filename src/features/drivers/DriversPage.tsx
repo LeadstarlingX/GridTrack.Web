@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Badge, Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
@@ -9,7 +9,7 @@ import { useDrivers } from '@/lib/api/queries/useDrivers'
 import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
 import type { DriverListItemDto } from '@/types/api'
 import DriverPerformanceCard from './DriverPerformanceCard'
-import { Car, ChevronDown, ChevronUp, Phone } from 'lucide-react'
+import { Car, ChevronDown, ChevronUp, Phone, Search, X } from 'lucide-react'
 
 type DriverStatusFilter = 'all' | DriverListItemDto['status']
 const STATUS_PILLS: { value: DriverStatusFilter; label: string }[] = [
@@ -27,10 +27,19 @@ export default function DriversPage() {
     const [statusFilter, setStatusFilter] = useState<DriverStatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>('all')
 
+    // Search by name, phone, or license plate — debounced so we don't refetch on every keystroke.
+    const [searchInput, setSearchInput] = useState('')
+    const [search, setSearch] = useState('')
+    useEffect(() => {
+        const id = setTimeout(() => setSearch(searchInput.trim()), 300)
+        return () => clearTimeout(id)
+    }, [searchInput])
+
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDrivers({
         pageSize: APP_CONFIG.table.driversPageSize,
         status: statusFilter !== 'all' ? statusFilter : undefined,
         districtId: districtFilter !== 'all' ? districtFilter : undefined,
+        search: search !== '' ? search : undefined,
     })
 
     const { mutate: setAvailability, isPending } = useDriverAvailability()
@@ -129,6 +138,30 @@ export default function DriversPage() {
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Manage driver availability.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative">
+                        <Search
+                            size={14}
+                            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[hsl(var(--foreground-muted))]"
+                        />
+                        <input
+                            type="text"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                            placeholder="Search name, phone, plate…"
+                            aria-label="Search drivers by name, phone number, or license plate"
+                            className="h-[38px] w-60 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] pl-8 pr-8 text-xs text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-muted))] focus:border-[hsl(var(--primary))] focus:outline-none"
+                        />
+                        {searchInput && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchInput('')}
+                                aria-label="Clear search"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
                     <div className="flex flex-wrap items-center gap-1 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2">
                         <span className="mr-1 text-xs text-[hsl(var(--foreground-muted))]">Status</span>
                         {STATUS_PILLS.map(({ value, label }) => (
@@ -175,7 +208,13 @@ export default function DriversPage() {
                 isLoading={isLoading || isFetchingNextPage}
                 onLoadMore={() => fetchNextPage()}
                 emptyTitle={isLoading ? 'Loading...' : 'No drivers'}
-                emptyDescription={isLoading ? '' : 'No drivers are currently available in the system.'}
+                emptyDescription={
+                    isLoading
+                        ? ''
+                        : search !== ''
+                          ? `No drivers match “${search}”.`
+                          : 'No drivers are currently available in the system.'
+                }
                 expandedId={expandedId}
                 renderExpanded={(row) => <DriverPerformanceCard driverId={row.id} />}
             />

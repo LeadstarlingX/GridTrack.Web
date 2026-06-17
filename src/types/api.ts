@@ -131,6 +131,7 @@ export interface DriversQueryParams {
     cursor?: string
     districtId?: string
     status?: DriverListItemDto['status']
+    search?: string
     pageSize?: number
 }
 
