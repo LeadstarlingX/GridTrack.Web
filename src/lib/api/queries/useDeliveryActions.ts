@@ -4,6 +4,32 @@ import { apiClient } from '../client'
 import { APP_CONFIG } from '@/config/app.config'
 import type { AnomalyType } from '@/types/api'
 
+export interface CreateDeliveryPayload {
+    lat: number
+    lng: number
+    districtId?: string
+    expectedEta?: string | null
+}
+
+export function useCreateDelivery(onSuccess?: (deliveryId: string) => void) {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (data: CreateDeliveryPayload) =>
+            apiClient
+                .post<{ deliveryId: string; districtId: string; createdAt: string }>(
+                    APP_CONFIG.api.deliveriesPath,
+                    data,
+                )
+                .then((r) => r.data),
+        onSuccess: (data) => {
+            toast.success('Delivery created.')
+            queryClient.invalidateQueries({ queryKey: ['deliveries'] })
+            onSuccess?.(data.deliveryId)
+        },
+        onError: () => toast.error('Failed to create delivery.'),
+    })
+}
+
 function path(template: string, id: string) {
     return template.replace('{id}', id)
 }

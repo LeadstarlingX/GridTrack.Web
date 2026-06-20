@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType } from 'react'
-import { Search, Thermometer } from 'lucide-react'
+import { AlertTriangle, Search, Thermometer } from 'lucide-react'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { cn } from '@/lib/utils'
@@ -10,17 +10,33 @@ function formatEta(s: number | null): string {
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m > 0 ? `${m}m` : `${s}s`
 }
 
-function KpiChip({ label, value, accent }: { label: string; value: string | number; accent?: string }) {
-    return (
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[hsl(var(--surface-raised))] border border-[hsl(var(--border))]">
+function KpiChip({ label, value, accent, active, onClick }: {
+    label: string
+    value: string | number
+    accent?: string
+    active?: boolean
+    onClick?: () => void
+}) {
+    const className = cn(
+        'flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors',
+        active
+            ? 'border-orange-500/60 bg-orange-500/15'
+            : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))]',
+        onClick && 'cursor-pointer hover:border-[hsl(var(--border-strong,var(--border)))]',
+    )
+    const inner = (
+        <>
             <span className="text-[10px] text-[hsl(var(--foreground-muted))] uppercase tracking-wide font-medium whitespace-nowrap">
                 {label}
             </span>
             <span className={cn('text-xs font-semibold tabular-nums', accent ?? 'text-[hsl(var(--foreground))]')}>
                 {value}
             </span>
-        </div>
+        </>
     )
+    return onClick
+        ? <button type="button" onClick={onClick} className={className}>{inner}</button>
+        : <div className={className}>{inner}</div>
 }
 
 interface GlowBtnProps {
@@ -63,6 +79,8 @@ function GlowBtn({ active, onClick, icon: Icon, label, color = 'primary' }: Glow
 export default function LiveOpsBar() {
     const heatEnabled = useMapStore((s) => s.heatmapEnabled)
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
+    const stalledOnly = useMapStore((s) => s.stalledOnly)
+    const toggleStalledOnly = useMapStore((s) => s.toggleStalledOnly)
     const districtPanelView = useMapStore((s) => s.districtPanelView)
     const sidePanelMode = useMapStore((s) => s.sidePanelMode)
     const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
@@ -98,6 +116,8 @@ export default function LiveOpsBar() {
                     label="Stalled"
                     value={kpi.stalled}
                     accent={kpi.stalled > 0 ? 'text-orange-500' : undefined}
+                    active={stalledOnly}
+                    onClick={toggleStalledOnly}
                 />
                 <KpiChip
                     label="Alerts"
@@ -106,6 +126,13 @@ export default function LiveOpsBar() {
                 />
             </div>
             <div className="flex items-center gap-2">
+                <GlowBtn
+                    active={stalledOnly}
+                    onClick={toggleStalledOnly}
+                    icon={AlertTriangle}
+                    label="Stalled only"
+                    color="warning"
+                />
                 <GlowBtn
                     active={heatEnabled}
                     onClick={toggleHeat}

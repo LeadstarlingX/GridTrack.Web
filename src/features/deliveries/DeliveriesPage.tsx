@@ -9,7 +9,8 @@ import { useDeliveries } from '@/lib/api/queries/useDeliveries'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
-import { Clock, X, ChevronDown } from 'lucide-react'
+import CreateDeliveryModal from './CreateDeliveryModal'
+import { Clock, X, ChevronDown, Plus } from 'lucide-react'
 
 type StatusFilter = DeliveryListItemDto['status'] | 'all'
 const STATUS_OPTIONS: StatusFilter[] = ['all', 'Created', 'Assigned', 'InTransit', 'Delivered', 'Anomalous']
@@ -108,6 +109,7 @@ export default function DeliveriesPage() {
     const [timelineId, setTimelineId] = useState<string | null>(
         () => (location.state as { openTimelineId?: string } | null)?.openTimelineId ?? null,
     )
+    const [createOpen, setCreateOpen] = useState(false)
     const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>(
         () => (location.state as { districtId?: string } | null)?.districtId ?? 'all',
@@ -244,6 +246,10 @@ export default function DeliveriesPage() {
                     <Button variant="outline" size="sm" onClick={() => setAppliedRange({ ...appliedRange })}>
                         Refresh
                     </Button>
+                    <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+                        <Plus size={14} />
+                        New Delivery
+                    </Button>
                 </div>
             </header>
 
@@ -276,6 +282,11 @@ export default function DeliveriesPage() {
             <DeliveryTimelineDrawer
                 deliveryId={timelineId}
                 onClose={() => setTimelineId(null)}
+            />
+
+            <CreateDeliveryModal
+                open={createOpen}
+                onClose={() => setCreateOpen(false)}
             />
         </div>
     )

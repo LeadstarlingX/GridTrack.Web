@@ -105,7 +105,11 @@ const DriverMarkerItem = memo(function DriverMarkerItem({
 
 // Subscribes to driver IDs only — stable when positions change, re-renders only on join/leave.
 export default function DriverMarkers() {
-    const driverIds = useLiveStore(useShallow((s) => Object.keys(s.drivers)))
+    const stalledOnly = useMapStore((s) => s.stalledOnly)
+    // When the "stalled only" filter is on, render just the stalled drivers.
+    const driverIds = useLiveStore(useShallow((s) =>
+        Object.keys(s.drivers).filter((id) => !stalledOnly || s.drivers[id].stalledSince !== null),
+    ))
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
     const toggleDriverPanel = useMapStore((s) => s.toggleDriverPanel)
 

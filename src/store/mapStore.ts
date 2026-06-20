@@ -13,6 +13,7 @@ interface MapStore {
     recommendationEnabled: boolean
     trailEnabled: boolean
     routesEnabled: boolean
+    stalledOnly: boolean
     hexResolution: number
     selectedDistrictId: string | null
     selectedDriverId: string | null
@@ -29,6 +30,7 @@ interface MapStore {
     toggleRecommendation: () => void
     toggleTrail: () => void
     toggleRoutes: () => void
+    toggleStalledOnly: () => void
     setHexResolution: (resolution: number) => void
     selectDistrict: (id: string | null) => void
     selectDriver: (id: string | null) => void
@@ -52,6 +54,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     recommendationEnabled: false,
     trailEnabled: true,
     routesEnabled: true,
+    stalledOnly: false,
     hexResolution: APP_CONFIG.map.hexResolution.default,
     selectedDistrictId: null,
     selectedDriverId: null,
@@ -68,6 +71,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
     toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),
     toggleRoutes: () => set((s) => ({ routesEnabled: !s.routesEnabled })),
+    toggleStalledOnly: () => set((s) => ({ stalledOnly: !s.stalledOnly })),
     setHexResolution: (resolution) => set({ hexResolution: resolution }),
     selectDistrict: (id) => set({ selectedDistrictId: id }),
     selectDriver: (id) => set({ selectedDriverId: id }),

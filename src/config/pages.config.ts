@@ -13,7 +13,7 @@ export const PAGE_CONFIG = {
     settings:   flag('VITE_ENABLE_SETTINGS'),
     analyticsChatbot: {
         enabled: flag('VITE_ENABLE_ANALYTICS_CHATBOT', false),
-        disabledMessage: 'AI analysis requires a Groq API key — set VITE_ENABLE_ANALYTICS_CHATBOT=true in Vercel once configured.',
+        disabledMessage: 'AI analysis requires a Groq API key — COMING SOON.',
     },
 }
 

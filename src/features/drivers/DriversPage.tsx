@@ -9,6 +9,7 @@ import { useDrivers } from '@/lib/api/queries/useDrivers'
 import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
 import type { DriverListItemDto } from '@/types/api'
 import DriverPerformanceCard from './DriverPerformanceCard'
+import DriverDetailDrawer from './DriverDetailDrawer'
 import { Car, ChevronDown, ChevronUp, Phone, Search, X } from 'lucide-react'
 
 type DriverStatusFilter = 'all' | DriverListItemDto['status']
@@ -24,6 +25,7 @@ export default function DriversPage() {
     const [expandedId, setExpandedId] = useState<string | null>(
         () => (location.state as { expandDriverId?: string } | null)?.expandDriverId ?? null,
     )
+    const [drawerDriverId, setDrawerDriverId] = useState<string | null>(null)
     const [statusFilter, setStatusFilter] = useState<DriverStatusFilter>('all')
     const [districtFilter, setDistrictFilter] = useState<string>('all')
 
@@ -207,6 +209,7 @@ export default function DriversPage() {
                 nextCursor={hasNextPage ? 'has-more' : null}
                 isLoading={isLoading || isFetchingNextPage}
                 onLoadMore={() => fetchNextPage()}
+                onRowClick={(row) => setDrawerDriverId(row.id)}
                 emptyTitle={isLoading ? 'Loading...' : 'No drivers'}
                 emptyDescription={
                     isLoading
@@ -217,6 +220,11 @@ export default function DriversPage() {
                 }
                 expandedId={expandedId}
                 renderExpanded={(row) => <DriverPerformanceCard driverId={row.id} />}
+            />
+
+            <DriverDetailDrawer
+                driverId={drawerDriverId}
+                onClose={() => setDrawerDriverId(null)}
             />
         </div>
     )
