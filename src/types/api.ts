@@ -50,8 +50,14 @@ export interface DeliveryListItemDto {
 
 // GET /api/deliveries/{id}
 export interface DeliveryDetailDto extends DeliveryListItemDto {
-    routePolyline: [number, number][]
+    // API returns coordinate objects ({ lat, lng }), not [lng, lat] tuples.
+    routePolyline: { lat: number; lng: number }[]
     updatedAt: string
+    currentLat: number | null
+    currentLng: number | null
+    routeDistanceMeters: number | null
+    routeDurationSeconds: number | null
+    routeCost: number | null
 }
 
 export interface DeliveriesQueryParams {
@@ -402,6 +408,12 @@ export interface StaffingForecastResponse {
 // POST /api/analysis/transcribe
 export interface TranscribeResponse {
     text: string
+}
+
+export interface DistrictGroupDto {
+    id: string
+    name: string
+    districtIds: string[]
 }
 
 export type ApiEndpoint =

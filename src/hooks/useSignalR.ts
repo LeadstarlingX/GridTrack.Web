@@ -7,6 +7,7 @@ import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
 import { getAuthToken } from '@/lib/api/authBridge'
 import { apiClient } from '@/lib/api/client'
+import { setHubConnection } from '@/lib/hubConnection'
 import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import type { DeliveryStatus } from '@/types/delivery'
 import type { DriverListItemDto, PagedResponse } from '@/types/api'
@@ -145,6 +146,7 @@ export function useSignalR() {
         connection
             .start()
             .then(() => {
+                setHubConnection(connection)
                 useMapStore.getState().setHubStatus('connected')
                 void hydrateDrivers()
                 // Measure RTT every 5s while connected
@@ -177,6 +179,7 @@ export function useSignalR() {
 
         return () => {
             if (rttTimer) clearInterval(rttTimer)
+            setHubConnection(null)
             connection.stop()
         }
     }, [queryClient])
