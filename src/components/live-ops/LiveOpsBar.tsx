@@ -1,5 +1,5 @@
 import { useMemo, type ComponentType } from 'react'
-import { AlertTriangle, Search, Thermometer } from 'lucide-react'
+import { AlertTriangle, Search, Thermometer, Users } from 'lucide-react'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { cn } from '@/lib/utils'
@@ -79,6 +79,8 @@ function GlowBtn({ active, onClick, icon: Icon, label, color = 'primary' }: Glow
 export default function LiveOpsBar() {
     const heatEnabled = useMapStore((s) => s.heatmapEnabled)
     const toggleHeat = useMapStore((s) => s.toggleHeatmap)
+    const staffingEnabled = useMapStore((s) => s.staffingEnabled)
+    const toggleStaffing = useMapStore((s) => s.toggleStaffing)
     const stalledOnly = useMapStore((s) => s.stalledOnly)
     const toggleStalledOnly = useMapStore((s) => s.toggleStalledOnly)
     const districtPanelView = useMapStore((s) => s.districtPanelView)
@@ -139,6 +141,13 @@ export default function LiveOpsBar() {
                     icon={Thermometer}
                     label="Heatmap"
                     color="warning"
+                />
+                <GlowBtn
+                    active={staffingEnabled}
+                    onClick={toggleStaffing}
+                    icon={Users}
+                    label="Staffing"
+                    color="info"
                 />
                 <GlowBtn
                     active={searchActive}
