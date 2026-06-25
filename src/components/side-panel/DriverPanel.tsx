@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Car, Loader2, Phone, X } from 'lucide-react'
+import { Car, Clock, Loader2, Phone, Wallet, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useMapStore } from '@/store/mapStore'
@@ -8,6 +8,8 @@ import { useFocusStore } from '@/store/focusStore'
 import { useDriverDetail } from '@/lib/api/queries/useDriverDetail'
 import { useDriverStats } from '@/lib/api/queries/useDriverStats'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useDelivery } from '@/lib/api/queries/useDelivery'
+import { useEtaCountdown } from '@/hooks/useEtaCountdown'
 import { apiClient } from '@/lib/api/client'
 import { APP_CONFIG } from '@/config/app.config'
 
@@ -39,7 +41,12 @@ export default function DriverPanel() {
     const { data: detail } = useDriverDetail(driverId)
     const { data: stats } = useDriverStats(driverId)
     const { data: allDistricts = [] } = useDistricts()
+    const { data: deliveryDetail } = useDelivery(activeDelivery?.id ?? null)
     const [following, setFollowing] = useState(false)
+    // ETA from the delivery detail (the live store's etaSeconds is often stale/0).
+    const etaDisplay = useEtaCountdown(
+        activeDelivery ? (deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null) : null,
+    )
 
     if (!driver) return null
 
@@ -56,7 +63,9 @@ export default function DriverPanel() {
                     const resp = await apiClient.get<DeliveryDetailDto>(
                         APP_CONFIG.api.deliveryDetailPath.replace('{id}', activeDelivery.id),
                     )
-                    const route: [number, number][] = resp.data.routePolyline ?? []
+                    const route: [number, number][] = (resp.data.routePolyline ?? []).map(
+                        (p) => [p.lat, p.lng] as [number, number],
+                    )
                     useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, activeDelivery.etaSeconds ?? 420)
                 } catch {
                     useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], activeDelivery.etaSeconds ?? 420)
@@ -97,6 +106,18 @@ export default function DriverPanel() {
                     <span className="text-muted-foreground">Position</span>
                     <span>{driver.lat.toFixed(4)}, {driver.lng.toFixed(4)}</span>
                 </div>
+                {activeDelivery && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground flex items-center gap-1"><Clock size={12} />ETA</span>
+                        <span className="font-mono tabular-nums text-sky-500">{etaDisplay}</span>
+                    </div>
+                )}
+                {activeDelivery && deliveryDetail?.routeCost != null && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground flex items-center gap-1"><Wallet size={12} />Expected cost</span>
+                        <span className="font-mono tabular-nums text-amber-500">{deliveryDetail.routeCost.toFixed(0)} SYP</span>
+                    </div>
+                )}
                 {detail?.licensePlate && (
                     <div className="flex justify-between">
                         <span className="text-muted-foreground flex items-center gap-1"><Car size={12} />Plate</span>
