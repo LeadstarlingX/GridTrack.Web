@@ -1,4 +1,4 @@
-import 'leaflet/dist/leaflet.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import './index.css'
 import React from 'react'
 import ReactDOM from 'react-dom/client'

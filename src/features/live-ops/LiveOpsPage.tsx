@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import L from 'leaflet'
+import type { MapRef } from 'react-map-gl/maplibre'
 import LiveMap from '@/components/map/LiveMap'
 import ConnectionStatus from '@/components/map/ConnectionStatus'
 import LiveOpsBar from '@/components/live-ops/LiveOpsBar'
@@ -8,7 +8,6 @@ import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
-import { setMapRef } from '@/lib/mapRef'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
 import { useStallDetector } from '@/hooks/useStallDetector'
@@ -61,7 +60,7 @@ function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
 }
 
 export default function LiveOpsPage() {
-    const mapRef = useRef<L.Map | null>(null)
+    const mapRef = useRef<MapRef | null>(null)
     const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
     const heatmapResolution = APP_CONFIG.map.heatmapResolution
     const location = useLocation()
@@ -118,10 +117,7 @@ export default function LiveOpsPage() {
             <LiveOpsBar />
             <div className="relative flex-1">
                 <LiveMap
-                    onMapReady={(m) => {
-                        mapRef.current = m
-                        setMapRef(m)
-                    }}
+                    onMapReady={(m) => { mapRef.current = m }}
                 />
                 <ConnectionStatus />
                 <SidePanel />

@@ -1,60 +1,52 @@
-import { GeoJSON } from 'react-leaflet'
+import { Source, Layer } from 'react-map-gl/maplibre'
 import { useMemo } from 'react'
 import { useMapStore } from '@/store/mapStore'
 
-const unselectedStyle = {
-    color: '#64748b',
-    weight: 1,
-    fillColor: '#64748b',
-    fillOpacity: 0.03,
-    opacity: 0.35,
-}
-
-const selectedStyle = {
-    color: '#3b82f6',
-    weight: 2.5,
-    fillColor: '#3b82f6',
-    fillOpacity: 0.06,
-    opacity: 0.9,
-}
-
 export default function DistrictBoundaryLayer() {
-    const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const boundaries       = useMapStore((s) => s.districtBoundariesGeoJSON)
     const selectedDistrictId = useMapStore((s) => s.selectedDistrictId)
 
-    const selectedFeatureCollection = useMemo(() => {
+    const selectedFC = useMemo(() => {
         if (!boundaries || !selectedDistrictId) return null
         const feature = boundaries.features.find((f) => {
             const id = f.properties?.boundaryId ?? String(f.properties?.osm_id ?? '')
             return id === selectedDistrictId
         })
-        if (!feature) return null
-        return {
-            ...boundaries,
-            features: [feature],
-        }
+        return feature ? { ...boundaries, features: [feature] } : null
     }, [boundaries, selectedDistrictId])
 
     if (!boundaries) return null
 
     return (
         <>
-            <GeoJSON
-                key={`boundaries-${selectedDistrictId ?? 'none'}`}
-                data={boundaries}
-                interactive={false}
-                style={(feature) => {
-                    const id = feature?.properties?.boundaryId ?? String(feature?.properties?.osm_id ?? '')
-                    return id && id === selectedDistrictId ? selectedStyle : unselectedStyle
-                }}
-            />
-            {selectedFeatureCollection && (
-                <GeoJSON
-                    key={`selected-${selectedDistrictId}`}
-                    data={selectedFeatureCollection}
-                    style={selectedStyle}
-                    interactive={false}
+            {/* All boundaries — subtle */}
+            <Source id="district-boundaries" type="geojson" data={boundaries}>
+                <Layer
+                    id="district-fill"
+                    type="fill"
+                    paint={{ 'fill-color': '#64748b', 'fill-opacity': 0.03 }}
                 />
+                <Layer
+                    id="district-line"
+                    type="line"
+                    paint={{ 'line-color': '#64748b', 'line-width': 1, 'line-opacity': 0.35 }}
+                />
+            </Source>
+
+            {/* Selected district — highlighted */}
+            {selectedFC && (
+                <Source id="district-selected" type="geojson" data={selectedFC as GeoJSON.FeatureCollection}>
+                    <Layer
+                        id="district-selected-fill"
+                        type="fill"
+                        paint={{ 'fill-color': '#3b82f6', 'fill-opacity': 0.06 }}
+                    />
+                    <Layer
+                        id="district-selected-line"
+                        type="line"
+                        paint={{ 'line-color': '#3b82f6', 'line-width': 2.5, 'line-opacity': 0.9 }}
+                    />
+                </Source>
             )}
         </>
     )

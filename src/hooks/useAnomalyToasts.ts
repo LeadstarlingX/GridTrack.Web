@@ -25,7 +25,7 @@ export function useAnomalyToasts() {
                 label: 'View',
                 onClick: () => {
                     const map = getMapRef()
-                    map?.flyTo([latest.lat, latest.lng], APP_CONFIG.map.focusZoom)
+                    map?.flyTo({ center: [latest.lng, latest.lat], zoom: APP_CONFIG.map.focusZoom, duration: APP_CONFIG.map.flyToDurationMs })
                     const mapState = useMapStore.getState()
                     mapState.selectDriver(latest.driverId)
                     mapState.setSidePanelMode('driver')
