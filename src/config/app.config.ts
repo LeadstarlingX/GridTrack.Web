@@ -1,14 +1,15 @@
 export const APP_CONFIG = {
     map: {
+        // center is [lat, lng] — used for display; for MapLibre initialViewState swap to lng/lat
         center: [33.5138, 36.2765] as [number, number],
         defaultZoom: 12,
         focusZoom: 15,
-        flyToDurationSec: 1.2,
+        flyToDurationMs: 600,
         fitBoundsPaddingPx: [32, 32] as [number, number],
         fitBoundsMaxZoom: 15,
         defaultEtaFallbackSeconds: 420,
-        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        // CARTO Positron — light/normal basemap, free, no API key
+        mapStyle: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' as const,
         routePolyline: {
             color: '#f59e0b',
             weight: 4,
@@ -60,6 +61,8 @@ export const APP_CONFIG = {
         retry: 1,
         refetchOnWindowFocus: false,
         historicalHeatmapStaleTimeMs: 300000,
+        // Deliveries is a live monitoring stream — poll on an interval instead of a manual refresh.
+        deliveriesRefetchMs: 15000,
     },
     toast: {
         anomalyDurationMs: 8000,
@@ -69,7 +72,9 @@ export const APP_CONFIG = {
         driversPageSize: 8,
     },
     analytics: {
-        defaultRangeDays: 7,
+        // Default lookback wide enough to include recent history on first load,
+        // not just the current day. Users narrow it via the date-range picker.
+        defaultRangeDays: 30,
         defaultHourStart: 6,
         defaultHourEnd: 22,
         minHour: 0,

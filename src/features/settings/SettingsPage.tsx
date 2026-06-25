@@ -5,13 +5,12 @@ import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
-import { APP_CONFIG } from '@/config/app.config'
 import { cn } from '@/lib/utils'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
 
-type Section = 'appearance' | 'notifications' | 'map' | 'connection'
+type Section = 'appearance' | 'notifications' | 'connection'
 
 const PING_INTERVAL_MS = 3_000
 const PING_TIMEOUT_MS  = 8_000
@@ -22,8 +21,6 @@ export default function SettingsPage() {
     const toggleToasts = useSettingsStore((s) => s.toggleToasts)
     const [section, setSection] = useState<Section>('appearance')
 
-    const hexResolution = useMapStore((s) => s.hexResolution)
-    const setHexResolution = useMapStore((s) => s.setHexResolution)
     const hubStatus = useMapStore((s) => s.hubStatus)
     const hubRtt = useMapStore((s) => s.hubRtt)
     const [latency, setLatency] = useState<LatencyResponse | null>(null)
@@ -73,13 +70,10 @@ export default function SettingsPage() {
     }, [section])
 
     const activeTheme = theme ?? 'system'
-    const minRes = APP_CONFIG.map.hexResolution.min
-    const maxRes = APP_CONFIG.map.hexResolution.max
 
     const navItems: { key: Section; label: string }[] = [
         { key: 'appearance', label: 'Appearance' },
         { key: 'notifications', label: 'Notifications' },
-        { key: 'map', label: 'Map Defaults' },
         { key: 'connection', label: 'Connection' },
     ]
 
@@ -168,28 +162,6 @@ export default function SettingsPage() {
                                     ))}
                                 </div>
                             </div>
-                        </div>
-                    )}
-
-                    {/* ── Map Defaults ── */}
-                    {section === 'map' && (
-                        <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
-                            <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Map Defaults</p>
-                            <SettingRow label="H3 resolution" description={`R${hexResolution} — lower is larger cells.`}>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="range"
-                                        min={minRes}
-                                        max={maxRes}
-                                        step={1}
-                                        value={hexResolution}
-                                        onChange={(e) => setHexResolution(Number(e.target.value))}
-                                        className="w-28"
-                                        style={{ accentColor: 'hsl(var(--primary))' }}
-                                    />
-                                    <span className="text-sm font-mono text-[hsl(var(--primary))] w-8">R{hexResolution}</span>
-                                </div>
-                            </SettingRow>
                         </div>
                     )}
 

@@ -66,7 +66,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
                         </SignedIn>
                         {children}
                     </ClerkLoaded>
-                    <Toaster position="bottom-right" />
+                    <Toaster position="top-center" duration={3500} visibleToasts={3} />
                 </QueryClientProvider>
             </ThemeProvider>
         </ClerkProvider>
