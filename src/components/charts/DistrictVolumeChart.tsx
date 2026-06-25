@@ -43,7 +43,7 @@ export default function DistrictVolumeChart({ data, isLoading, onBarClick }: Dis
                     fill="var(--color-deliveries)"
                     radius={[0, 4, 4, 0]}
                     cursor={onBarClick ? 'pointer' : undefined}
-                    onClick={onBarClick ? (payload: DistrictVolumePoint) => onBarClick(payload.districtId ?? payload.district) : undefined}
+                    onClick={onBarClick ? ((payload: DistrictVolumePoint) => onBarClick(payload.districtId ?? payload.district)) as never : undefined}
                 />
             </BarChart>
         </ChartContainer>
