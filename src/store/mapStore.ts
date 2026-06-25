@@ -11,6 +11,7 @@ interface MapStore {
     heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
     recommendationEnabled: boolean
+    staffingEnabled: boolean
     trailEnabled: boolean
     routesEnabled: boolean
     stalledOnly: boolean
@@ -28,6 +29,7 @@ interface MapStore {
     toggleHeatmap: () => void
     toggleHistoricalHeatmap: () => void
     toggleRecommendation: () => void
+    toggleStaffing: () => void
     toggleTrail: () => void
     toggleRoutes: () => void
     toggleStalledOnly: () => void
@@ -52,6 +54,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     heatmapEnabled: false,
     historicalHeatmapEnabled: false,
     recommendationEnabled: false,
+    staffingEnabled: false,
     trailEnabled: true,
     routesEnabled: true,
     stalledOnly: false,
@@ -69,6 +72,7 @@ export const useMapStore = create<MapStore>()((set) => ({
     toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     toggleHistoricalHeatmap: () => set((s) => ({ historicalHeatmapEnabled: !s.historicalHeatmapEnabled })),
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
+    toggleStaffing: () => set((s) => ({ staffingEnabled: !s.staffingEnabled })),
     toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),
     toggleRoutes: () => set((s) => ({ routesEnabled: !s.routesEnabled })),
     toggleStalledOnly: () => set((s) => ({ stalledOnly: !s.stalledOnly })),
