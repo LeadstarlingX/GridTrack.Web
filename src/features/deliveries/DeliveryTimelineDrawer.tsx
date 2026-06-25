@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { useDeliveryTimeline } from '@/lib/api/queries/useDeliveryTimeline'
 import { useDelivery } from '@/lib/api/queries/useDelivery'
 import { useDrivers } from '@/lib/api/queries/useDrivers'
+import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import {
     useAssignDriver,
     usePickUpDelivery,
@@ -19,6 +20,8 @@ import {
     useFlagAnomaly,
 } from '@/lib/api/queries/useDeliveryActions'
 import { useAutoAssign } from '@/lib/api/queries/useAutoAssign'
+import { useEtaCountdown } from '@/hooks/useEtaCountdown'
+import { useLiveStore } from '@/store/liveStore'
 import type { DeliveryTimelineEventDto, DeliveryStatus, AnomalyType } from '@/types/api'
 import {
     PackagePlus,
@@ -32,6 +35,9 @@ import {
     ChevronLeft,
     UserSearch,
     Sparkles,
+    Timer,
+    MapPin,
+    BrainCircuit,
 } from 'lucide-react'
 
 interface Props {
@@ -133,6 +139,17 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
 
     const { data: timeline, isLoading, isError } = useDeliveryTimeline(deliveryId)
     const { data: delivery } = useDelivery(deliveryId)
+    const { data: recommendation } = useDeliveryRecommendation(
+        deliveryId,
+        delivery?.status === 'InTransit' || delivery?.status === 'Assigned',
+    )
+
+    // Live ETA from SignalR store — more up-to-date than the REST response
+    const liveEtaSeconds = useLiveStore((s) =>
+        deliveryId ? (s.deliveries[deliveryId]?.etaSeconds ?? null) : null,
+    )
+    const etaDisplay = useEtaCountdown(liveEtaSeconds ?? delivery?.etaSeconds ?? null)
+
     const { data: driversData, isLoading: driversLoading } = useDrivers(
         { status: 'available', pageSize: 15 },
         { enabled: actionMode === 'assign' },
@@ -168,6 +185,65 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                         {deliveryId ?? '—'}
                     </SheetDescription>
                 </SheetHeader>
+
+                {/* Live info strip — ETA / cost / AI */}
+                {delivery && (status === 'InTransit' || delivery.routeCost != null || recommendation?.aiAvailable) && (
+                    <div className="shrink-0 border-b border-[hsl(var(--border))] px-6 py-3 space-y-2.5">
+
+                        {/* ETA countdown */}
+                        {status === 'InTransit' && (
+                            <div className="flex items-center gap-2.5">
+                                <Timer size={14} className="shrink-0 text-sky-400" />
+                                <span className="text-xs text-[hsl(var(--foreground-muted))]">ETA</span>
+                                <span className="ml-auto font-mono text-sm font-semibold text-sky-400 tabular-nums">
+                                    {etaDisplay}
+                                </span>
+                            </div>
+                        )}
+
+                        {/* Route cost */}
+                        {delivery.routeCost != null && (
+                            <div className="flex items-center gap-2.5">
+                                <MapPin size={14} className="shrink-0 text-amber-400" />
+                                <span className="text-xs text-[hsl(var(--foreground-muted))]">Route cost</span>
+                                <span className="ml-auto text-sm font-semibold text-amber-400">
+                                    {delivery.routeCost.toFixed(0)} SYP
+                                </span>
+                            </div>
+                        )}
+
+                        {/* AI recommendation */}
+                        {recommendation?.aiAvailable && (recommendation.urgencyScore != null || recommendation.recommendedAction) && (
+                            <div className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2.5 space-y-1">
+                                <div className="flex items-center gap-1.5">
+                                    <BrainCircuit size={13} className="shrink-0 text-violet-400" />
+                                    <span className="text-[11px] font-medium text-violet-400 uppercase tracking-wider">
+                                        AI
+                                    </span>
+                                    {recommendation.urgencyScore != null && (
+                                        <span className={`ml-auto text-xs font-semibold tabular-nums ${
+                                            recommendation.urgencyScore >= 0.7 ? 'text-red-400' :
+                                            recommendation.urgencyScore >= 0.4 ? 'text-amber-400' :
+                                            'text-green-400'
+                                        }`}>
+                                            urgency {(recommendation.urgencyScore * 100).toFixed(0)}%
+                                        </span>
+                                    )}
+                                </div>
+                                {recommendation.recommendedAction && (
+                                    <p className="text-xs font-medium text-[hsl(var(--foreground))]">
+                                        {recommendation.recommendedAction}
+                                    </p>
+                                )}
+                                {recommendation.reason && (
+                                    <p className="text-[11px] text-[hsl(var(--foreground-muted))] leading-relaxed">
+                                        {recommendation.reason}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Scrollable timeline */}
                 <div className="flex-1 overflow-y-auto px-6 py-6">

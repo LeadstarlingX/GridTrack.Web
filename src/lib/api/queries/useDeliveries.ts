@@ -14,5 +14,7 @@ export function useDeliveries(params: Omit<DeliveriesQueryParams, 'cursor'>) {
                 .then((r) => r.data),
         initialPageParam: undefined as string | undefined,
         getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+        // Monitoring stream: auto-refresh so the list stays current without a manual refresh.
+        refetchInterval: APP_CONFIG.query.deliveriesRefetchMs,
     })
 }
