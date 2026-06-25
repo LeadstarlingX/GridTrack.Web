@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge, Button, Skeleton } from '@/components/ui'
 import { apiClient } from '@/lib/api/client'
@@ -33,6 +33,14 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
 
     const rangeLabel = useMemo(() => `${range.from} to ${range.to}`, [range.from, range.to])
     const rangeDays = useMemo(() => getRangeDays(range.from, range.to), [range.from, range.to])
+
+    // The date range drives the conversation: whenever it changes, wipe the chat and
+    // reload the export for the new range. No manual "Load Data" step.
+    useEffect(() => {
+        clearConversation()
+        void loadCsvForRange(range.from, range.to, activeDays, hourStart, hourEnd)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [range.from, range.to])
 
     const handleSend = async () => {
         if (!input.trim()) return
@@ -92,20 +100,17 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
                     <span className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1">
                         {rangeLabel}
                     </span>
-                    {csvData && (
+                    {isCsvLoading ? (
+                        <Badge variant="outline" className="text-[11px] font-medium uppercase tracking-wide">
+                            Loading…
+                        </Badge>
+                    ) : csvData && (
                         <Badge variant="secondary" className="text-[11px] font-medium uppercase tracking-wide">
                             {rangeDays} days loaded
                         </Badge>
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => loadCsvForRange(range.from, range.to, activeDays, hourStart, hourEnd)}
-                    >
-                        {isCsvLoading ? 'Loading...' : 'Load Data'}
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={clearConversation}>
                         Clear
                     </Button>
@@ -115,7 +120,9 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
             <div className="flex h-[340px] flex-col gap-3 overflow-y-auto rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-4">
                 {messages.length === 0 ? (
                     <p className="text-xs text-[hsl(var(--foreground-subtle))] italic">
-                        Load data to unlock AI analysis, then ask about anomalies, ETAs, or district trends.
+                        {isCsvLoading
+                            ? 'Loading data for the selected range…'
+                            : 'Ask about anomalies, ETAs, or district trends for the selected range.'}
                     </p>
                 ) : (
                     messages.map((message, index) => <ChatMessage key={`${message.role}-${index}`} message={message} />)
@@ -135,7 +142,7 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
                             void handleSend()
                         }
                     }}
-                    placeholder={csvData ? 'Ask about the data… (Enter to send, Shift+Enter for newline)' : 'Load CSV data to start the conversation.'}
+                    placeholder={csvData ? 'Ask about the data… (Enter to send, Shift+Enter for newline)' : 'Loading data for the selected range…'}
                     className="min-h-[90px] resize-none rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2 text-sm text-[hsl(var(--foreground))]"
                     disabled={!csvData || isLoading}
                 />
