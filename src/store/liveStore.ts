@@ -23,6 +23,7 @@ interface LiveStore {
     pushSurge: (alert: DemandSurge) => void
     pushIncident: (incident: AnomalyIncident) => void
     initDrivers: (drivers: DriverState[]) => void
+    setDriverStatus: (id: string, status: DriverState['status']) => void
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
@@ -126,5 +127,15 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                     : d
             }
             return { drivers: { ...s.drivers, ...updates } }
+        }),
+    setDriverStatus: (id, status) =>
+        set((s) => {
+            if (!s.drivers[id]) return s
+            return {
+                drivers: {
+                    ...s.drivers,
+                    [id]: { ...s.drivers[id], status },
+                },
+            }
         }),
 }))

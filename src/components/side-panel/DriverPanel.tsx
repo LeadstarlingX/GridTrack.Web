@@ -66,9 +66,11 @@ export default function DriverPanel() {
                     const route: [number, number][] = (resp.data.routePolyline ?? []).map(
                         (p) => [p.lat, p.lng] as [number, number],
                     )
-                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, activeDelivery.etaSeconds ?? 420)
+                    const eta = resp.data.etaSeconds ?? deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? 420
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, eta)
                 } catch {
-                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], activeDelivery.etaSeconds ?? 420)
+                    const eta = deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? 420
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], eta)
                 }
             } else {
                 useFocusStore.getState().enterFocusMode(`patrol-${driver.id}`, driver.id, [], 0)

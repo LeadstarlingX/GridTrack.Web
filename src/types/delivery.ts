@@ -1,4 +1,4 @@
-export type DeliveryStatus = 'Created' | 'Assigned' | 'InTransit' | 'Delivered' | 'Anomalous'
+export type DeliveryStatus = 'Created' | 'Assigned' | 'InTransit' | 'Delivered' | 'Anomalous' | 'Cancelled'
 
 export interface DeliveryState {
     id: string

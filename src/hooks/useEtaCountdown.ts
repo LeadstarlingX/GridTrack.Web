@@ -15,6 +15,12 @@ export function useEtaCountdown(etaSeconds: number | null) {
             return
         }
 
+        // ← ADD this block
+        if (etaSeconds <= 0) {
+            setDisplay('Arrived')
+            return
+        }
+
         let remaining = etaSeconds
         setDisplay(formatSeconds(remaining))
 
