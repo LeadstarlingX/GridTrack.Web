@@ -157,7 +157,7 @@ export default function LiveMap({ onMapReady }: Props) {
         return useLiveStore.subscribe((state) => {
             const map = mapRef.current?.getMap()
             if (!map?.isStyleLoaded()) return
-            ;(map.getSource('drivers') as GeoJSONSource | undefined)
+                ;(map.getSource('drivers') as GeoJSONSource | undefined)
                 ?.setData(buildDriversGeoJSON(state.drivers, stalledOnly))
             ;(map.getSource('driver-trail') as GeoJSONSource | undefined)
                 ?.setData(buildTrailGeoJSON(state.trails, activeIdRef.current))
@@ -174,6 +174,7 @@ export default function LiveMap({ onMapReady }: Props) {
     }, [focusedId, selectedId])
 
     const onClick = useCallback((e: MapLayerMouseEvent) => {
+        if (!e.target.isStyleLoaded()) return
         const features = e.target.queryRenderedFeatures(e.point, { layers: ['driver-circles'] })
         if (features.length > 0) {
             const driverId = features[0].properties?.id as string
@@ -185,6 +186,7 @@ export default function LiveMap({ onMapReady }: Props) {
     }, [toggleDriverPanel])
 
     const onMouseMove = useCallback((e: MapLayerMouseEvent) => {
+        if (!e.target.isStyleLoaded()) return
         const features = e.target.queryRenderedFeatures(e.point, { layers: ['driver-circles'] })
         setCursor(features.length > 0 ? 'pointer' : '')
     }, [])

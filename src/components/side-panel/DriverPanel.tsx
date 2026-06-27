@@ -35,7 +35,7 @@ export default function DriverPanel() {
     const driver = useLiveStore((s) => s.drivers[driverId ?? ''])
     const activeDelivery = useLiveStore((s) =>
         Object.values(s.deliveries).find(
-            (d) => d.assignedDriverId === (driverId ?? '') && d.status === 'InTransit',
+            (d) => d.assignedDriverId === (driverId ?? '') && (d.status === 'InTransit' || d.status === 'PickedUp'),
         ) ?? null,
     )
     const { data: detail } = useDriverDetail(driverId)
@@ -66,10 +66,10 @@ export default function DriverPanel() {
                     const route: [number, number][] = (resp.data.routePolyline ?? []).map(
                         (p) => [p.lat, p.lng] as [number, number],
                     )
-                    const eta = resp.data.etaSeconds ?? deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? 420
-                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, eta)
+                    const eta = resp.data.etaSeconds ?? deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, eta, resp.data.routeCost)
                 } catch {
-                    const eta = deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? 420
+                    const eta = deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null
                     useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], eta)
                 }
             } else {

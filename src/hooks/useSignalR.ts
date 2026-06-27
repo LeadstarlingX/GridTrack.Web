@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { HubConnectionBuilder, HttpTransportType, LogLevel } from '@microsoft/signalr'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -38,10 +38,18 @@ interface ForecastOverlayUpdatedPayload {
 
 export function useSignalR() {
     const queryClient = useQueryClient()
+    const queryClientRef = useRef(queryClient)
+    queryClientRef.current = queryClient
 
     useEffect(() => {
+        // Derive hub URL: explicit VITE_HUB_URL > VITE_API_BASE_URL + path > same-origin /hubs/dashboard
+        const apiBase = import.meta.env.VITE_API_BASE_URL ?? ''
+        const hubUrl = import.meta.env.VITE_HUB_URL ?? (apiBase ? `${apiBase}/hubs/dashboard` : '/hubs/dashboard')
+
+        console.log('[SignalR] Connecting to:', hubUrl)
+
         const connection = new HubConnectionBuilder()
-            .withUrl(import.meta.env.VITE_HUB_URL ?? '', {
+            .withUrl(hubUrl, {
                 skipNegotiation: true,
                 transport: HttpTransportType.WebSockets,
                 accessTokenFactory: () => getAuthToken().then((t) => t ?? ''),
@@ -83,6 +91,7 @@ export function useSignalR() {
         })
 
         connection.on('DeliveryUpdated', (payload: DeliveryUpdatedPayload) => {
+            // Backend broadcasts etaSeconds as null — never overwrite a live value with null.
             const patch: Record<string, unknown> = {
                 status: payload.status,
                 assignedDriverId: payload.assignedDriverId ?? null,
@@ -116,7 +125,7 @@ export function useSignalR() {
         })
 
         connection.on('ForecastOverlayUpdated', (payload: ForecastOverlayUpdatedPayload) => {
-            queryClient.invalidateQueries({ queryKey: ['forecast', payload.districtId] })
+            queryClientRef.current.invalidateQueries({ queryKey: ['forecast', payload.districtId] })
         })
 
         connection.on('StallDetected', (payload: { driverId: string; driverName: string; districtId: string; stalledSince: string }) => {
@@ -136,6 +145,7 @@ export function useSignalR() {
         })
 
         let rttTimer: ReturnType<typeof setInterval> | null = null
+        let disposed = false  // Guards against StrictMode double-mount noise
 
         const hydrateDrivers = async () => {
             try {
@@ -163,6 +173,8 @@ export function useSignalR() {
         connection
             .start()
             .then(() => {
+                if (disposed) return  // StrictMode cleaned up this instance before start resolved
+                console.log('[SignalR] Connected successfully')
                 setHubConnection(connection)
                 useMapStore.getState().setHubStatus('connected')
                 void hydrateDrivers()
@@ -179,7 +191,11 @@ export function useSignalR() {
                 measureRtt()
                 rttTimer = setInterval(measureRtt, 5_000)
             })
-            .catch(() => useMapStore.getState().setHubStatus('disconnected'))
+            .catch((err) => {
+                if (disposed) return  // Expected during StrictMode cleanup — not a real failure
+                console.error('[SignalR] Connection failed:', err?.message || err)
+                useMapStore.getState().setHubStatus('disconnected')
+            })
 
         connection.onreconnected(() => {
             useMapStore.getState().setHubStatus('connected')
@@ -195,9 +211,11 @@ export function useSignalR() {
         })
 
         return () => {
+            disposed = true
             if (rttTimer) clearInterval(rttTimer)
             setHubConnection(null)
             connection.stop()
         }
-    }, [queryClient])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 }

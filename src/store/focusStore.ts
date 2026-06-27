@@ -5,15 +5,17 @@ interface FocusStore {
     focusedDriverId: string | null
     autoFollow: boolean
     routePolyline: [number, number][] | null
+    pickupCoord: [number, number] | null
+    dropCoord: [number, number] | null
     etaSeconds: number | null
-    pickupCoord: [number, number] | null   // [lat, lng] — first waypoint
-    dropoffCoord: [number, number] | null  // [lat, lng] — last waypoint
+    routeCost: number | null
 
     enterFocusMode: (
         deliveryId: string,
         driverId: string,
         polyline: [number, number][],
-        etaSeconds: number
+        etaSeconds: number | null,
+        routeCost?: number | null,
     ) => void
     exitFocusMode: () => void
     toggleAutoFollow: () => void
@@ -27,19 +29,21 @@ export const useFocusStore = create<FocusStore>()((set) => ({
     routePolyline: null,
     etaSeconds: null,
     pickupCoord: null,
-    dropoffCoord: null,
+    dropCoord: null,
+    routeCost: null,
 
-    enterFocusMode: (deliveryId, driverId, polyline, etaSeconds) => {
+    enterFocusMode: (deliveryId, driverId, polyline, etaSeconds, routeCost) => {
         const pickup = polyline.length > 0 ? (polyline[0] as [number, number]) : null
-        const dropoff = polyline.length > 1 ? (polyline[polyline.length - 1] as [number, number]) : null
+        const drop = polyline.length > 1 ? (polyline[polyline.length - 1] as [number, number]) : null
         set({
             focusedDeliveryId: deliveryId,
             focusedDriverId: driverId,
             routePolyline: polyline,
-            etaSeconds,
-            autoFollow: true,
             pickupCoord: pickup,
-            dropoffCoord: dropoff,
+            dropCoord: drop,
+            etaSeconds,
+            routeCost: routeCost ?? null,
+            autoFollow: true,
         })
     },
 
@@ -51,7 +55,8 @@ export const useFocusStore = create<FocusStore>()((set) => ({
             etaSeconds: null,
             autoFollow: true,
             pickupCoord: null,
-            dropoffCoord: null,
+            dropCoord: null,
+            routeCost: null,
         }),
 
     toggleAutoFollow: () => set((s) => ({ autoFollow: !s.autoFollow })),
