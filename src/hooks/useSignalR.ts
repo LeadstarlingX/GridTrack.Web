@@ -83,11 +83,28 @@ export function useSignalR() {
         })
 
         connection.on('DeliveryUpdated', (payload: DeliveryUpdatedPayload) => {
-            useLiveStore.getState().patchDelivery(payload.deliveryId, {
+            const patch: Record<string, unknown> = {
                 status: payload.status,
                 assignedDriverId: payload.assignedDriverId ?? null,
-                etaSeconds: payload.etaSeconds ?? null,
-            })
+            }
+            if (payload.etaSeconds != null) {
+                patch.etaSeconds = payload.etaSeconds
+            }
+            useLiveStore.getState().patchDelivery(payload.deliveryId, patch as Partial<import('@/types/delivery').DeliveryState>)
+
+            // When a delivery is delivered or cancelled, mark the driver as available on the live map.
+            if ((payload.status === 'Delivered' || payload.status === 'Cancelled') && payload.assignedDriverId) {
+                const store = useLiveStore.getState()
+                const driver = store.drivers[payload.assignedDriverId]
+                if (driver) {
+                    useLiveStore.setState({
+                        drivers: {
+                            ...store.drivers,
+                            [payload.assignedDriverId]: { ...driver, status: 'available' as const },
+                        },
+                    })
+                }
+            }
         })
 
         connection.on('AnomalyBroadcast', (payload: AnomalyBroadcastPayload) => {
