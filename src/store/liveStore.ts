@@ -23,7 +23,6 @@ interface LiveStore {
     pushSurge: (alert: DemandSurge) => void
     pushIncident: (incident: AnomalyIncident) => void
     initDrivers: (drivers: DriverState[]) => void
-    setDriverStatus: (id: string, status: DriverState['status']) => void
 }
 
 export const useLiveStore = create<LiveStore>()((set) => ({
@@ -91,7 +90,18 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 ...s.deliveries,
                 [id]: s.deliveries[id]
                     ? { ...s.deliveries[id], ...partial }
-                    : { id, status: 'Created' as const, assignedDriverId: null, districtId: '', etaSeconds: null, createdAt: new Date().toISOString(), ...partial },
+                    : {
+                        id,
+                        status: 'Created' as const,
+                        assignedDriverId: null,
+                        districtId: '',
+                        etaDeadline: null,
+                        createdAt: new Date().toISOString(),
+                        routeDistanceMeters: null,
+                        routeDurationSeconds: null,
+                        routeCost: null,
+                        ...partial,
+                    },
             },
         })),
 
@@ -128,14 +138,6 @@ export const useLiveStore = create<LiveStore>()((set) => ({
             }
             return { drivers: { ...s.drivers, ...updates } }
         }),
-    setDriverStatus: (id, status) =>
-        set((s) => {
-            if (!s.drivers[id]) return s
-            return {
-                drivers: {
-                    ...s.drivers,
-                    [id]: { ...s.drivers[id], status },
-                },
-            }
-        }),
 }))
+
+if (typeof window !== 'undefined') (window as any).__gs = useLiveStore

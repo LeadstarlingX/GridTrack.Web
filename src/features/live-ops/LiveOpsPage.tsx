@@ -106,7 +106,6 @@ export default function LiveOpsPage() {
             delivery.id,
             delivery.assignedDriverId,
             [],
-            delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds,
         )
         setSidePanelMode('focus')
         navigate('/', { replace: true, state: null })

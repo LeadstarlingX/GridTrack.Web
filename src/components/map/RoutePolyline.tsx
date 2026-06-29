@@ -10,7 +10,7 @@ const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', feature
 export default function RoutePolyline() {
     const polyline = useFocusStore((s) => s.routePolyline)
     const pickupCoord = useFocusStore((s) => s.pickupCoord)
-    const dropoffCoord = useFocusStore((s) => s.dropCoord)
+    const dropoffCoord = useFocusStore((s) => s.dropoffCoord)
 
     const data: GeoJSON.FeatureCollection = useMemo(() => {
         const empty: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }

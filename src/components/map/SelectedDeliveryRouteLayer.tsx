@@ -17,8 +17,8 @@ export default function SelectedDeliveryRouteLayer() {
     const activeDelivery = useLiveStore((s) =>
         selectedDriverId
             ? Object.values(s.deliveries).find(
-                  (d) => d.assignedDriverId === selectedDriverId && d.status === 'InTransit',
-              ) ?? null
+            (d) => d.assignedDriverId === selectedDriverId && d.status === 'InTransit',
+        ) ?? null
             : null,
     )
 
@@ -70,17 +70,17 @@ export default function SelectedDeliveryRouteLayer() {
             {/* Pickup (green) */}
             <Source id="selected-pickup" type="geojson" data={pickup}>
                 <Layer id="selected-pickup-ring" type="circle"
-                    paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#22c55e' }} />
+                       paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#22c55e' }} />
                 <Layer id="selected-pickup-dot" type="circle"
-                    paint={{ 'circle-radius': 5, 'circle-color': '#22c55e', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
+                       paint={{ 'circle-radius': 5, 'circle-color': '#22c55e', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
             </Source>
 
             {/* Drop-off (amber) */}
             <Source id="selected-drop" type="geojson" data={drop}>
                 <Layer id="selected-drop-ring" type="circle"
-                    paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#f59e0b' }} />
+                       paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#f59e0b' }} />
                 <Layer id="selected-drop-dot" type="circle"
-                    paint={{ 'circle-radius': 5, 'circle-color': '#f59e0b', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
+                       paint={{ 'circle-radius': 5, 'circle-color': '#f59e0b', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
             </Source>
         </>
     )

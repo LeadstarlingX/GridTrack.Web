@@ -98,10 +98,15 @@ export default function LiveOpsBar() {
         const inTransit = dList.filter((d) => d.status === 'in-transit').length
         const stalled = dList.filter((d) => d.stalledSince !== null).length
         const delivering = Object.values(deliveries).filter(
-            (d) => d.status === 'InTransit' && d.etaSeconds != null,
+            (d) => d.status === 'InTransit' && d.etaDeadline != null,
         )
         const avgEta = delivering.length
-            ? Math.round(delivering.reduce((sum, d) => sum + (d.etaSeconds ?? 0), 0) / delivering.length)
+            ? Math.round(
+                delivering.reduce(
+                    (sum, d) => sum + Math.max(0, Math.floor((new Date(d.etaDeadline!).getTime() - Date.now()) / 1000)),
+                    0,
+                ) / delivering.length,
+            )
             : null
         return { active, inTransit, stalled, avgEta, alerts: anomalyQueue.length }
     }, [drivers, deliveries, anomalyQueue])

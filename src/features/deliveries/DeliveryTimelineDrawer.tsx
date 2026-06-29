@@ -12,6 +12,7 @@ import { useDeliveryTimeline } from '@/lib/api/queries/useDeliveryTimeline'
 import { useDelivery } from '@/lib/api/queries/useDelivery'
 import { useDrivers } from '@/lib/api/queries/useDrivers'
 import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
+import { toEtaDeadline } from '@/lib/eta'
 import {
     useAssignDriver,
     usePickUpDelivery,
@@ -144,11 +145,23 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
         delivery?.status === 'InTransit' || delivery?.status === 'Assigned',
     )
 
-    // Live ETA from SignalR store — more up-to-date than the REST response
-    const liveEtaSeconds = useLiveStore((s) =>
-        deliveryId ? (s.deliveries[deliveryId]?.etaSeconds ?? null) : null,
+    // Live ETA deadline from SignalR store — always accurate, computed from absolute timestamp.
+    const liveEtaDeadline = useLiveStore((s) =>
+        deliveryId ? (s.deliveries[deliveryId]?.etaDeadline ?? null) : null,
     )
-    const etaDisplay = useEtaCountdown(liveEtaSeconds ?? delivery?.etaSeconds ?? null)
+    // REST fallback. Lazy-initialise from cached delivery data so there's no '--:--'
+    // flash on remount. Only advance with positive etaSeconds — negative means the
+    // backend's ExpectedEta expired; null means not calculated yet.
+    const [restEtaDeadline, setRestEtaDeadline] = useState<string | null>(
+        () => toEtaDeadline(delivery?.etaSeconds),
+    )
+    useEffect(() => { setRestEtaDeadline(null) }, [deliveryId])
+    useEffect(() => {
+        const d = toEtaDeadline(delivery?.etaSeconds)
+        if (d !== null) setRestEtaDeadline(d)
+    }, [delivery?.etaSeconds])
+
+    const etaDisplay = useEtaCountdown(liveEtaDeadline ?? restEtaDeadline)
 
     const { data: driversData, isLoading: driversLoading } = useDrivers(
         { status: 'available', pageSize: 15 },
@@ -187,11 +200,11 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                 </SheetHeader>
 
                 {/* Live info strip — ETA / cost / AI */}
-                {delivery && (status === 'InTransit' || delivery.routeCost != null || recommendation?.aiAvailable) && (
+                {delivery && (status === 'InTransit' || status === 'Assigned' || status === 'PickedUp' || delivery.routeCost != null || recommendation?.aiAvailable) && (
                     <div className="shrink-0 border-b border-[hsl(var(--border))] px-6 py-3 space-y-2.5">
 
-                        {/* ETA countdown */}
-                        {status === 'InTransit' && (
+                        {/* ETA countdown — show for any active status that has a live deadline */}
+                        {(status === 'InTransit' || status === 'PickedUp' || status === 'Assigned') && etaDisplay !== '--:--' && (
                             <div className="flex items-center gap-2.5">
                                 <Timer size={14} className="shrink-0 text-sky-400" />
                                 <span className="text-xs text-[hsl(var(--foreground-muted))]">ETA</span>
@@ -223,8 +236,8 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                                     {recommendation.urgencyScore != null && (
                                         <span className={`ml-auto text-xs font-semibold tabular-nums ${
                                             recommendation.urgencyScore >= 0.7 ? 'text-red-400' :
-                                            recommendation.urgencyScore >= 0.4 ? 'text-amber-400' :
-                                            'text-green-400'
+                                                recommendation.urgencyScore >= 0.4 ? 'text-amber-400' :
+                                                    'text-green-400'
                                         }`}>
                                             urgency {(recommendation.urgencyScore * 100).toFixed(0)}%
                                         </span>

@@ -6,36 +6,31 @@ function formatSeconds(s: number): string {
     return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-export function useEtaCountdown(etaSeconds: number | null) {
+/**
+ * Counts down to an absolute ISO deadline. Recomputes remaining time on every
+ * tick from (deadline - Date.now()), so the display is correct across mounts,
+ * SignalR reconnects, and stale-snapshot scenarios.
+ */
+export function useEtaCountdown(etaDeadline: string | null) {
     const [display, setDisplay] = useState('--:--')
 
     useEffect(() => {
-        if (etaSeconds === null) {
+        if (etaDeadline === null) {
             setDisplay('--:--')
             return
         }
 
-        // ← ADD this block
-        if (etaSeconds <= 0) {
-            setDisplay('Arrived')
-            return
+        const deadlineMs = new Date(etaDeadline).getTime()
+
+        const tick = () => {
+            const remaining = Math.floor((deadlineMs - Date.now()) / 1000)
+            setDisplay(remaining > 0 ? formatSeconds(remaining) : 'Arrived')
         }
 
-        let remaining = etaSeconds
-        setDisplay(formatSeconds(remaining))
-
-        const interval = setInterval(() => {
-            remaining -= 1
-            if (remaining <= 0) {
-                setDisplay('Arrived')
-                clearInterval(interval)
-                return
-            }
-            setDisplay(formatSeconds(remaining))
-        }, 1000)
-
+        tick()
+        const interval = setInterval(tick, 1000)
         return () => clearInterval(interval)
-    }, [etaSeconds])
+    }, [etaDeadline])
 
     return display
 }

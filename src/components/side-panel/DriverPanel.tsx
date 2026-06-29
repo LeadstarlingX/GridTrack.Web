@@ -10,6 +10,7 @@ import { useDriverStats } from '@/lib/api/queries/useDriverStats'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { useDelivery } from '@/lib/api/queries/useDelivery'
 import { useEtaCountdown } from '@/hooks/useEtaCountdown'
+import { toEtaDeadline } from '@/lib/eta'
 import { apiClient } from '@/lib/api/client'
 import { APP_CONFIG } from '@/config/app.config'
 
@@ -33,20 +34,37 @@ export default function DriverPanel() {
     const driverId = useMapStore((s) => s.selectedDriverId)
     const setMode = useMapStore((s) => s.setSidePanelMode)
     const driver = useLiveStore((s) => s.drivers[driverId ?? ''])
-    const activeDelivery = useLiveStore((s) =>
-        Object.values(s.deliveries).find(
-            (d) => d.assignedDriverId === (driverId ?? '') && (d.status === 'InTransit' || d.status === 'PickedUp'),
-        ) ?? null,
-    )
+    const activeDelivery = useLiveStore((s) => {
+        const candidates = Object.values(s.deliveries).filter(
+            (d) =>
+                d.assignedDriverId === (driverId ?? '') &&
+                (d.status === 'InTransit' || d.status === 'PickedUp' || d.status === 'Assigned'),
+        )
+        // Sort newest-first so stale stuck deliveries from prior sessions are skipped.
+        return (
+            candidates.sort(
+                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+            )[0] ?? null
+        )
+    })
     const { data: detail } = useDriverDetail(driverId)
     const { data: stats } = useDriverStats(driverId)
     const { data: allDistricts = [] } = useDistricts()
     const { data: deliveryDetail } = useDelivery(activeDelivery?.id ?? null)
     const [following, setFollowing] = useState(false)
-    // ETA from the delivery detail (the live store's etaSeconds is often stale/0).
-    const etaDisplay = useEtaCountdown(
-        activeDelivery ? (deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null) : null,
+    // Lazy-init from cached deliveryDetail so remount shows ETA immediately.
+    // Only advance when toEtaDeadline returns non-null (positive etaSeconds).
+    const [etaDeadlineFromRest, setEtaDeadlineFromRest] = useState<string | null>(
+        () => toEtaDeadline(deliveryDetail?.etaSeconds),
     )
+    const activeDeliveryId = activeDelivery?.id ?? null
+    useEffect(() => { setEtaDeadlineFromRest(null) }, [activeDeliveryId])
+    useEffect(() => {
+        const d = toEtaDeadline(deliveryDetail?.etaSeconds)
+        if (d !== null) setEtaDeadlineFromRest(d)
+    }, [deliveryDetail?.etaSeconds])
+
+    const etaDisplay = useEtaCountdown(activeDelivery?.etaDeadline ?? etaDeadlineFromRest)
 
     if (!driver) return null
 
@@ -66,14 +84,12 @@ export default function DriverPanel() {
                     const route: [number, number][] = (resp.data.routePolyline ?? []).map(
                         (p) => [p.lat, p.lng] as [number, number],
                     )
-                    const eta = resp.data.etaSeconds ?? deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null
-                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route, eta, resp.data.routeCost)
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route)
                 } catch {
-                    const eta = deliveryDetail?.etaSeconds ?? activeDelivery.etaSeconds ?? null
-                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [], eta)
+                    useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [])
                 }
             } else {
-                useFocusStore.getState().enterFocusMode(`patrol-${driver.id}`, driver.id, [], 0)
+                useFocusStore.getState().enterFocusMode(`patrol-${driver.id}`, driver.id, [])
             }
             setMode('focus')
         } finally {
@@ -108,7 +124,7 @@ export default function DriverPanel() {
                     <span className="text-muted-foreground">Position</span>
                     <span>{driver.lat.toFixed(4)}, {driver.lng.toFixed(4)}</span>
                 </div>
-                {activeDelivery && (
+                {activeDelivery && etaDisplay !== '--:--' && (
                     <div className="flex justify-between">
                         <span className="text-muted-foreground flex items-center gap-1"><Clock size={12} />ETA</span>
                         <span className="font-mono tabular-nums text-sky-500">{etaDisplay}</span>

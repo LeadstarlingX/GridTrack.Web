@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { apiClient } from '@/lib/api/client'
 import { useLiveStore } from '@/store/liveStore'
+import { toEtaDeadline } from '@/lib/eta'
 import type { DriverState } from '@/types/driver'
 import type { DeliveryState, DeliveryStatus } from '@/types/delivery'
 
@@ -71,8 +72,15 @@ export function useRealLiveState() {
                         status: d.status as DeliveryStatus,
                         assignedDriverId: d.assignedDriverId ?? null,
                         districtId: d.districtId,
-                        etaSeconds: d.etaSeconds ?? null,
+                        // Convert remaining-seconds snapshot to absolute deadline so the
+                        // countdown stays accurate across remounts and SignalR gaps.
+                        etaDeadline: toEtaDeadline(d.etaSeconds),
                         createdAt: d.createdAt,
+                        // List endpoint does not return route economics; detail endpoint does.
+                        // SignalR DeliveryUpdated will patch these once the route is calculated.
+                        routeDistanceMeters: null,
+                        routeDurationSeconds: null,
+                        routeCost: null,
                     }
                 }
 
