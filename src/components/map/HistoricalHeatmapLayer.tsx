@@ -45,10 +45,16 @@ export default function HistoricalHeatmapLayer() {
             return { ...f, properties: { ...f.properties, intensity } }
         })
 
-        const values = features.map((f) => (f as GeoJSON.Feature).properties?.intensity ?? 0)
-        const p25 = percentile(values, 25)
-        const p50 = percentile(values, 50)
-        const p75 = percentile(values, 75)
+        // Percentiles over cells that actually have activity, not the full city grid — most of
+        // the ~900 grid cells are empty, so including them collapses p25/p50/p75 to 0. MapLibre's
+        // `step` expression requires strictly ascending stops, so duplicate 0 stops make the
+        // layer fail to render at all (not just look flat).
+        const active = Object.values(countMap).filter((v) => v > 0).sort((a, b) => a - b)
+        let p25 = percentile(active, 25)
+        let p50 = percentile(active, 50)
+        let p75 = percentile(active, 75)
+        if (p50 <= p25) p50 = p25 + 1
+        if (p75 <= p50) p75 = p50 + 1
 
         return {
             colored: { ...heatmapGeoJSON, features } as GeoJSON.FeatureCollection,
