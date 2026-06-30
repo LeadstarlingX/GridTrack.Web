@@ -4,11 +4,13 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Skel
 import DeliveryTrendChart from '@/components/charts/DeliveryTrendChart'
 import AnomalyRateChart from '@/components/charts/AnomalyRateChart'
 import DistrictVolumeChart from '@/components/charts/DistrictVolumeChart'
+import DistrictDemandForecastChart from '@/components/charts/DistrictDemandForecastChart'
 import StatusBreakdownChart from '@/components/charts/StatusBreakdownChart'
 import UrgencyTrendChart from '@/components/charts/UrgencyTrendChart'
 import { APP_CONFIG } from '@/config/app.config'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { useDistrictVolume } from '@/lib/api/queries/useDistrictVolume'
+import { useDistrictDemandForecast } from '@/lib/api/queries/useDistrictDemandForecast'
 import { useDriverAnalytics } from '@/lib/api/queries/useDriverAnalytics'
 import { apiClient } from '@/lib/api/client'
 import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
@@ -67,6 +69,7 @@ export default function AnalyticsPage() {
         return { from: start.toISOString().slice(0, 10), to: end.toISOString().slice(0, 10) }
     })
     const [appliedRange, setAppliedRange] = useState<DateRangeValue>(range)
+    const [forecastHoursAhead, setForecastHoursAhead] = useState(3)
 
     const trendsParams = useMemo(
         () => ({
@@ -83,6 +86,9 @@ export default function AnalyticsPage() {
     const { data: trendsData, isLoading: trendsLoading } = useAnalyticsTrends(trendsParams)
     const { data: districtVolumeData, isLoading: districtVolumeLoading } = useDistrictVolume(
         { from: appliedRange.from, to: appliedRange.to },
+    )
+    const { data: demandForecastData, isLoading: demandForecastLoading } = useDistrictDemandForecast(
+        { hoursAhead: forecastHoursAhead },
     )
 
     const { data: driverAnalyticsData } = useDriverAnalytics()
@@ -121,6 +127,18 @@ export default function AnalyticsPage() {
     const urgencyTrend = useMemo(
         () => trendsData?.urgencyTrend.map((p) => ({ bucket: p.bucket, avgScore: p.value })) ?? [],
         [trendsData],
+    )
+
+    const top5DemandForecast = useMemo(
+        () =>
+            (demandForecastData?.items ?? [])
+                .slice(0, 5)
+                .map((item) => ({
+                    district: item.districtName,
+                    districtId: item.districtId,
+                    predicted: Math.round(item.predictedDeliveries * 10) / 10,
+                })),
+        [demandForecastData],
     )
 
     const downloadCsv = async (mode: 'range' | 'full') => {
@@ -295,6 +313,45 @@ export default function AnalyticsPage() {
                                 <StatusBreakdownChart
                                     data={statusBreakdownData?.items ?? []}
                                     isLoading={statusBreakdownLoading}
+                                />
+                            </CardContent>
+                        </Card>
+                    </section>
+
+                    <section className="grid gap-4">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <CardTitle className="text-sm font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">
+                                            Top 5 Districts — Predicted Demand
+                                        </CardTitle>
+                                        <CardDescription className="text-xs text-[hsl(var(--foreground-muted))]">
+                                            Seasonal-naive forecast (28-day same hour/day-of-week average), summed over the
+                                            selected lookahead window.
+                                        </CardDescription>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-1.5 rounded-lg border border-[hsl(var(--primary)/0.4)] bg-[hsl(var(--primary)/0.1)] px-2.5 py-1.5">
+                                        <span className="text-[10px] uppercase tracking-wide font-medium whitespace-nowrap text-[hsl(var(--primary))]">
+                                            Next {forecastHoursAhead}h
+                                        </span>
+                                        <input
+                                            type="range"
+                                            min={1}
+                                            max={12}
+                                            step={1}
+                                            value={forecastHoursAhead}
+                                            onChange={(e) => setForecastHoursAhead(Number(e.target.value))}
+                                            className="w-20 accent-[hsl(var(--primary))]"
+                                            aria-label="Forecast lookahead hours"
+                                        />
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <DistrictDemandForecastChart
+                                    data={top5DemandForecast}
+                                    isLoading={demandForecastLoading}
                                 />
                             </CardContent>
                         </Card>

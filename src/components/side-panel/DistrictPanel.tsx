@@ -6,6 +6,7 @@ import { useMapStore } from '@/store/mapStore'
 import { useForecast } from '@/lib/api/queries/useForecast'
 import { useDistrictSparkline } from '@/lib/api/queries/useDistrictSparkline'
 import { useDistrictSummary } from '@/lib/api/queries/useDistrictSummary'
+import { useDistrictDemandForecast } from '@/lib/api/queries/useDistrictDemandForecast'
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts'
 import { format } from 'date-fns'
 
@@ -53,8 +54,11 @@ export default function DistrictPanel() {
 
     const { data: forecast, isLoading: forecastLoading } = useForecast(boundaryId)
     const { data: districtSummary } = useDistrictSummary(boundaryId)
+    const { data: demandForecast, isLoading: demandForecastLoading } = useDistrictDemandForecast({ hoursAhead: 1 })
 
     if (!boundaryId) return null
+
+    const nextHourPredicted = demandForecast?.items.find((i) => i.districtId === boundaryId)?.predictedDeliveries
 
     const boundaryMatch = boundaries?.features?.find((feature) => {
         const featureId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
@@ -85,6 +89,21 @@ export default function DistrictPanel() {
                             <p className="text-2xl font-bold mb-2">{forecast?.forecastedDemand ?? '—'}</p>
                         )}
                         <SparklineChart districtId={boundaryId} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-1"><CardTitle className="text-sm">Predicted (next hour)</CardTitle></CardHeader>
+                    <CardContent className="pt-0 pb-3">
+                        {demandForecastLoading ? (
+                            <Skeleton className="h-8 w-16" />
+                        ) : (
+                            <p className="text-2xl font-bold">
+                                {nextHourPredicted !== undefined ? nextHourPredicted.toFixed(1) : '—'}
+                            </p>
+                        )}
+                        <p className="mt-1 text-[11px] text-[hsl(var(--foreground-muted))]">
+                            28-day historical average for this hour/day-of-week.
+                        </p>
                     </CardContent>
                 </Card>
                 <Card>

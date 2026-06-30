@@ -61,8 +61,6 @@ function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
 
 export default function LiveOpsPage() {
     const mapRef = useRef<MapRef | null>(null)
-    const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
-    const heatmapResolution = APP_CONFIG.map.heatmapResolution
     const location = useLocation()
     const navigate = useNavigate()
     const enterFocusMode = useFocusStore((s) => s.enterFocusMode)
@@ -70,17 +68,6 @@ export default function LiveOpsPage() {
 
     useFocusMode(mapRef)
     useStallDetector()
-
-    useEffect(() => {
-        const fileName = `/h3-damascus-r${heatmapResolution}.geojson`
-        fetch(fileName)
-            .then((r) => {
-                if (!r.ok) throw new Error(`Missing H3 file: ${fileName}`)
-                return r.json()
-            })
-            .then((data) => setHeatmapGeoJSON(normalizeGeoJson(data)))
-            .catch((err) => console.warn(err))
-    }, [setHeatmapGeoJSON, heatmapResolution])
 
     // Always use local GeoJSON — has Arabic names (name_fixed) and full boundary data
     useEffect(() => {

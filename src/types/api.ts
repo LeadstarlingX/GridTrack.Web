@@ -195,22 +195,19 @@ export interface TrendsQueryParams {
     granularity: 'hour' | 'day'
 }
 
-// GET /api/analytics/h3-density
-export interface H3CellDto {
-    h3Index: string
+// GET /api/analytics/pickup-density
+export interface PickupPointDto {
     lat: number
     lng: number
-    deliveryCount: number
 }
 
-export interface H3DensityDto {
-    cells: H3CellDto[]
+export interface PickupDensityDto {
+    points: PickupPointDto[]
 }
 
-export interface H3DensityQueryParams {
+export interface PickupDensityQueryParams {
     from: string
     to: string
-    resolution: number
     fromHour?: number
     toHour?: number
 }
@@ -259,6 +256,23 @@ export interface DistrictVolumeDto {
 export interface DistrictVolumeQueryParams {
     from?: string
     to?: string
+}
+
+// GET /api/analytics/district-demand-forecast
+export interface DistrictDemandForecastItemDto {
+    districtId: string
+    districtName: string
+    predictedDeliveries: number
+}
+
+export interface DistrictDemandForecastDto {
+    items: DistrictDemandForecastItemDto[]
+    hoursAhead: number
+    generatedAt: string
+}
+
+export interface DistrictDemandForecastQueryParams {
+    hoursAhead: number
 }
 
 // GET /api/forecast/{districtId}
@@ -428,8 +442,9 @@ export type ApiEndpoint =
     | '/api/alerts'
     | '/api/analytics/summary'
     | '/api/analytics/trends'
-    | '/api/analytics/h3-density'
+    | '/api/analytics/pickup-density'
     | '/api/analytics/district-volume'
+    | '/api/analytics/district-demand-forecast'
     | '/api/forecast/{districtId}'
     | '/api/export/csv'
     | '/api/analysis/chat'
