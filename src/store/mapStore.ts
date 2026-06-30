@@ -8,8 +8,8 @@ export type HubStatus = 'connected' | 'reconnecting' | 'disconnected'
 interface MapStore {
     hubStatus: HubStatus
     hubRtt: number | null
-    heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
+    lookbackHours: number
     recommendationEnabled: boolean
     staffingEnabled: boolean
     trailEnabled: boolean
@@ -22,12 +22,12 @@ interface MapStore {
     districtPanelView: 'details' | 'browse'
     heatmapGeoJSON: GeoJSON.FeatureCollection | null
     districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
-    historicalHeatmapRange: { from: string; to: string; fromHour: number; toHour: number } | null
+    historicalHeatmapRange: { from: string; to: string; fromHour?: number; toHour?: number } | null
     historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
     districtForecasts: Record<string, ForecastDto>
 
-    toggleHeatmap: () => void
     toggleHistoricalHeatmap: () => void
+    setLookbackHours: (hours: number) => void
     toggleRecommendation: () => void
     toggleStaffing: () => void
     toggleTrail: () => void
@@ -41,7 +41,7 @@ interface MapStore {
     setDistrictPanelView: (view: 'details' | 'browse') => void
     setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
-    setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
+    setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour?: number; toHour?: number }) => void
     setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
     setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
@@ -51,8 +51,8 @@ interface MapStore {
 export const useMapStore = create<MapStore>()((set) => ({
     hubStatus: 'disconnected',
     hubRtt: null,
-    heatmapEnabled: false,
     historicalHeatmapEnabled: false,
+    lookbackHours: 3,
     recommendationEnabled: false,
     staffingEnabled: false,
     trailEnabled: true,
@@ -69,8 +69,8 @@ export const useMapStore = create<MapStore>()((set) => ({
     historicalHeatmapData: null,
     districtForecasts: {},
 
-    toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     toggleHistoricalHeatmap: () => set((s) => ({ historicalHeatmapEnabled: !s.historicalHeatmapEnabled })),
+    setLookbackHours: (hours) => set({ lookbackHours: hours }),
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
     toggleStaffing: () => set((s) => ({ staffingEnabled: !s.staffingEnabled })),
     toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),

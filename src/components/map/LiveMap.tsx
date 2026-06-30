@@ -92,21 +92,6 @@ const CIRCLE_PAINT = {
     'circle-opacity': 0.95,
 } as const
 
-const HEATMAP_PAINT = {
-    'heatmap-weight': 1,
-    'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 7, 1, 15, 3],
-    'heatmap-color': [
-        'interpolate', ['linear'], ['heatmap-density'],
-        0,    'rgba(0,0,0,0)',
-        0.25, '#22c55e',
-        0.5,  '#eab308',
-        0.75, '#f59e0b',
-        1,    '#ef4444',
-    ],
-    'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 7, 20, 15, 40],
-    'heatmap-opacity': 0.65,
-} as const
-
 interface Props {
     onMapReady: (map: MapRef) => void
 }
@@ -119,7 +104,6 @@ export default function LiveMap({ onMapReady }: Props) {
     const fLng = useLiveStore((s) => focusedDriverId ? (s.drivers[focusedDriverId]?.lng ?? 0) : 0)
     const toggleDriverPanel = useMapStore((s) => s.toggleDriverPanel)
     const stalledOnly   = useMapStore((s) => s.stalledOnly)
-    const heatmapEnabled = useMapStore((s) => s.heatmapEnabled)
     const focusedId     = useFocusStore((s) => s.focusedDriverId)
     const selectedId    = useMapStore((s) => s.selectedDriverId)
     const [cursor, setCursor] = useState('')
@@ -244,11 +228,8 @@ export default function LiveMap({ onMapReady }: Props) {
             }}
             attributionControl={false}
         >
-            {/* Single source for all driver positions; reused by both circles and heatmap */}
+            {/* Single source for all driver positions */}
             <Source id="drivers" type="geojson" data={EMPTY_FC}>
-                {heatmapEnabled && (
-                    <Layer id="driver-heatmap" type="heatmap" paint={HEATMAP_PAINT as never} />
-                )}
                 <Layer id="driver-circles" type="circle" paint={CIRCLE_PAINT as never} />
             </Source>
 
