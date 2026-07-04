@@ -1,9 +1,27 @@
 import { useMemo, useState } from 'react'
-import L from 'leaflet'
 import { Search } from 'lucide-react'
 import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
+
+function featureBbox(feature: GeoJSON.Feature): [[number, number], [number, number]] | null {
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity
+    const visit = (coords: number[] | number[][] | number[][][]) => {
+        if (typeof coords[0] === 'number') {
+            const [lng, lat] = coords as number[]
+            if (lng < minLng) minLng = lng
+            if (lng > maxLng) maxLng = lng
+            if (lat < minLat) minLat = lat
+            if (lat > maxLat) maxLat = lat
+        } else {
+            (coords as number[][]).forEach(visit as (c: number[]) => void)
+        }
+    }
+    if (feature.geometry.type === 'Polygon') feature.geometry.coordinates.forEach(visit as (c: number[][]) => void)
+    else if (feature.geometry.type === 'MultiPolygon') feature.geometry.coordinates.forEach((p) => p.forEach(visit as (c: number[][]) => void))
+    if (!isFinite(minLng)) return null
+    return [[minLng, minLat], [maxLng, maxLat]]
+}
 function StaffingBadge({ boundaryId }: { boundaryId: string }) {
     const forecast = useMapStore((s) => s.districtForecasts[boundaryId])
     if (!forecast) return null
@@ -79,10 +97,8 @@ export default function NeighborhoodListPanel() {
                                     selectDistrict(item.boundaryId)
                                     const map = getMapRef()
                                     if (map) {
-                                        const bounds = L.geoJSON(item.feature as any).getBounds()
-                                        if (bounds.isValid()) {
-                                            map.fitBounds(bounds, { padding: APP_CONFIG.map.fitBoundsPaddingPx, maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
-                                        }
+                                        const bbox = featureBbox(item.feature as GeoJSON.Feature)
+                                        if (bbox) map.fitBounds(bbox, { padding: APP_CONFIG.map.fitBoundsPaddingPx[0], maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
                                     }
                                 }}
                             >
@@ -100,10 +116,8 @@ export default function NeighborhoodListPanel() {
                                         setSidePanelMode('district')
                                         const map = getMapRef()
                                         if (map) {
-                                            const bounds = L.geoJSON(item.feature as any).getBounds()
-                                            if (bounds.isValid()) {
-                                                map.fitBounds(bounds, { padding: APP_CONFIG.map.fitBoundsPaddingPx, maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
-                                            }
+                                            const bbox = featureBbox(item.feature as GeoJSON.Feature)
+                                            if (bbox) map.fitBounds(bbox, { padding: APP_CONFIG.map.fitBoundsPaddingPx[0], maxZoom: APP_CONFIG.map.fitBoundsMaxZoom })
                                         }
                                     }}
                                 >

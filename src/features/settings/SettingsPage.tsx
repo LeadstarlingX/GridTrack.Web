@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon, Monitor, LogOut, User } from 'lucide-react'
+import { useClerk, useUser } from '@clerk/clerk-react'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
-import { APP_CONFIG } from '@/config/app.config'
 import { cn } from '@/lib/utils'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
 
-type Section = 'appearance' | 'notifications' | 'map' | 'connection'
+type Section = 'appearance' | 'notifications' | 'connection' | 'account'
 
 const PING_INTERVAL_MS = 3_000
 const PING_TIMEOUT_MS  = 8_000
@@ -22,13 +22,26 @@ export default function SettingsPage() {
     const toggleToasts = useSettingsStore((s) => s.toggleToasts)
     const [section, setSection] = useState<Section>('appearance')
 
-    const hexResolution = useMapStore((s) => s.hexResolution)
-    const setHexResolution = useMapStore((s) => s.setHexResolution)
     const hubStatus = useMapStore((s) => s.hubStatus)
     const hubRtt = useMapStore((s) => s.hubRtt)
     const [latency, setLatency] = useState<LatencyResponse | null>(null)
     const [pinging, setPinging] = useState(false)
     const [pingError, setPingError] = useState<string | null>(null)
+
+    // Clerk
+    const { signOut } = useClerk()
+    const { user } = useUser()
+    const [signingOut, setSigningOut] = useState(false)
+
+    const handleSignOut = async () => {
+        setSigningOut(true)
+        try {
+            await signOut({ redirectUrl: '/sign-in' })
+        } catch {
+            toast.error('Sign-out failed — try again.')
+            setSigningOut(false)
+        }
+    }
 
     // Auto-ping loop: fires immediately, waits for response, then waits 3 s before next ping.
     // Chained (not setInterval) so requests never overlap.
@@ -73,14 +86,12 @@ export default function SettingsPage() {
     }, [section])
 
     const activeTheme = theme ?? 'system'
-    const minRes = APP_CONFIG.map.hexResolution.min
-    const maxRes = APP_CONFIG.map.hexResolution.max
 
     const navItems: { key: Section; label: string }[] = [
-        { key: 'appearance', label: 'Appearance' },
+        { key: 'appearance',   label: 'Appearance' },
         { key: 'notifications', label: 'Notifications' },
-        { key: 'map', label: 'Map Defaults' },
-        { key: 'connection', label: 'Connection' },
+        { key: 'connection',   label: 'Connection' },
+        { key: 'account',      label: 'Account' },
     ]
 
     return (
@@ -119,8 +130,8 @@ export default function SettingsPage() {
                             <div className="grid grid-cols-3 gap-3">
                                 {([
                                     { key: 'light', label: 'Light', Icon: Sun },
-                                    { key: 'dark', label: 'Dark', Icon: Moon },
-                                    { key: 'system', label: 'System', Icon: Monitor },
+                                    { key: 'dark',  label: 'Dark',  Icon: Moon },
+                                    { key: 'system',label: 'System',Icon: Monitor },
                                 ] as const).map(({ key, label, Icon }) => (
                                     <button
                                         key={key}
@@ -152,10 +163,10 @@ export default function SettingsPage() {
                                 <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">Toast Preview</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     {[
-                                        { label: 'Error', fn: () => toast.error('Failed to load delivery data — retrying…') },
+                                        { label: 'Error',   fn: () => toast.error('Failed to load delivery data — retrying…') },
                                         { label: 'Warning', fn: () => toast.warning('Driver Hassan N. has been stalled for 14 min') },
                                         { label: 'Success', fn: () => toast.success('Driver availability updated successfully') },
-                                        { label: 'Info', fn: () => toast.info('Historical heatmap data loaded') },
+                                        { label: 'Info',    fn: () => toast.info('Historical heatmap data loaded') },
                                     ].map(({ label, fn }) => (
                                         <button
                                             key={label}
@@ -171,28 +182,6 @@ export default function SettingsPage() {
                         </div>
                     )}
 
-                    {/* ── Map Defaults ── */}
-                    {section === 'map' && (
-                        <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5 space-y-4">
-                            <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Map Defaults</p>
-                            <SettingRow label="H3 resolution" description={`R${hexResolution} — lower is larger cells.`}>
-                                <div className="flex items-center gap-3">
-                                    <input
-                                        type="range"
-                                        min={minRes}
-                                        max={maxRes}
-                                        step={1}
-                                        value={hexResolution}
-                                        onChange={(e) => setHexResolution(Number(e.target.value))}
-                                        className="w-28"
-                                        style={{ accentColor: 'hsl(var(--primary))' }}
-                                    />
-                                    <span className="text-sm font-mono text-[hsl(var(--primary))] w-8">R{hexResolution}</span>
-                                </div>
-                            </SettingRow>
-                        </div>
-                    )}
-
                     {/* ── Connection ── */}
                     {section === 'connection' && (
                         <div className="space-y-4">
@@ -204,8 +193,8 @@ export default function SettingsPage() {
                                         'text-4xl font-bold tabular-nums',
                                         hubRtt == null ? 'text-[hsl(var(--foreground-muted))]'
                                             : hubRtt < 100 ? 'text-green-500'
-                                            : hubRtt < 300 ? 'text-amber-500'
-                                            : 'text-red-500'
+                                                : hubRtt < 300 ? 'text-amber-500'
+                                                    : 'text-red-500'
                                     )}>
                                         {hubRtt != null ? `${hubRtt}` : '—'}
                                     </span>
@@ -225,8 +214,8 @@ export default function SettingsPage() {
                                         hubStatus === 'connected'
                                             ? 'bg-green-500/15 text-green-600 dark:text-green-400'
                                             : hubStatus === 'reconnecting'
-                                            ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                                            : 'bg-red-500/15 text-red-600 dark:text-red-400'
+                                                ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                                : 'bg-red-500/15 text-red-600 dark:text-red-400'
                                     )}>
                                         <span className={cn(
                                             'inline-block w-1.5 h-1.5 rounded-full',
@@ -274,6 +263,60 @@ export default function SettingsPage() {
                                         {pingError ?? 'Waiting for response…'}
                                     </p>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Account ── */}
+                    {section === 'account' && (
+                        <div className="space-y-4">
+                            {/* User info */}
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">Signed in as</p>
+                                <div className="flex items-center gap-3">
+                                    {user?.imageUrl ? (
+                                        <img
+                                            src={user.imageUrl}
+                                            alt={user.fullName ?? 'User'}
+                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[hsl(var(--border))]"
+                                        />
+                                    ) : (
+                                        <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
+                                            <User size={18} className="text-[hsl(var(--primary))]" />
+                                        </div>
+                                    )}
+                                    <div>
+                                        <p className="text-sm font-medium text-[hsl(var(--foreground))]">
+                                            {user?.fullName ?? '—'}
+                                        </p>
+                                        <p className="text-xs text-[hsl(var(--foreground-muted))]">
+                                            {user?.primaryEmailAddress?.emailAddress ?? '—'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Sign out */}
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">Session</p>
+                                <SettingRow
+                                    label="Sign out"
+                                    description="End your session on this device."
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={handleSignOut}
+                                        disabled={signingOut}
+                                        className={cn(
+                                            'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-100',
+                                            'border border-red-500/40 text-red-500 hover:bg-red-500/10',
+                                            'disabled:opacity-50 disabled:cursor-not-allowed'
+                                        )}
+                                    >
+                                        <LogOut size={14} />
+                                        {signingOut ? 'Signing out…' : 'Sign out'}
+                                    </button>
+                                </SettingRow>
                             </div>
                         </div>
                     )}

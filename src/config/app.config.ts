@@ -1,29 +1,21 @@
 export const APP_CONFIG = {
     map: {
+        // center is [lat, lng] — used for display; for MapLibre initialViewState swap to lng/lat
         center: [33.5138, 36.2765] as [number, number],
         defaultZoom: 12,
         focusZoom: 15,
-        flyToDurationSec: 1.2,
+        flyToDurationMs: 600,
         fitBoundsPaddingPx: [32, 32] as [number, number],
         fitBoundsMaxZoom: 15,
         defaultEtaFallbackSeconds: 420,
-        tileUrl: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-        tileAttribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        // CARTO Positron — light/normal basemap, free, no API key
+        mapStyle: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json' as const,
         routePolyline: {
             color: '#f59e0b',
             weight: 4,
             opacity: 0.8,
             dashArray: '8 8',
         },
-        hexResolution: {
-            default: 8,
-            min: 7,
-            max: 10,
-            devMax: 10,
-            highResEnvFlag: 'VITE_ENABLE_HIGH_RES',
-        },
-        heatmapResolution: 8,
-        h3FilePattern: '/h3-damascus-r{res}.geojson',
         districtBoundariesFile: '/damascus_level10.geojson',
     },
     heatmap: {
@@ -60,6 +52,8 @@ export const APP_CONFIG = {
         retry: 1,
         refetchOnWindowFocus: false,
         historicalHeatmapStaleTimeMs: 300000,
+        // Deliveries is a live monitoring stream — poll on an interval instead of a manual refresh.
+        deliveriesRefetchMs: 15000,
     },
     toast: {
         anomalyDurationMs: 8000,
@@ -69,7 +63,9 @@ export const APP_CONFIG = {
         driversPageSize: 8,
     },
     analytics: {
-        defaultRangeDays: 7,
+        // Default lookback wide enough to include recent history on first load,
+        // not just the current day. Users narrow it via the date-range picker.
+        defaultRangeDays: 30,
         defaultHourStart: 6,
         defaultHourEnd: 22,
         minHour: 0,
@@ -100,8 +96,9 @@ export const APP_CONFIG = {
         analyticsSummaryPath: '/api/analytics/summary',
         analyticsStatusBreakdownPath: '/api/analytics/status-breakdown',
         analyticsTrendsPath: '/api/analytics/trends',
-        analyticsH3DensityPath: '/api/analytics/h3-density',
+        analyticsPickupDensityPath: '/api/analytics/pickup-density',
         analyticsDistrictVolumePath: '/api/analytics/district-volume',
+        analyticsDistrictDemandForecastPath: '/api/analytics/district-demand-forecast',
         forecastPath: '/api/forecast/{districtId}',
         exportCsvPath: '/api/export/csv',
         analyticsDriversPath: '/api/analytics/drivers',
@@ -111,6 +108,7 @@ export const APP_CONFIG = {
         analyticsAnomalyBreakdownPath: '/api/analytics/anomaly-breakdown',
         analysisChatPath: '/api/analysis/chat',
         analysisChatStreamPath: '/api/analysis/chat/stream',
+        analysisChatReportPath: '/api/analysis/chat/report',
         analysisTranscribePath: '/api/analysis/transcribe',
         staffingPath: '/api/forecast/staffing',
         deliveryAutoAssignPath: '/api/deliveries/{id}/auto-assign',

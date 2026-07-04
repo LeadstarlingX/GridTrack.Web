@@ -7,6 +7,8 @@ import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
 import { getAuthToken } from '@/lib/api/authBridge'
 import { apiClient } from '@/lib/api/client'
+import { setHubConnection } from '@/lib/hubConnection'
+import { toEtaDeadline } from '@/lib/eta'
 import type { AnomalyAlert, DemandSurge, AnomalyIncident } from '@/types/hub'
 import type { DeliveryStatus } from '@/types/delivery'
 import type { DriverListItemDto, PagedResponse } from '@/types/api'
@@ -25,6 +27,9 @@ interface DeliveryUpdatedPayload {
     status: DeliveryStatus
     assignedDriverId?: string | null
     etaSeconds?: number | null
+    routeDistanceMeters?: number | null
+    routeDurationSeconds?: number | null
+    routeCost?: number | null
 }
 
 interface AnomalyBroadcastPayload extends Omit<AnomalyAlert, 'id'> {}
@@ -82,11 +87,26 @@ export function useSignalR() {
         })
 
         connection.on('DeliveryUpdated', (payload: DeliveryUpdatedPayload) => {
-            useLiveStore.getState().patchDelivery(payload.deliveryId, {
+            const store = useLiveStore.getState()
+            const prev = store.deliveries[payload.deliveryId]
+
+            const newEtaDeadline = toEtaDeadline(payload.etaSeconds)
+            store.patchDelivery(payload.deliveryId, {
                 status: payload.status,
                 assignedDriverId: payload.assignedDriverId ?? null,
-                etaSeconds: payload.etaSeconds ?? null,
+                // Only advance the deadline when the backend sends a real value.
+                // A null etaSeconds on a location tick must not erase a valid deadline.
+                ...(newEtaDeadline !== null ? { etaDeadline: newEtaDeadline } : {}),
+                routeDistanceMeters: payload.routeDistanceMeters ?? null,
+                routeDurationSeconds: payload.routeDurationSeconds ?? null,
+                routeCost: payload.routeCost ?? null,
             })
+
+            const statusChanged = prev?.status !== payload.status
+            const routeArrived = payload.routeCost != null && prev?.routeCost == null
+            if (statusChanged || routeArrived) {
+                queryClient.invalidateQueries({ queryKey: ['delivery', payload.deliveryId] })
+            }
         })
 
         connection.on('AnomalyBroadcast', (payload: AnomalyBroadcastPayload) => {
@@ -145,6 +165,7 @@ export function useSignalR() {
         connection
             .start()
             .then(() => {
+                setHubConnection(connection)
                 useMapStore.getState().setHubStatus('connected')
                 void hydrateDrivers()
                 // Measure RTT every 5s while connected
@@ -177,6 +198,7 @@ export function useSignalR() {
 
         return () => {
             if (rttTimer) clearInterval(rttTimer)
+            setHubConnection(null)
             connection.stop()
         }
     }, [queryClient])

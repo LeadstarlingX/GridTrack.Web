@@ -1,19 +1,25 @@
 import { useEffect, useRef } from 'react'
-import L from 'leaflet'
+import type { MapRef } from 'react-map-gl/maplibre'
 import { useFocusStore } from '@/store/focusStore'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
+import { APP_CONFIG } from '@/config/app.config'
 
-export function useFocusMode(mapRef: React.MutableRefObject<L.Map | null>) {
+export function useFocusMode(mapRef: React.MutableRefObject<MapRef | null>) {
     const focusedDeliveryId = useFocusStore((s) => s.focusedDeliveryId)
-    const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
-    const prevFocusedId = useRef<string | null>(null)
+    const focusedDriverId   = useFocusStore((s) => s.focusedDriverId)
+    const prevFocusedId     = useRef<string | null>(null)
 
     useEffect(() => {
         if (focusedDeliveryId && !prevFocusedId.current) {
             const driver = useLiveStore.getState().drivers[focusedDriverId ?? '']
             if (driver && mapRef.current) {
-                mapRef.current.flyTo([driver.lat, driver.lng], 15, { duration: 1.2 })
+                // MapLibre flyTo: center is [lng, lat]
+                mapRef.current.flyTo({
+                    center: [driver.lng, driver.lat],
+                    zoom: APP_CONFIG.map.focusZoom,
+                    duration: APP_CONFIG.map.flyToDurationMs,
+                })
             }
         }
         prevFocusedId.current = focusedDeliveryId

@@ -10,13 +10,14 @@ export default function FocusModePanel() {
     const focusedDeliveryId = useFocusStore((s) => s.focusedDeliveryId)
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
     const autoFollow = useFocusStore((s) => s.autoFollow)
-    const etaSeconds = useFocusStore((s) => s.etaSeconds)
     const toggleAutoFollow = useFocusStore((s) => s.toggleAutoFollow)
     const exitFocus = useFocusStore((s) => s.exitFocusMode)
     const setMode = useMapStore((s) => s.setSidePanelMode)
 
     const driver = useLiveStore((s) => s.drivers[focusedDriverId ?? ''])
-    const eta = useEtaCountdown(etaSeconds)
+    // ETA lives in liveStore — updated by every SignalR DeliveryUpdated tick.
+    const etaDeadline = useLiveStore((s) => s.deliveries[focusedDeliveryId ?? '']?.etaDeadline ?? null)
+    const eta = useEtaCountdown(etaDeadline)
 
     const handleExit = () => {
         exitFocus()

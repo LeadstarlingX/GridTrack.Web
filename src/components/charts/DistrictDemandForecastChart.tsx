@@ -1,26 +1,25 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import { ChartContainer, ChartTooltip, ChartTooltipContent, Skeleton } from '@/components/ui'
 
-export interface DistrictVolumePoint {
+export interface DistrictDemandForecastPoint {
     district: string
-    deliveries: number
-    districtId?: string
+    districtId: string
+    predicted: number
 }
 
-interface DistrictVolumeChartProps {
-    data: DistrictVolumePoint[]
+interface DistrictDemandForecastChartProps {
+    data: DistrictDemandForecastPoint[]
     isLoading?: boolean
-    onBarClick?: (districtId: string) => void
 }
 
 const chartConfig = {
-    deliveries: {
-        label: 'Volume',
+    predicted: {
+        label: 'Predicted deliveries',
         color: 'hsl(var(--primary))',
     },
 }
 
-export default function DistrictVolumeChart({ data, isLoading, onBarClick }: DistrictVolumeChartProps) {
+export default function DistrictDemandForecastChart({ data, isLoading }: DistrictDemandForecastChartProps) {
     if (isLoading) {
         return <Skeleton className="h-56 w-full" />
     }
@@ -38,13 +37,7 @@ export default function DistrictVolumeChart({ data, isLoading, onBarClick }: Dis
                     width={90}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar
-                    dataKey="deliveries"
-                    fill="var(--color-deliveries)"
-                    radius={[0, 4, 4, 0]}
-                    cursor={onBarClick ? 'pointer' : undefined}
-                    onClick={onBarClick ? ((payload: DistrictVolumePoint) => onBarClick(payload.districtId ?? payload.district)) as never : undefined}
-                />
+                <Bar dataKey="predicted" fill="var(--color-predicted)" radius={[0, 4, 4, 0]} />
             </BarChart>
         </ChartContainer>
     )

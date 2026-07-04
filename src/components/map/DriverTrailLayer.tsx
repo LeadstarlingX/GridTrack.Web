@@ -1,47 +1,46 @@
-import { useCallback } from 'react'
-import { Polyline } from 'react-leaflet'
-import { useLiveStore } from '@/store/liveStore'
-import { useFocusStore } from '@/store/focusStore'
+import { Source, Layer } from 'react-map-gl/maplibre'
 import { useMapStore } from '@/store/mapStore'
+import { useLiveStore } from '@/store/liveStore'
 
-function driverColor(status: string, isStalled: boolean): string {
-    if (isStalled) return '#f97316'
-    if (status === 'available') return '#22c55e'
-    if (status === 'offline') return '#94a3b8'
-    return '#3b82f6'
-}
+// Source data is fed imperatively by LiveMap's liveStore subscription.
+// This component only declares the Source + Layer; LiveMap drives the data.
+const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
 
 export default function DriverTrailLayer() {
     const trailEnabled = useMapStore((s) => s.trailEnabled)
     const selectedDriverId = useMapStore((s) => s.selectedDriverId)
-    const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
-    const activeId = focusedDriverId ?? selectedDriverId
+    const sidePanelMode = useMapStore((s) => s.sidePanelMode)
 
-    // Narrow selectors: only re-render when the active driver's specific data changes,
-    // not on every position batch for all drivers.
-    const trail = useLiveStore(useCallback((s) =>
-        activeId ? s.trails[activeId] : null,
-    [activeId]))
+    // When a plain click selects an in-transit driver, SelectedDeliveryRouteLayer takes over
+    // with the solid pickup→drop route + pins. The dashed "behind the driver" trail would
+    // just clutter that view, so suppress it for exactly the same condition that layer uses.
+    const hasInTransitDelivery = useLiveStore((s) =>
+        sidePanelMode === 'driver' && selectedDriverId
+            ? Object.values(s.deliveries).some(
+                (d) => d.assignedDriverId === selectedDriverId && d.status === 'InTransit',
+            )
+            : false,
+    )
 
-    const color = useLiveStore(useCallback((s) => {
-        if (!activeId) return '#3b82f6'
-        const d = s.drivers[activeId]
-        return d ? driverColor(d.status, d.stalledSince !== null) : '#3b82f6'
-    }, [activeId]))
-
-    if (!trailEnabled || !activeId || !trail || trail.length < 2) return null
+    if (!trailEnabled || hasInTransitDelivery) return null
 
     return (
-        <Polyline
-            positions={trail}
-            pathOptions={{
-                color,
-                weight: 2.5,
-                opacity: 0.7,
-                dashArray: '6 4',
-                lineCap: 'round',
-                lineJoin: 'round',
-            }}
-        />
+        <Source id="driver-trail" type="geojson" data={EMPTY_FC}>
+            <Layer
+                id="driver-trail-line"
+                type="line"
+                paint={{
+                    'line-color': [
+                        'case',
+                        ['boolean', ['feature-state', 'stalled'], false], '#f97316',
+                        '#3b82f6',
+                    ],
+                    'line-width': 2.5,
+                    'line-opacity': 0.7,
+                    'line-dasharray': [6, 4],
+                }}
+                layout={{ 'line-cap': 'round', 'line-join': 'round' }}
+            />
+        </Source>
     )
 }

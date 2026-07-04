@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Badge } from '@/components/ui'
 import { cn } from '@/lib/utils'
+import { APP_CONFIG } from '@/config/app.config'
 import { useAlerts } from '@/lib/api/queries/useAlerts'
 import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import { useMapStore } from '@/store/mapStore'
@@ -220,11 +221,11 @@ function IncidentAlertsBanner() {
 
 function ApiAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
     const today = new Date()
-    const weekAgo = new Date()
-    weekAgo.setDate(today.getDate() - 6)
+    const rangeStart = new Date()
+    rangeStart.setDate(today.getDate() - (APP_CONFIG.analytics.defaultRangeDays - 1))
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useAlerts({
-        from: weekAgo.toISOString().slice(0, 10),
+        from: rangeStart.toISOString().slice(0, 10),
         to: today.toISOString().slice(0, 10),
         pageSize: 20,
         anomalyType: typeFilter !== 'all' ? typeFilter : undefined,

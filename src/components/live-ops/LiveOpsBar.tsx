@@ -1,13 +1,21 @@
-import { useMemo, type ComponentType } from 'react'
-import { AlertTriangle, Search, Thermometer } from 'lucide-react'
+import { useEffect, useMemo, type ComponentType } from 'react'
+import { AlertTriangle, Search, Thermometer, Users } from 'lucide-react'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { cn } from '@/lib/utils'
+
+const LOOKBACK_REFRESH_MS = 2 * 60 * 1000
 
 function formatEta(s: number | null): string {
     if (s == null) return '—'
     const m = Math.floor(s / 60)
     return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : m > 0 ? `${m}m` : `${s}s`
+}
+
+function computeLookbackRange(lookbackHours: number) {
+    const to = new Date()
+    const from = new Date(to.getTime() - lookbackHours * 60 * 60 * 1000)
+    return { from: from.toISOString(), to: to.toISOString() }
 }
 
 function KpiChip({ label, value, accent, active, onClick }: {
@@ -77,8 +85,13 @@ function GlowBtn({ active, onClick, icon: Icon, label, color = 'primary' }: Glow
 }
 
 export default function LiveOpsBar() {
-    const heatEnabled = useMapStore((s) => s.heatmapEnabled)
-    const toggleHeat = useMapStore((s) => s.toggleHeatmap)
+    const heatEnabled = useMapStore((s) => s.historicalHeatmapEnabled)
+    const toggleHeat = useMapStore((s) => s.toggleHistoricalHeatmap)
+    const lookbackHours = useMapStore((s) => s.lookbackHours)
+    const setLookbackHours = useMapStore((s) => s.setLookbackHours)
+    const setHistoricalHeatmapRange = useMapStore((s) => s.setHistoricalHeatmapRange)
+    const staffingEnabled = useMapStore((s) => s.staffingEnabled)
+    const toggleStaffing = useMapStore((s) => s.toggleStaffing)
     const stalledOnly = useMapStore((s) => s.stalledOnly)
     const toggleStalledOnly = useMapStore((s) => s.toggleStalledOnly)
     const districtPanelView = useMapStore((s) => s.districtPanelView)
@@ -96,13 +109,30 @@ export default function LiveOpsBar() {
         const inTransit = dList.filter((d) => d.status === 'in-transit').length
         const stalled = dList.filter((d) => d.stalledSince !== null).length
         const delivering = Object.values(deliveries).filter(
-            (d) => d.status === 'InTransit' && d.etaSeconds != null,
+            (d) => d.status === 'InTransit' && d.etaDeadline != null,
         )
         const avgEta = delivering.length
-            ? Math.round(delivering.reduce((sum, d) => sum + (d.etaSeconds ?? 0), 0) / delivering.length)
+            ? Math.round(
+                delivering.reduce(
+                    (sum, d) => sum + Math.max(0, Math.floor((new Date(d.etaDeadline!).getTime() - Date.now()) / 1000)),
+                    0,
+                ) / delivering.length,
+            )
             : null
         return { active, inTransit, stalled, avgEta, alerts: anomalyQueue.length }
     }, [drivers, deliveries, anomalyQueue])
+
+    // Pickup-density heatmap range: rolling "last N hours" window anchored to now. Recomputed
+    // on toggle/slider change and on an interval so "now" doesn't go stale during a long session.
+    useEffect(() => {
+        if (!heatEnabled) return
+        setHistoricalHeatmapRange(computeLookbackRange(lookbackHours))
+        const id = setInterval(
+            () => setHistoricalHeatmapRange(computeLookbackRange(lookbackHours)),
+            LOOKBACK_REFRESH_MS,
+        )
+        return () => clearInterval(id)
+    }, [heatEnabled, lookbackHours, setHistoricalHeatmapRange])
 
     const searchActive = sidePanelMode === 'district' && districtPanelView === 'browse'
 
@@ -139,6 +169,30 @@ export default function LiveOpsBar() {
                     icon={Thermometer}
                     label="Heatmap"
                     color="warning"
+                />
+                {heatEnabled && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10">
+                        <span className="text-[10px] text-amber-500 uppercase tracking-wide font-medium whitespace-nowrap">
+                            Last {lookbackHours}h
+                        </span>
+                        <input
+                            type="range"
+                            min={1}
+                            max={12}
+                            step={1}
+                            value={lookbackHours}
+                            onChange={(e) => setLookbackHours(Number(e.target.value))}
+                            className="w-20 accent-amber-500"
+                            aria-label="Heatmap lookback hours"
+                        />
+                    </div>
+                )}
+                <GlowBtn
+                    active={staffingEnabled}
+                    onClick={toggleStaffing}
+                    icon={Users}
+                    label="Staffing"
+                    color="info"
                 />
                 <GlowBtn
                     active={searchActive}

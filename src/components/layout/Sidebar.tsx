@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Radio, BarChart3, Package, Bell, Users, Settings } from 'lucide-react'
+import { Radio, BarChart3, Activity, Bot, Package, Bell, Users, Settings, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useLiveStore } from '@/store/liveStore'
@@ -9,7 +9,10 @@ import { PAGE_CONFIG } from '@/config/pages.config'
 const ALL_NAV_ITEMS = [
     { to: '/', label: 'Live Ops', icon: Radio, pageKey: 'liveOps' as const },
     { to: '/analytics', label: 'Analytics', icon: BarChart3, pageKey: 'analytics' as const },
+    { to: '/performance', label: 'Performance', icon: Activity, pageKey: 'analytics' as const },
+    { to: '/assistant', label: 'AI Assistant', icon: Bot, pageKey: 'analytics' as const },
     { to: '/deliveries', label: 'Deliveries', icon: Package, pageKey: 'deliveries' as const },
+    { to: '/cancelled', label: 'Cancelled', icon: XCircle, pageKey: 'cancelled' as const },
     { to: '/alerts', label: 'Alerts', icon: Bell, pageKey: 'alerts' as const },
     { to: '/drivers', label: 'Drivers', icon: Users, pageKey: 'drivers' as const },
 ]

@@ -1,11 +1,11 @@
-import L from 'leaflet'
+import type { Map as MaplibreMap } from 'maplibre-gl'
 
-let mapInstance: L.Map | null = null
+let mapInstance: MaplibreMap | null = null
 
-export function setMapRef(map: L.Map) {
+export function setMapRef(map: MaplibreMap) {
     mapInstance = map
 }
 
-export function getMapRef() {
+export function getMapRef(): MaplibreMap | null {
     return mapInstance
 }

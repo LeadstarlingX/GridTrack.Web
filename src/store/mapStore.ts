@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { APP_CONFIG } from '@/config/app.config'
 import type { ForecastDto } from '@/types/api'
 
 type SidePanelMode = 'idle' | 'district' | 'driver' | 'focus'
@@ -8,39 +7,35 @@ export type HubStatus = 'connected' | 'reconnecting' | 'disconnected'
 interface MapStore {
     hubStatus: HubStatus
     hubRtt: number | null
-    heatmapEnabled: boolean
     historicalHeatmapEnabled: boolean
+    lookbackHours: number
     recommendationEnabled: boolean
+    staffingEnabled: boolean
     trailEnabled: boolean
     routesEnabled: boolean
     stalledOnly: boolean
-    hexResolution: number
     selectedDistrictId: string | null
     selectedDriverId: string | null
     sidePanelMode: SidePanelMode
     districtPanelView: 'details' | 'browse'
-    heatmapGeoJSON: GeoJSON.FeatureCollection | null
     districtBoundariesGeoJSON: GeoJSON.FeatureCollection | null
-    historicalHeatmapRange: { from: string; to: string; fromHour: number; toHour: number } | null
-    historicalHeatmapData: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null
+    historicalHeatmapRange: { from: string; to: string; fromHour?: number; toHour?: number } | null
     districtForecasts: Record<string, ForecastDto>
 
-    toggleHeatmap: () => void
     toggleHistoricalHeatmap: () => void
+    setLookbackHours: (hours: number) => void
     toggleRecommendation: () => void
+    toggleStaffing: () => void
     toggleTrail: () => void
     toggleRoutes: () => void
     toggleStalledOnly: () => void
-    setHexResolution: (resolution: number) => void
     selectDistrict: (id: string | null) => void
     selectDriver: (id: string | null) => void
     toggleDriverPanel: (id: string) => void
     setSidePanelMode: (mode: SidePanelMode) => void
     setDistrictPanelView: (view: 'details' | 'browse') => void
-    setHeatmapGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
     setDistrictBoundariesGeoJSON: (data: GeoJSON.FeatureCollection | null) => void
-    setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour: number; toHour: number }) => void
-    setHistoricalHeatmapData: (data: Array<{ h3Index: string; lat: number; lng: number; count: number }> | null) => void
+    setHistoricalHeatmapRange: (range: { from: string; to: string; fromHour?: number; toHour?: number }) => void
     setDistrictForecast: (districtId: string, forecast: ForecastDto) => void
     setHubStatus: (status: HubStatus) => void
     setHubRtt: (ms: number | null) => void
@@ -49,30 +44,28 @@ interface MapStore {
 export const useMapStore = create<MapStore>()((set) => ({
     hubStatus: 'disconnected',
     hubRtt: null,
-    heatmapEnabled: false,
     historicalHeatmapEnabled: false,
+    lookbackHours: 3,
     recommendationEnabled: false,
+    staffingEnabled: false,
     trailEnabled: true,
     routesEnabled: true,
     stalledOnly: false,
-    hexResolution: APP_CONFIG.map.hexResolution.default,
     selectedDistrictId: null,
     selectedDriverId: null,
     sidePanelMode: 'idle',
     districtPanelView: 'browse',
-    heatmapGeoJSON: null,
     districtBoundariesGeoJSON: null,
     historicalHeatmapRange: null,
-    historicalHeatmapData: null,
     districtForecasts: {},
 
-    toggleHeatmap: () => set((s) => ({ heatmapEnabled: !s.heatmapEnabled })),
     toggleHistoricalHeatmap: () => set((s) => ({ historicalHeatmapEnabled: !s.historicalHeatmapEnabled })),
+    setLookbackHours: (hours) => set({ lookbackHours: hours }),
     toggleRecommendation: () => set((s) => ({ recommendationEnabled: !s.recommendationEnabled })),
+    toggleStaffing: () => set((s) => ({ staffingEnabled: !s.staffingEnabled })),
     toggleTrail: () => set((s) => ({ trailEnabled: !s.trailEnabled })),
     toggleRoutes: () => set((s) => ({ routesEnabled: !s.routesEnabled })),
     toggleStalledOnly: () => set((s) => ({ stalledOnly: !s.stalledOnly })),
-    setHexResolution: (resolution) => set({ hexResolution: resolution }),
     selectDistrict: (id) => set({ selectedDistrictId: id }),
     selectDriver: (id) => set({ selectedDriverId: id }),
     toggleDriverPanel: (id) =>
@@ -85,10 +78,8 @@ export const useMapStore = create<MapStore>()((set) => ({
         }),
     setSidePanelMode: (mode) => set({ sidePanelMode: mode }),
     setDistrictPanelView: (view) => set({ districtPanelView: view }),
-    setHeatmapGeoJSON: (data) => set({ heatmapGeoJSON: data }),
     setDistrictBoundariesGeoJSON: (data) => set({ districtBoundariesGeoJSON: data }),
     setHistoricalHeatmapRange: (range) => set({ historicalHeatmapRange: range }),
-    setHistoricalHeatmapData: (data) => set({ historicalHeatmapData: data }),
     setDistrictForecast: (districtId, forecast) =>
         set((s) => ({ districtForecasts: { ...s.districtForecasts, [districtId]: forecast } })),
     setHubStatus: (status) => set({ hubStatus: status }),

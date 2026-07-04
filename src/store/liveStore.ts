@@ -90,7 +90,18 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 ...s.deliveries,
                 [id]: s.deliveries[id]
                     ? { ...s.deliveries[id], ...partial }
-                    : { id, status: 'Created' as const, assignedDriverId: null, districtId: '', etaSeconds: null, createdAt: new Date().toISOString(), ...partial },
+                    : {
+                        id,
+                        status: 'Created' as const,
+                        assignedDriverId: null,
+                        districtId: '',
+                        etaDeadline: null,
+                        createdAt: new Date().toISOString(),
+                        routeDistanceMeters: null,
+                        routeDurationSeconds: null,
+                        routeCost: null,
+                        ...partial,
+                    },
             },
         })),
 
@@ -128,3 +139,5 @@ export const useLiveStore = create<LiveStore>()((set) => ({
             return { drivers: { ...s.drivers, ...updates } }
         }),
 }))
+
+if (typeof window !== 'undefined') (window as any).__gs = useLiveStore

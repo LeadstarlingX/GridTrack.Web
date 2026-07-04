@@ -3,8 +3,9 @@ import type { DeliveryStatus } from '@/types/delivery'
 import type { AnomalyAlert, AnomalyType, DemandSurge, AnomalyIncident } from '@/types/hub'
 import { APP_CONFIG } from '@/config/app.config'
 import { useLiveStore } from '@/store/liveStore'
-import { useFocusStore } from '@/store/focusStore'
+import { toEtaDeadline } from '@/lib/eta'
 import { DAMASCUS_ROUTES } from '@/constants/mockRoutes'
+// import {useFocusStore} from "@/store";
 
 function pick<T>(arr: readonly T[]): T {
     return arr[Math.floor(Math.random() * arr.length)]
@@ -106,7 +107,7 @@ export function startMockEmitter(): () => void {
     // ETA recalculation — every 2s
     const etaInterval = setInterval(() => {
         const { drivers } = useLiveStore.getState()
-        const focusId = useFocusStore.getState().focusedDeliveryId
+        // const focusId = useFocusStore.getState().focusedDeliveryId
 
         for (const [delId, del] of Object.entries(useLiveStore.getState().deliveries)) {
             if (del.status !== 'InTransit' || !del.assignedDriverId) continue
@@ -116,10 +117,7 @@ export function startMockEmitter(): () => void {
             const remaining = routeRemainingDistance(driver.routeIndex, driver.pointIndex)
             const eta = Math.round(remaining / AVG_SPEED_MPS)
 
-            if (delId === focusId) {
-                useFocusStore.getState().setEta(eta)
-            }
-            useLiveStore.getState().patchDelivery(delId, { etaSeconds: eta })
+            useLiveStore.getState().patchDelivery(delId, { etaDeadline: toEtaDeadline(eta) })
         }
     }, APP_CONFIG.mock.etaTickMs)
 

@@ -11,5 +11,6 @@ export function useDelivery(id: string | null) {
                 .get<DeliveryDetailDto>(APP_CONFIG.api.deliveryDetailPath.replace('{id}', id!))
                 .then((r) => r.data),
         enabled: id !== null,
+        staleTime: 30_000, // prevent immediate background refetch on remount overwriting valid etaSeconds
     })
 }

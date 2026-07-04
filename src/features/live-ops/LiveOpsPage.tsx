@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import L from 'leaflet'
+import type { MapRef } from 'react-map-gl/maplibre'
 import LiveMap from '@/components/map/LiveMap'
 import ConnectionStatus from '@/components/map/ConnectionStatus'
 import LiveOpsBar from '@/components/live-ops/LiveOpsBar'
@@ -8,7 +8,6 @@ import SidePanel from '@/components/side-panel/SidePanel'
 import { useMapStore } from '@/store/mapStore'
 import { useFocusStore } from '@/store/focusStore'
 import { useLiveStore } from '@/store/liveStore'
-import { setMapRef } from '@/lib/mapRef'
 import { useFocusMode } from './useFocusMode'
 import { APP_CONFIG } from '@/config/app.config'
 import { useStallDetector } from '@/hooks/useStallDetector'
@@ -61,9 +60,7 @@ function applyBoundaryToStore(raw: GeoJSON.FeatureCollection) {
 }
 
 export default function LiveOpsPage() {
-    const mapRef = useRef<L.Map | null>(null)
-    const setHeatmapGeoJSON = useMapStore((s) => s.setHeatmapGeoJSON)
-    const heatmapResolution = APP_CONFIG.map.heatmapResolution
+    const mapRef = useRef<MapRef | null>(null)
     const location = useLocation()
     const navigate = useNavigate()
     const enterFocusMode = useFocusStore((s) => s.enterFocusMode)
@@ -71,17 +68,6 @@ export default function LiveOpsPage() {
 
     useFocusMode(mapRef)
     useStallDetector()
-
-    useEffect(() => {
-        const fileName = `/h3-damascus-r${heatmapResolution}.geojson`
-        fetch(fileName)
-            .then((r) => {
-                if (!r.ok) throw new Error(`Missing H3 file: ${fileName}`)
-                return r.json()
-            })
-            .then((data) => setHeatmapGeoJSON(normalizeGeoJson(data)))
-            .catch((err) => console.warn(err))
-    }, [setHeatmapGeoJSON, heatmapResolution])
 
     // Always use local GeoJSON — has Arabic names (name_fixed) and full boundary data
     useEffect(() => {
@@ -107,7 +93,6 @@ export default function LiveOpsPage() {
             delivery.id,
             delivery.assignedDriverId,
             [],
-            delivery.etaSeconds ?? APP_CONFIG.map.defaultEtaFallbackSeconds,
         )
         setSidePanelMode('focus')
         navigate('/', { replace: true, state: null })
@@ -118,10 +103,7 @@ export default function LiveOpsPage() {
             <LiveOpsBar />
             <div className="relative flex-1">
                 <LiveMap
-                    onMapReady={(m) => {
-                        mapRef.current = m
-                        setMapRef(m)
-                    }}
+                    onMapReady={(m) => { mapRef.current = m }}
                 />
                 <ConnectionStatus />
                 <SidePanel />

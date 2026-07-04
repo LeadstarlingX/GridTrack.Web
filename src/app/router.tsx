@@ -3,7 +3,10 @@ import { useAuth } from '@clerk/clerk-react'
 import AppShell from '@/components/layout/AppShell'
 import LiveOpsPage from '@/features/live-ops/LiveOpsPage'
 import AnalyticsPage from '@/features/analytics/AnalyticsPage'
+import PerformancePage from '@/features/analytics/PerformancePage'
+import AssistantPage from '@/features/analytics/AssistantPage'
 import DeliveriesPage from '@/features/deliveries/DeliveriesPage'
+import CancelledOrdersPage from '@/features/deliveries/CancelledOrdersPage'
 import AlertsPage from '@/features/alerts/AlertsPage'
 import DriversPage from '@/features/drivers/DriversPage'
 import SettingsPage from '@/features/settings/SettingsPage'
@@ -56,11 +59,41 @@ export const router = createBrowserRouter([
                 ),
             },
             {
+                path: 'performance',
+                element: (
+                    <ErrorBoundary>
+                        <PageGuard pageKey="analytics">
+                            <PerformancePage />
+                        </PageGuard>
+                    </ErrorBoundary>
+                ),
+            },
+            {
+                path: 'assistant',
+                element: (
+                    <ErrorBoundary>
+                        <PageGuard pageKey="analytics">
+                            <AssistantPage />
+                        </PageGuard>
+                    </ErrorBoundary>
+                ),
+            },
+            {
                 path: 'deliveries',
                 element: (
                     <ErrorBoundary>
                         <PageGuard pageKey="deliveries">
                             <DeliveriesPage />
+                        </PageGuard>
+                    </ErrorBoundary>
+                ),
+            },
+            {
+                path: 'cancelled',
+                element: (
+                    <ErrorBoundary>
+                        <PageGuard pageKey="cancelled">
+                            <CancelledOrdersPage />
                         </PageGuard>
                     </ErrorBoundary>
                 ),

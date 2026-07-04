@@ -10,10 +10,12 @@ interface ChatbotState {
     csvData: string | null
     isLoading: boolean
     isCsvLoading: boolean
+    isGeneratingReport: boolean
     sendMessage: (text: string) => Promise<void>
     loadCsvForRange: (from: string, to: string, days: string[], fromHour: number, toHour: number) => Promise<void>
     clearConversation: () => void
     transcribeAudio: (blob: Blob, mimeType: string) => Promise<string | null>
+    generateReport: () => Promise<void>
 }
 
 function trimCsvForContext(csvData: string) {
@@ -26,6 +28,7 @@ export function useChatbot(): ChatbotState {
     const [csvData, setCsvData] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [isCsvLoading, setIsCsvLoading] = useState(false)
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false)
     const abortRef = useRef<AbortController | null>(null)
 
     const loadCsvForRange = useCallback(
@@ -60,7 +63,7 @@ export function useChatbot(): ChatbotState {
             setMessages((prev) => [
                 ...prev,
                 { role: 'user', content: trimmed },
-                { role: 'assistant', content: '' },
+                { role: 'assistant', content: '', toolsUsed: [] },
             ])
             setIsLoading(true)
 
@@ -103,14 +106,30 @@ export function useChatbot(): ChatbotState {
                             return
                         }
                         try {
-                            const { token: tok } = JSON.parse(data) as { token: string }
-                            if (tok) {
+                            const parsed = JSON.parse(data) as { token?: string; tool?: string }
+                            if (parsed.tool) {
+                                setMessages((prev) => {
+                                    const updated = [...prev]
+                                    const last = updated[updated.length - 1]
+                                    if (last?.role === 'assistant') {
+                                        updated[updated.length - 1] = {
+                                            ...last,
+                                            toolsUsed: [...(last.toolsUsed ?? []), parsed.tool!],
+                                        }
+                                    }
+                                    return updated
+                                })
+                            }
+                            if (parsed.token) {
                                 setIsLoading(false)
                                 setMessages((prev) => {
                                     const updated = [...prev]
                                     const last = updated[updated.length - 1]
                                     if (last?.role === 'assistant') {
-                                        updated[updated.length - 1] = { ...last, content: last.content + tok }
+                                        updated[updated.length - 1] = {
+                                            ...last,
+                                            content: last.content + parsed.token,
+                                        }
                                     }
                                     return updated
                                 })
@@ -145,6 +164,40 @@ export function useChatbot(): ChatbotState {
         setMessages([])
     }, [])
 
+    const generateReport = useCallback(async () => {
+        if (!messages.length) return
+        setIsGeneratingReport(true)
+        try {
+            const token = await getAuthToken()
+            const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+            const response = await fetch(`${baseUrl}${APP_CONFIG.api.analysisChatReportPath}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                    messages: messages.map((m) => ({ role: m.role, content: m.content })),
+                    csvData: csvData ?? '',
+                }),
+            })
+            if (!response.ok) throw new Error('Report generation failed')
+            const blob = await response.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'gridtrack-report.pdf'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+        } catch {
+            toast.error('Could not generate report. Try again.')
+        } finally {
+            setIsGeneratingReport(false)
+        }
+    }, [messages, csvData])
+
     const transcribeAudio = useCallback(async (blob: Blob, mimeType: string): Promise<string | null> => {
         try {
             const token = await getAuthToken()
@@ -166,7 +219,7 @@ export function useChatbot(): ChatbotState {
     }, [])
 
     return useMemo(
-        () => ({ messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation, transcribeAudio }),
-        [messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation, transcribeAudio],
+        () => ({ messages, csvData, isLoading, isCsvLoading, isGeneratingReport, sendMessage, loadCsvForRange, clearConversation, transcribeAudio, generateReport }),
+        [messages, csvData, isLoading, isCsvLoading, isGeneratingReport, sendMessage, loadCsvForRange, clearConversation, transcribeAudio, generateReport],
     )
 }

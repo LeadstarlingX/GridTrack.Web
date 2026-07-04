@@ -17,7 +17,12 @@ export default function LiveKpiStrip() {
     const stalledDrivers = driverList.filter((d) => d.stalledSince !== null).length
     const inTransit = Object.values(deliveries).filter((d) => d.status === 'InTransit')
     const avgEta = inTransit.length > 0
-        ? Math.round(inTransit.reduce((sum, d) => sum + (d.etaSeconds ?? 0), 0) / inTransit.length)
+        ? Math.round(
+            inTransit.reduce(
+                (sum, d) => sum + Math.max(0, Math.floor((new Date(d.etaDeadline ?? 0).getTime() - Date.now()) / 1000)),
+                0,
+            ) / inTransit.length,
+        )
         : null
     const unresolvedAlerts = alerts.length
 

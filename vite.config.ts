@@ -17,7 +17,7 @@ export default defineConfig({
           if (!id.includes('node_modules')) return
           if (id.includes('@clerk'))          return 'vendor-clerk'
           if (id.includes('@microsoft/signalr')) return 'vendor-signalr'
-          if (id.includes('leaflet'))         return 'vendor-map'
+          if (id.includes('maplibre-gl') || id.includes('react-map-gl')) return 'vendor-map'
           if (id.includes('recharts'))        return 'vendor-charts'
           if (id.includes('react'))           return 'vendor-react'
         },

@@ -243,9 +243,6 @@ export default function DeliveriesPage() {
                         <DistrictPicker districts={allDistricts} value={districtFilter} onChange={setDistrictFilter} />
                     </div>
                     <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
-                    <Button variant="outline" size="sm" onClick={() => setAppliedRange({ ...appliedRange })}>
-                        Refresh
-                    </Button>
                     <Button size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
                         <Plus size={14} />
                         New Delivery
