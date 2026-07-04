@@ -108,6 +108,7 @@ export const APP_CONFIG = {
         analyticsAnomalyBreakdownPath: '/api/analytics/anomaly-breakdown',
         analysisChatPath: '/api/analysis/chat',
         analysisChatStreamPath: '/api/analysis/chat/stream',
+        analysisChatReportPath: '/api/analysis/chat/report',
         analysisTranscribePath: '/api/analysis/transcribe',
         staffingPath: '/api/forecast/staffing',
         deliveryAutoAssignPath: '/api/deliveries/{id}/auto-assign',
