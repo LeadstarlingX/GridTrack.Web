@@ -1,58 +1,100 @@
 import { useMemo } from 'react'
-import { Source, Layer } from 'react-map-gl/maplibre'
+import { Source, Layer, Marker } from 'react-map-gl/maplibre'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { useDelivery } from '@/lib/api/queries/useDelivery'
 
 const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', features: [] }
+const EMPTY_ROUTE: [number, number][] = []
 
-// Full origin→destination route for the driver the operator clicked, with explicit
-// pickup (green) and drop-off (amber) pins. Sourced from the delivery's stored OSRM
-// polyline (pickup = first waypoint, drop = last) — not the live "route ahead".
+function GpsPin({ color }: { color: string }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 36"
+            width={28}
+            height={42}
+            style={{ display: 'block', filter: 'drop-shadow(0 2px 5px rgba(0,0,0,0.4))' }}
+        >
+            <path
+                d="M12 0C5.373 0 0 5.373 0 12c0 9.5 12 24 12 24S24 21.5 24 12C24 5.373 18.627 0 12 0z"
+                fill={color}
+                stroke="white"
+                strokeWidth="1.5"
+            />
+            <circle cx="12" cy="11.5" r="4.5" fill="white" opacity="0.9" />
+        </svg>
+    )
+}
+
+// Full route for the driver the operator clicked, with GPS-pin markers at pickup (green)
+// and drop-off (red). Prefers the live routeAhead from SignalR (always current) over the
+// stored OSRM polyline (stale once driver enters the drop-off leg).
 export default function SelectedDeliveryRouteLayer() {
     const selectedDriverId = useMapStore((s) => s.selectedDriverId)
     const sidePanelMode = useMapStore((s) => s.sidePanelMode)
 
-    // The active in-transit delivery for the selected driver (if any).
     const activeDelivery = useLiveStore((s) =>
         selectedDriverId
             ? Object.values(s.deliveries).find(
-            (d) => d.assignedDriverId === selectedDriverId && d.status === 'InTransit',
-        ) ?? null
+                (d) => d.assignedDriverId === selectedDriverId && d.status === 'InTransit',
+            ) ?? null
             : null,
     )
 
-    // Focus mode draws its own route (RoutePolyline); only render here for a plain click.
+    // Stable reference — returns null when no route data so Zustand equality passes.
+    const liveRouteAhead = useLiveStore((s) =>
+        selectedDriverId ? (s.driverRoutes[selectedDriverId] ?? EMPTY_ROUTE) : EMPTY_ROUTE,
+    )
+
+    // Focus mode draws its own route; only render here for a plain driver-click.
     const enabled = sidePanelMode === 'driver' && activeDelivery !== null
     const { data: detail } = useDelivery(enabled ? activeDelivery!.id : null)
 
-    const { route, pickup, drop } = useMemo(() => {
-        const pts = detail?.routePolyline ?? []
-        if (pts.length < 2) return { route: EMPTY_FC, pickup: EMPTY_FC, drop: EMPTY_FC }
-        const coords = pts.map((p) => [p.lng, p.lat])
-        const first = coords[0]
-        const last = coords[coords.length - 1]
-        return {
-            route: {
-                type: 'FeatureCollection',
-                features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} }],
-            } as GeoJSON.FeatureCollection,
-            pickup: {
-                type: 'FeatureCollection',
-                features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: first }, properties: {} }],
-            } as GeoJSON.FeatureCollection,
-            drop: {
-                type: 'FeatureCollection',
-                features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: last }, properties: {} }],
-            } as GeoJSON.FeatureCollection,
-        }
-    }, [detail])
+    const { routeFC, pickupMarker, dropMarker } = useMemo(() => {
+        const storedPts = detail?.routePolyline ?? []
+        const usingLive = liveRouteAhead.length >= 2
 
-    if (!enabled || route.features.length === 0) return null
+        // Route line coords in [lng, lat] for MapLibre GeoJSON
+        const coords: [number, number][] = usingLive
+            ? liveRouteAhead.map(([lat, lng]) => [lng, lat])
+            : storedPts.length >= 2
+                ? storedPts.map((p) => [p.lng, p.lat])
+                : []
+
+        if (coords.length < 2) return { routeFC: EMPTY_FC, pickupMarker: null, dropMarker: null }
+
+        const routeFC: GeoJSON.FeatureCollection = {
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', geometry: { type: 'LineString', coordinates: coords }, properties: {} }],
+        }
+
+        let pickupMarker: { lat: number; lng: number } | null = null
+        let dropMarker: { lat: number; lng: number } | null = null
+
+        if (usingLive) {
+            // Live route: driver → destination. The first coord is the driver's moving position —
+            // pickup pin must come from the FIXED stored route endpoint, not coords[0].
+            if (storedPts.length >= 1) {
+                const p = storedPts[storedPts.length - 1]
+                pickupMarker = { lat: p.lat, lng: p.lng }
+            }
+            const last = coords[coords.length - 1]   // [lng, lat]
+            dropMarker = { lat: last[1], lng: last[0] }
+        } else {
+            // Stored route only (driver home → pickup). Show the pickup destination pin.
+            const last = coords[coords.length - 1]   // [lng, lat]
+            pickupMarker = { lat: last[1], lng: last[0] }
+        }
+
+        return { routeFC, pickupMarker, dropMarker }
+    }, [detail, liveRouteAhead])
+
+    if (!enabled || routeFC.features.length === 0) return null
 
     return (
         <>
-            <Source id="selected-route" type="geojson" data={route}>
+            <Source id="selected-route" type="geojson" data={routeFC}>
                 <Layer
                     id="selected-route-casing"
                     type="line"
@@ -67,21 +109,17 @@ export default function SelectedDeliveryRouteLayer() {
                 />
             </Source>
 
-            {/* Pickup (green) */}
-            <Source id="selected-pickup" type="geojson" data={pickup}>
-                <Layer id="selected-pickup-ring" type="circle"
-                       paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#22c55e' }} />
-                <Layer id="selected-pickup-dot" type="circle"
-                       paint={{ 'circle-radius': 5, 'circle-color': '#22c55e', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
-            </Source>
+            {pickupMarker && (
+                <Marker longitude={pickupMarker.lng} latitude={pickupMarker.lat} anchor="bottom">
+                    <GpsPin color="#22c55e" />
+                </Marker>
+            )}
 
-            {/* Drop-off (amber) */}
-            <Source id="selected-drop" type="geojson" data={drop}>
-                <Layer id="selected-drop-ring" type="circle"
-                       paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#f59e0b' }} />
-                <Layer id="selected-drop-dot" type="circle"
-                       paint={{ 'circle-radius': 5, 'circle-color': '#f59e0b', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
-            </Source>
+            {dropMarker && (
+                <Marker longitude={dropMarker.lng} latitude={dropMarker.lat} anchor="bottom">
+                    <GpsPin color="#ef4444" />
+                </Marker>
+            )}
         </>
     )
 }

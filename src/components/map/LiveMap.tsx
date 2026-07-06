@@ -25,6 +25,31 @@ const EMPTY_FC: GeoJSON.FeatureCollection = { type: 'FeatureCollection', feature
 
 // Coordinate note: stores use [lat, lng]; MapLibre/GeoJSON uses [lng, lat]. Always swap.
 
+// Generates a GPS teardrop pin on a canvas and loads it into the MapLibre sprite.
+function loadPinImages(map: ReturnType<MapRef['getMap']>) {
+    const makePinCanvas = (color: string) => {
+        const w = 30, h = 42, cx = w / 2, r = 13, top = 2
+        const c = document.createElement('canvas')
+        c.width = w; c.height = h
+        const ctx = c.getContext('2d')!
+        ctx.shadowOffsetY = 2; ctx.shadowBlur = 4; ctx.shadowColor = 'rgba(0,0,0,0.35)'
+        ctx.beginPath()
+        ctx.moveTo(cx, h - 1)
+        ctx.bezierCurveTo(cx - 1, h - 8, cx - r, top + r * 1.6, cx - r, top + r)
+        ctx.arc(cx, top + r, r, Math.PI, 0)
+        ctx.bezierCurveTo(cx + r, top + r * 1.6, cx + 1, h - 8, cx, h - 1)
+        ctx.closePath()
+        ctx.fillStyle = color; ctx.fill()
+        ctx.shadowColor = 'transparent'
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1.5; ctx.stroke()
+        ctx.beginPath(); ctx.arc(cx, top + r, r * 0.42, 0, Math.PI * 2)
+        ctx.fillStyle = 'white'; ctx.fill()
+        return c
+    }
+    if (!map.hasImage('pickup-pin')) map.addImage('pickup-pin', makePinCanvas('#22c55e'), { pixelRatio: 2 })
+    if (!map.hasImage('drop-pin'))   map.addImage('drop-pin',   makePinCanvas('#f59e0b'), { pixelRatio: 2 })
+}
+
 function buildDriversGeoJSON(
     drivers: Record<string, DriverState>,
     stalledOnly: boolean,
@@ -196,9 +221,10 @@ export default function LiveMap({ onMapReady }: Props) {
                 if (!m) return
                 setMapRef(m.getMap())
                 onMapReady(m)
+                const rawMap = m.getMap()
+                loadPinImages(rawMap)
                 // Seed sources with current store state
                 const state = useLiveStore.getState()
-                const rawMap = m.getMap()
                 ;(rawMap.getSource('drivers') as GeoJSONSource | undefined)
                     ?.setData(buildDriversGeoJSON(state.drivers, stalledOnly))
 
@@ -242,6 +268,27 @@ export default function LiveMap({ onMapReady }: Props) {
             <DistrictBoundaryLayer />
             <DistrictDeliveryBadges />
             <RecommendationOverlay />
+
+            {/* Fixed driver status legend */}
+            <div style={{
+                position: 'absolute', bottom: 28, right: 10, zIndex: 1,
+                background: 'rgba(15,17,23,0.82)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: 8, padding: '8px 12px', display: 'flex', flexDirection: 'column',
+                gap: 5, fontSize: 11, color: '#e2e8f0', pointerEvents: 'none',
+                backdropFilter: 'blur(4px)',
+            }}>
+                {([
+                    { color: '#22c55e', r: 7,  label: 'Available'  },
+                    { color: '#3b82f6', r: 7,  label: 'In-transit' },
+                    { color: '#f97316', r: 10, label: 'Stalled'    },
+                    { color: '#94a3b8', r: 7,  label: 'Offline'    },
+                ] as const).map(({ color, r, label }) => (
+                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ width: r * 2, height: r * 2, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                        <span>{label}</span>
+                    </div>
+                ))}
+            </div>
         </Map>
     )
 }

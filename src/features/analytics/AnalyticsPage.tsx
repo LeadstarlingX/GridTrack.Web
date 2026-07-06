@@ -16,6 +16,7 @@ import { apiClient } from '@/lib/api/client'
 import { useAnalyticsSummary } from '@/lib/api/queries/useAnalyticsSummary'
 import { useAnalyticsTrends } from '@/lib/api/queries/useAnalyticsTrends'
 import { useStatusBreakdown } from '@/lib/api/queries/useStatusBreakdown'
+import { useSarimaDeliveryForecast } from '@/lib/api/queries/useSarimaDeliveryForecast'
 import DateRangePicker, { type DateRangeValue } from './DateRangePicker'
 
 // Date selection is driven entirely by the date-range picker; exports cover every
@@ -100,6 +101,8 @@ export default function AnalyticsPage() {
             .sort((a, b) => b.anomalyRate - a.anomalyRate)
             .slice(0, 5)
     }, [driverAnalyticsData])
+
+    const { data: sarimaForecast } = useSarimaDeliveryForecast(3)
 
     const { data: statusBreakdownData, isLoading: statusBreakdownLoading } = useStatusBreakdown(
         { from: appliedRange.from, to: appliedRange.to },
@@ -245,7 +248,11 @@ export default function AnalyticsPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <DeliveryTrendChart data={deliveryTrend} isLoading={trendsLoading} />
+                                <DeliveryTrendChart
+                                    data={deliveryTrend}
+                                    forecast={sarimaForecast}
+                                    isLoading={trendsLoading}
+                                />
                             </CardContent>
                         </Card>
 

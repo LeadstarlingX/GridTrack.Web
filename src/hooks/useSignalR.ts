@@ -80,6 +80,7 @@ export function useSignalR() {
                     lat: p.lat,
                     lng: p.lng,
                     districtId: p.districtId,
+                    deliveryId: p.deliveryId ?? null,
                     routeAhead: p.routeAhead,
                 }))
             )
