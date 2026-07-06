@@ -6,9 +6,60 @@ import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateR
 import { APP_CONFIG } from '@/config/app.config'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useCancellationAnalytics } from '@/lib/api/queries/useCancellationAnalytics'
+import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
 import { Clock } from 'lucide-react'
+
+function CancelAiInsight({ deliveryId }: { deliveryId: string }) {
+    const [enabled, setEnabled] = useState(false)
+    const { data, isLoading } = useDeliveryRecommendation(deliveryId, enabled)
+    if (data) {
+        const text = data.aiAvailable && data.recommendedAction
+            ? data.recommendedAction
+            : 'No specific action recommended'
+        return <span className="text-[11px] text-[hsl(var(--foreground-muted))] italic">{text}</span>
+    }
+    return (
+        <button
+            type="button"
+            onClick={() => setEnabled(true)}
+            disabled={isLoading}
+            className="text-[11px] px-2 py-0.5 rounded border border-[hsl(var(--border))] bg-transparent text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] transition-colors disabled:opacity-50 whitespace-nowrap"
+        >
+            {isLoading ? '⚡ …' : '⚡ Insight'}
+        </button>
+    )
+}
+
+function CancellationSummary({ from, to }: { from: string; to: string }) {
+    const { data } = useCancellationAnalytics(from, to)
+    if (!data || data.totalCancelled === 0) return null
+    const topReason = data.reasons.sort((a, b) => b.count - a.count)[0]
+    return (
+        <div className="rounded-xl border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-4 flex flex-wrap gap-6 text-sm">
+            <div>
+                <p className="text-xs text-[hsl(var(--foreground-muted))] mb-0.5">Total cancelled</p>
+                <p className="font-semibold tabular-nums text-[hsl(var(--destructive))]">{data.totalCancelled}</p>
+            </div>
+            <div>
+                <p className="text-xs text-[hsl(var(--foreground-muted))] mb-0.5">Late cancellations</p>
+                <p className="font-semibold tabular-nums">{data.lateCancellations}</p>
+            </div>
+            <div>
+                <p className="text-xs text-[hsl(var(--foreground-muted))] mb-0.5">Cancellation rate</p>
+                <p className="font-semibold tabular-nums">{(data.cancellationRate * 100).toFixed(1)}%</p>
+            </div>
+            {topReason && (
+                <div>
+                    <p className="text-xs text-[hsl(var(--foreground-muted))] mb-0.5">Top reason</p>
+                    <p className="font-semibold">{topReason.reason} <span className="text-[hsl(var(--foreground-muted))] font-normal">({topReason.count}×)</span></p>
+                </div>
+            )}
+        </div>
+    )
+}
 
 function formatTimestamp(value: string) {
     return new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -78,6 +129,11 @@ export default function CancelledOrdersPage() {
             cell: (row) => formatTimestamp(row.createdAt),
         },
         {
+            key: 'ai',
+            header: 'AI Insight',
+            cell: (row) => <CancelAiInsight deliveryId={row.id} />,
+        },
+        {
             key: 'timeline',
             header: '',
             cell: (row) => (
@@ -103,6 +159,8 @@ export default function CancelledOrdersPage() {
                 </div>
                 <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
             </header>
+
+            <CancellationSummary from={appliedRange.from} to={appliedRange.to} />
 
             <CursorTable
                 columns={columns}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import Map, { Source, Layer } from 'react-map-gl/maplibre'
 import type { MapRef, MapLayerMouseEvent } from 'react-map-gl/maplibre'
 import type { GeoJSONSource } from 'maplibre-gl'
@@ -123,6 +124,7 @@ interface Props {
 
 export default function LiveMap({ onMapReady }: Props) {
     const mapRef = useRef<MapRef>(null)
+    const location = useLocation()
     const autoFollow    = useFocusStore((s) => s.autoFollow)
     const focusedDriverId = useFocusStore((s) => s.focusedDriverId)
     const fLat = useLiveStore((s) => focusedDriverId ? (s.drivers[focusedDriverId]?.lat ?? 0) : 0)
@@ -251,6 +253,20 @@ export default function LiveMap({ onMapReady }: Props) {
                 }
                 rawMap.on('moveend', syncGroups)
                 syncGroups()
+
+                // If navigated here with a focusDriverId, select and pan to that driver.
+                const navState = location.state as { focusDriverId?: string; focusLat?: number; focusLng?: number } | null
+                const focusId = navState?.focusDriverId
+                if (focusId) {
+                    const live = useLiveStore.getState().drivers[focusId]
+                    const lat = live?.lat ?? navState?.focusLat
+                    const lng = live?.lng ?? navState?.focusLng
+                    if (lat != null && lng != null) {
+                        m.flyTo({ center: [lng, lat], zoom: APP_CONFIG.map.focusZoom, duration: APP_CONFIG.map.flyToDurationMs })
+                    }
+                    useMapStore.getState().selectDriver(focusId)
+                    useMapStore.getState().setSidePanelMode('driver')
+                }
             }}
             attributionControl={false}
         >

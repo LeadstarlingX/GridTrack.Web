@@ -7,6 +7,7 @@ import { useAlerts } from '@/lib/api/queries/useAlerts'
 import { useDeliveryRecommendation } from '@/lib/api/queries/useDeliveryRecommendation'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
+import { getMapRef } from '@/lib/mapRef'
 import type { AnomalyAlertDto } from '@/types/api'
 import type { AnomalyIncident } from '@/types/hub'
 
@@ -57,8 +58,8 @@ function formatTime(ts: string) {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function AlertAiChip({ deliveryId, urgencyColor }: { deliveryId: string; urgencyColor: string }) {
-    const [enabled, setEnabled] = useState(false)
+function AlertAiChip({ deliveryId, urgencyColor, autoLoad = false }: { deliveryId: string; urgencyColor: string; autoLoad?: boolean }) {
+    const [enabled, setEnabled] = useState(autoLoad)
     const { data, isLoading } = useDeliveryRecommendation(deliveryId, enabled)
 
     const note = data
@@ -115,7 +116,11 @@ function AlertCard({ type, driverName, driverId, deliveryId, districtName, reaso
     const handleViewOnMap = () => {
         selectDriver(driverId)
         setSidePanelMode('driver')
-        navigate('/')
+        const pos = useLiveStore.getState().drivers[driverId]
+        if (pos) {
+            getMapRef()?.flyTo({ center: [pos.lng, pos.lat], zoom: APP_CONFIG.map.focusZoom, duration: APP_CONFIG.map.flyToDurationMs })
+        }
+        navigate('/', { state: { focusDriverId: driverId, focusLat: pos?.lat, focusLng: pos?.lng } })
     }
 
     return (
@@ -337,8 +342,6 @@ export default function AlertsPage() {
                     </div>
                 </div>
             </header>
-
-                <IncidentAlertsBanner />
 
             <ApiAlertsList filter={filter} typeFilter={typeFilter} />
         </div>
