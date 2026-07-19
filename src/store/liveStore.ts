@@ -101,6 +101,8 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                         routeDistanceMeters: null,
                         routeDurationSeconds: null,
                         routeCost: null,
+                        urgencyScore: null,
+                        urgencyNote: null,
                         ...partial,
                     },
             },

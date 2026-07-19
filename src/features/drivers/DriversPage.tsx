@@ -4,7 +4,7 @@ import { Badge, Button } from '@/components/ui'
 import { cn } from '@/lib/utils'
 import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import { APP_CONFIG } from '@/config/app.config'
-import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useAllowedDistricts } from '@/lib/api/queries/useAllowedDistricts'
 import { useDrivers } from '@/lib/api/queries/useDrivers'
 import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
 import type { DriverListItemDto } from '@/types/api'
@@ -45,7 +45,7 @@ export default function DriversPage() {
     })
 
     const { mutate: setAvailability, isPending } = useDriverAvailability()
-    const { data: allDistricts = [] } = useDistricts()
+    const allDistricts = useAllowedDistricts()
 
     const rows = useMemo(() => data?.pages.flatMap((p) => p.items) ?? [], [data])
 

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import { Sun, Moon, Monitor, LogOut, User } from 'lucide-react'
-import { useClerk, useUser } from '@clerk/clerk-react'
+import { useNavigate } from 'react-router-dom'
+import { useAuthStore } from '@/store/authStore'
+import { useDistrictGroups } from '@/lib/api/queries/useDistrictGroups'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
@@ -11,7 +13,7 @@ import { cn } from '@/lib/utils'
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
 
-type Section = 'appearance' | 'notifications' | 'connection' | 'account'
+type Section = 'appearance' | 'notifications' | 'connection' | 'account' | 'sectors'
 
 const PING_INTERVAL_MS = 3_000
 const PING_TIMEOUT_MS  = 8_000
@@ -29,18 +31,15 @@ export default function SettingsPage() {
     const [pingError, setPingError] = useState<string | null>(null)
 
     // Clerk
-    const { signOut } = useClerk()
-    const { user } = useUser()
+    const navigate = useNavigate()
+    const authStore = useAuthStore()
+    const { data: districtGroups, isLoading: groupsLoading } = useDistrictGroups()
     const [signingOut, setSigningOut] = useState(false)
 
-    const handleSignOut = async () => {
+    const handleSignOut = () => {
         setSigningOut(true)
-        try {
-            await signOut({ redirectUrl: '/sign-in' })
-        } catch {
-            toast.error('Sign-out failed — try again.')
-            setSigningOut(false)
-        }
+        authStore.logout()
+        navigate('/sign-in', { replace: true })
     }
 
     // Auto-ping loop: fires immediately, waits for response, then waits 3 s before next ping.
@@ -92,6 +91,7 @@ export default function SettingsPage() {
         { key: 'notifications', label: 'Notifications' },
         { key: 'connection',   label: 'Connection' },
         { key: 'account',      label: 'Account' },
+        { key: 'sectors' as const, label: 'Sectors' },
     ]
 
     return (
@@ -270,54 +270,97 @@ export default function SettingsPage() {
                     {/* ── Account ── */}
                     {section === 'account' && (
                         <div className="space-y-4">
-                            {/* User info */}
                             <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
                                 <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">Signed in as</p>
                                 <div className="flex items-center gap-3">
-                                    {user?.imageUrl ? (
-                                        <img
-                                            src={user.imageUrl}
-                                            alt={user.fullName ?? 'User'}
-                                            className="w-10 h-10 rounded-full object-cover ring-2 ring-[hsl(var(--border))]"
-                                        />
-                                    ) : (
-                                        <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
-                                            <User size={18} className="text-[hsl(var(--primary))]" />
-                                        </div>
-                                    )}
+                                    <div className="w-10 h-10 rounded-full bg-[hsl(var(--primary)/0.15)] flex items-center justify-center">
+                                        <User size={18} className="text-[hsl(var(--primary))]" />
+                                    </div>
                                     <div>
                                         <p className="text-sm font-medium text-[hsl(var(--foreground))]">
-                                            {user?.fullName ?? '—'}
+                                            {authStore.userId ?? '—'}
                                         </p>
-                                        <p className="text-xs text-[hsl(var(--foreground-muted))]">
-                                            {user?.primaryEmailAddress?.emailAddress ?? '—'}
-                                        </p>
+                                        <span className={cn(
+                                            'inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold mt-1',
+                                            authStore.role === 'GeneralObserver'
+                                                ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
+                                                : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                        )}>
+                        {authStore.role ?? 'Unknown'}
+                    </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Sign out */}
                             <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
                                 <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">Session</p>
-                                <SettingRow
-                                    label="Sign out"
-                                    description="End your session on this device."
-                                >
+                                <SettingRow label="Sign out" description="End your session on this device.">
                                     <button
-                                        type="button"
-                                        onClick={handleSignOut}
-                                        disabled={signingOut}
-                                        className={cn(
-                                            'inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-100',
-                                            'border border-red-500/40 text-red-500 hover:bg-red-500/10',
-                                            'disabled:opacity-50 disabled:cursor-not-allowed'
-                                        )}
+                                        type="button" onClick={handleSignOut} disabled={signingOut}
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-red-500/40 text-red-500 hover:bg-red-500/10 disabled:opacity-50"
                                     >
                                         <LogOut size={14} />
                                         {signingOut ? 'Signing out…' : 'Sign out'}
                                     </button>
                                 </SettingRow>
                             </div>
+                        </div>
+                    )}
+
+                    {section === 'sectors' && (
+                        <div className="space-y-4">
+                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                    {authStore.role === 'GeneralObserver' ? 'All Sectors' : 'Your Sectors'}
+                                </p>
+
+                                {groupsLoading && (
+                                    <p className="text-xs text-[hsl(var(--foreground-muted))]">Loading…</p>
+                                )}
+
+                                {!groupsLoading && districtGroups && (
+                                    <div className="space-y-2">
+                                        {districtGroups
+                                            .filter((g) =>
+                                                authStore.role === 'GeneralObserver' ||
+                                                authStore.sectorIds.includes(g.id)
+                                            )
+                                            .map((group) => (
+                                                <div
+                                                    key={group.id}
+                                                    className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] px-4 py-3"
+                                                >
+                                                    <div>
+                                                        <p className="text-sm font-medium text-[hsl(var(--foreground))]">{group.name}</p>
+                                                        <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
+                                                            {group.districtIds.length} district{group.districtIds.length !== 1 ? 's' : ''}
+                                                        </p>
+                                                    </div>
+                                                    <span className={cn(
+                                                        'text-[10px] font-semibold px-2 py-1 rounded-full',
+                                                        authStore.role === 'GeneralObserver'
+                                                            ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
+                                                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
+                                                    )}>
+                                    {authStore.role === 'GeneralObserver' ? 'Full access' : 'Your sector'}
+                                </span>
+                                                </div>
+                                            ))}
+
+                                        {authStore.role !== 'GeneralObserver' && authStore.sectorIds.length === 0 && (
+                                            <p className="text-xs text-[hsl(var(--foreground-muted))]">
+                                                No sectors assigned. Contact your administrator.
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            {authStore.role === 'GeneralObserver' && (
+                                <p className="text-xs text-[hsl(var(--foreground-muted))] px-1">
+                                    As a General Observer you have read access to all sectors. District-to-sector assignment is managed via the API.
+                                </p>
+                            )}
                         </div>
                     )}
                 </div>

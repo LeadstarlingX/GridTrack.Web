@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useAllowedDistricts } from '@/lib/api/queries/useAllowedDistricts'
 import { useCreateDelivery } from '@/lib/api/queries/useDeliveryActions'
 import { APP_CONFIG } from '@/config/app.config'
 
@@ -28,7 +28,7 @@ export default function CreateDeliveryModal({ open, onClose }: Props) {
     const [districtId, setDistrictId] = useState('')
     const [eta, setEta] = useState('')
 
-    const { data: districts = [] } = useDistricts()
+    const districts = useAllowedDistricts()
     const create = useCreateDelivery(() => onClose())
 
     useEffect(() => {

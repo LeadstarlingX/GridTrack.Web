@@ -138,6 +138,18 @@ export function useSignalR() {
             useLiveStore.getState().pushIncident(payload)
         })
 
+        connection.on('UrgencyUpdated', (payload: { deliveryId: string; urgencyScore: number; aiNote: string }) => {
+            useLiveStore.getState().patchDelivery(payload.deliveryId, {
+                urgencyScore: payload.urgencyScore,
+                urgencyNote:  payload.aiNote,
+            })
+            if (payload.urgencyScore >= 8) {
+                toast.error(`Urgency ${payload.urgencyScore}/10 · ${payload.aiNote}`, {
+                    duration: APP_CONFIG.toast.anomalyDurationMs,
+                })
+            }
+        })
+
         let rttTimer: ReturnType<typeof setInterval> | null = null
 
         const hydrateDrivers = async () => {

@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { useLiveStore } from '@/store/liveStore'
 import { useMapStore } from '@/store/mapStore'
 import { PAGE_CONFIG } from '@/config/pages.config'
+import { useAuthStore } from '@/store/authStore'
 
 const ALL_NAV_ITEMS = [
     { to: '/', label: 'Live Ops', icon: Radio, pageKey: 'liveOps' as const },
@@ -28,6 +29,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
     const hubStatus = useMapStore((s) => s.hubStatus)
     const drivers = useLiveStore((s) => s.drivers)
     const inTransitCount = Object.values(drivers).filter((d) => d.status === 'in-transit').length
+    const role = useAuthStore((s) => s.role)
 
     return (
         <aside
@@ -46,6 +48,16 @@ export default function Sidebar({ isOpen }: SidebarProps) {
                 </div>
                 <span className="text-sm font-semibold tracking-tight text-[hsl(var(--foreground))]">GridTrack</span>
                 <span className="ml-auto text-[10px] font-mono text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]">v2</span>
+                {role && (
+                    <span className={cn(
+                        'text-[9px] font-semibold px-1.5 py-0.5 rounded ml-auto',
+                        role === 'GeneralObserver'
+                            ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
+                            : 'bg-amber-500/15 text-amber-500'
+                    )}>
+                    {role === 'GeneralObserver' ? 'Admin' : 'Observer'}
+                </span>
+                )}
             </div>
 
             {/* Nav */}
