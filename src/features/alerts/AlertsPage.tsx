@@ -9,7 +9,7 @@ import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { getMapRef } from '@/lib/mapRef'
 import type { AnomalyAlertDto } from '@/types/api'
-import type { AnomalyIncident } from '@/types/hub'
+// import type { AnomalyIncident } from '@/types/hub'
 
 type UrgencyFilter = 'all' | 'critical' | 'high' | 'low'
 type AnomalyTypeFilter = 'all' | AnomalyAlertDto['anomalyType']
@@ -189,40 +189,40 @@ function AlertCard({ type, driverName, driverId, deliveryId, districtName, reaso
     )
 }
 
-function IncidentCard({ incident }: { incident: AnomalyIncident }) {
-    const time = new Date(incident.detectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    return (
-        <div className="flex gap-3 rounded-xl border border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.05)] p-4">
-            <div className="w-1 shrink-0 rounded-full bg-[hsl(var(--destructive))]" />
-            <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <Badge variant="destructive">Incident</Badge>
-                    <span className="text-xs font-medium text-[hsl(var(--foreground))]">{incident.districtId}</span>
-                    <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
-                        {incident.anomalyCount} anomalies · {incident.windowMinutes} min window
-                    </span>
-                    <span className="ml-auto text-[11px] font-mono text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]">{time}</span>
-                </div>
-                <p className="text-sm text-[hsl(var(--foreground-muted))]">{incident.summary}</p>
-            </div>
-        </div>
-    )
-}
+// function IncidentCard({ incident }: { incident: AnomalyIncident }) {
+//     const time = new Date(incident.detectedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+//     return (
+//         <div className="flex gap-3 rounded-xl border border-[hsl(var(--destructive)/0.4)] bg-[hsl(var(--destructive)/0.05)] p-4">
+//             <div className="w-1 shrink-0 rounded-full bg-[hsl(var(--destructive))]" />
+//             <div className="flex-1 min-w-0">
+//                 <div className="flex flex-wrap items-center gap-2 mb-1">
+//                     <Badge variant="destructive">Incident</Badge>
+//                     <span className="text-xs font-medium text-[hsl(var(--foreground))]">{incident.districtId}</span>
+//                     <span className="text-[11px] text-[hsl(var(--foreground-muted))]">
+//                         {incident.anomalyCount} anomalies · {incident.windowMinutes} min window
+//                     </span>
+//                     <span className="ml-auto text-[11px] font-mono text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]">{time}</span>
+//                 </div>
+//                 <p className="text-sm text-[hsl(var(--foreground-muted))]">{incident.summary}</p>
+//             </div>
+//         </div>
+//     )
+// }
 
-function IncidentAlertsBanner() {
-    const incidents = useLiveStore((s) => s.incidents)
-    if (incidents.length === 0) return null
-    return (
-        <section className="flex flex-col gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsl(var(--destructive))]">
-                Live Incidents
-            </p>
-            {incidents.map((inc) => (
-                <IncidentCard key={`${inc.districtId}-${inc.detectedAt}`} incident={inc} />
-            ))}
-        </section>
-    )
-}
+// function IncidentAlertsBanner() {
+//     const incidents = useLiveStore((s) => s.incidents)
+//     if (incidents.length === 0) return null
+//     return (
+//         <section className="flex flex-col gap-2">
+//             <p className="text-[11px] font-semibold uppercase tracking-widest text-[hsl(var(--destructive))]">
+//                 Live Incidents
+//             </p>
+//             {incidents.map((inc) => (
+//                 <IncidentCard key={`${inc.districtId}-${inc.detectedAt}`} incident={inc} />
+//             ))}
+//         </section>
+//     )
+// }
 
 function ApiAlertsList({ filter, typeFilter }: { filter: UrgencyFilter; typeFilter: AnomalyTypeFilter }) {
     const today = new Date()
