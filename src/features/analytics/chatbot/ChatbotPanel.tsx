@@ -29,7 +29,7 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const chunksRef = useRef<Blob[]>([])
 
-    const { messages, csvData, isLoading, isCsvLoading, isGeneratingReport, sendMessage, loadCsvForRange, clearConversation, generateReport } = useChatbot()
+    const { messages, csvData, isLoading, isCsvLoading, sendMessage, loadCsvForRange, clearConversation } = useChatbot()
 
     const rangeLabel = useMemo(() => `${range.from} to ${range.to}`, [range.from, range.to])
     const rangeDays = useMemo(() => getRangeDays(range.from, range.to), [range.from, range.to])
@@ -110,19 +110,9 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
                         </Badge>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void generateReport()}
-                        disabled={!messages.length || isGeneratingReport}
-                    >
-                        {isGeneratingReport ? 'Generating…' : 'PDF Report'}
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={clearConversation}>
-                        Clear
-                    </Button>
-                </div>
+                <Button variant="ghost" size="sm" onClick={clearConversation}>
+                    Clear
+                </Button>
             </div>
 
             <div className="flex h-[340px] flex-col gap-3 overflow-y-auto rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] p-4">

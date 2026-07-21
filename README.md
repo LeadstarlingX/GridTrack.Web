@@ -115,10 +115,12 @@ The Python pipeline ([gridtrack-forecasting](https://github.com/LeadstarlingX/gr
 exposes an **MCP server** so AI agents can query live fleet data (active drivers, anomalies,
 deliveries, district status, stalled drivers, activity trends, and peak-hour data) as native tools.
 
-- **URL:** `http://localhost:8000/mcp` (SSE transport — Python service must be running)
+- **Endpoint:** `http://localhost:8000/mcp/sse` (SSE transport — Python service must be running)
 - **Auth:** `Authorization: Bearer <MCP_API_KEY>` — key defined in `.env` at the GridTrack repo root
 
-Full setup instructions and available tools: [gridtrack-forecasting README](https://github.com/LeadstarlingX/gridtrack-forecasting#mcp-server--ai-agent-integration).
+For setup instructions (Claude Code, Claude Desktop, Python SDK) and the full tool reference, see:
+- [GridTrack README — MCP server](https://github.com/LeadstarlingX/GridTrack#mcp-server--ai-agent-integration) — client setup including Claude Desktop on Windows
+- [gridtrack-forecasting README — MCP server](https://github.com/LeadstarlingX/gridtrack-forecasting#mcp-server--ai-agent-integration) — transport details and tool reference
 
 ## License
 
