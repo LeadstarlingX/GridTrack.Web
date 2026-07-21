@@ -11,4 +11,6 @@ export interface DeliveryState {
     routeDistanceMeters: number | null
     routeDurationSeconds: number | null
     routeCost: number | null
+    urgencyScore: number | null
+    urgencyNote: string | null
 }

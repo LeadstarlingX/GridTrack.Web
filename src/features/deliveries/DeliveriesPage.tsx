@@ -6,7 +6,7 @@ import CursorTable, { type CursorColumn } from '@/components/shared/CursorTable'
 import DateRangePicker, { type DateRangeValue } from '@/features/analytics/DateRangePicker'
 import { APP_CONFIG } from '@/config/app.config'
 import { useDeliveries } from '@/lib/api/queries/useDeliveries'
-import { useDistricts } from '@/lib/api/queries/useDistricts'
+import { useAllowedDistricts } from '@/lib/api/queries/useAllowedDistricts'
 import type { DeliveryListItemDto, DeliveriesQueryParams } from '@/types/api'
 import DeliveryTimelineDrawer from './DeliveryTimelineDrawer'
 import CreateDeliveryModal from './CreateDeliveryModal'
@@ -132,7 +132,7 @@ export default function DeliveriesPage() {
     }), [statusFilter, districtFilter, appliedRange])
 
     const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useDeliveries(queryParams)
-    const { data: allDistricts = [] } = useDistricts()
+    const allDistricts = useAllowedDistricts()
     const districtNameMap = useMemo(
         () => Object.fromEntries(allDistricts.map((d) => [d.id, d.name])),
         [allDistricts],

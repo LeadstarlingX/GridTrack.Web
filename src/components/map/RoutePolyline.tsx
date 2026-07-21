@@ -74,19 +74,15 @@ export default function RoutePolyline() {
 
             {hasRoute && pickupGeoJSON.features.length > 0 && (
                 <Source id="focus-pickup" type="geojson" data={pickupGeoJSON}>
-                    <Layer id="focus-pickup-ring" type="circle"
-                           paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#22c55e' }} />
-                    <Layer id="focus-pickup-dot" type="circle"
-                           paint={{ 'circle-radius': 5, 'circle-color': '#22c55e', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
+                    <Layer id="focus-pickup-pin" type="symbol"
+                           layout={{ 'icon-image': 'pickup-pin', 'icon-anchor': 'bottom', 'icon-allow-overlap': true, 'icon-size': 1 }} />
                 </Source>
             )}
 
             {hasRoute && dropoffGeoJSON.features.length > 0 && (
                 <Source id="focus-dropoff" type="geojson" data={dropoffGeoJSON}>
-                    <Layer id="focus-dropoff-ring" type="circle"
-                           paint={{ 'circle-radius': 9, 'circle-color': 'transparent', 'circle-stroke-width': 2.5, 'circle-stroke-color': '#f59e0b' }} />
-                    <Layer id="focus-dropoff-dot" type="circle"
-                           paint={{ 'circle-radius': 5, 'circle-color': '#f59e0b', 'circle-stroke-width': 1.5, 'circle-stroke-color': '#ffffff' }} />
+                    <Layer id="focus-dropoff-pin" type="symbol"
+                           layout={{ 'icon-image': 'drop-pin', 'icon-anchor': 'bottom', 'icon-allow-overlap': true, 'icon-size': 1 }} />
                 </Source>
             )}
         </>

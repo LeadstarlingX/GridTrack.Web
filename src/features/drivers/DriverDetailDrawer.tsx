@@ -13,6 +13,9 @@ import { useDriverStats } from '@/lib/api/queries/useDriverStats'
 import { useDriverAvailability } from '@/lib/api/queries/useDriverAvailability'
 import { useDistricts } from '@/lib/api/queries/useDistricts'
 import { useNavigate } from 'react-router-dom'
+import { useLiveStore } from '@/store/liveStore'
+import { getMapRef } from '@/lib/mapRef'
+import { APP_CONFIG } from '@/config/app.config'
 import type { ReactNode } from 'react'
 
 interface Props {
@@ -179,9 +182,13 @@ export default function DriverDetailDrawer({ driverId, onClose }: Props) {
                                 variant="outline"
                                 size="sm"
                                 className="w-full justify-start gap-2"
-                                onClick={() =>
-                                    navigate('/', { state: { focusDriverId: driver.id } })
-                                }
+                                onClick={() => {
+                                    const live = useLiveStore.getState().drivers[driver.id]
+                                    const lat = live?.lat ?? driver.lat
+                                    const lng = live?.lng ?? driver.lng
+                                    getMapRef()?.flyTo({ center: [lng, lat], zoom: APP_CONFIG.map.focusZoom, duration: APP_CONFIG.map.flyToDurationMs })
+                                    navigate('/', { state: { focusDriverId: driver.id, focusLat: lat, focusLng: lng } })
+                                }}
                             >
                                 <Map size={13} />
                                 Show on live map

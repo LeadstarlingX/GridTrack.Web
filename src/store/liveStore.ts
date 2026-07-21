@@ -16,7 +16,7 @@ interface LiveStore {
     driverRoutes: Record<string, [number, number][]>
 
     updateDriverPosition: (id: string, lat: number, lng: number, districtId: string, routeAhead?: [number, number][]) => void
-    batchUpdateDriverPositions: (updates: Array<{ id: string; lat: number; lng: number; districtId: string; routeAhead?: [number, number][] | null }>) => void
+    batchUpdateDriverPositions: (updates: Array<{ id: string; lat: number; lng: number; districtId: string; deliveryId?: string | null; routeAhead?: [number, number][] | null }>) => void
     patchDelivery: (id: string, partial: Partial<DeliveryState>) => void
     pushAnomaly: (alert: AnomalyAlert) => void
     markStall: (id: string, stalledSince: string) => void
@@ -66,9 +66,10 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                 const existing = drivers[u.id]
                 const prevTrail = trails[u.id] ?? []
                 trails[u.id] = [...prevTrail, [u.lat, u.lng] as [number, number]].slice(-TRAIL_MAX_POINTS)
+                const liveStatus = u.deliveryId ? 'in-transit' as const : 'available' as const
                 drivers[u.id] = existing
-                    ? { ...existing, lat: u.lat, lng: u.lng, districtId: u.districtId, stalledSince: null }
-                    : { id: u.id, name: u.id.slice(-8), lat: u.lat, lng: u.lng, districtId: u.districtId, status: 'in-transit' as const, routeIndex: 0, pointIndex: 0, stalledSince: null }
+                    ? { ...existing, lat: u.lat, lng: u.lng, districtId: u.districtId, status: liveStatus, stalledSince: null }
+                    : { id: u.id, name: u.id.slice(-8), lat: u.lat, lng: u.lng, districtId: u.districtId, status: liveStatus, routeIndex: 0, pointIndex: 0, stalledSince: null }
                 if (u.routeAhead !== undefined) {
                     driverRoutes[u.id] = u.routeAhead ?? []
                 }
@@ -100,6 +101,8 @@ export const useLiveStore = create<LiveStore>()((set) => ({
                         routeDistanceMeters: null,
                         routeDurationSeconds: null,
                         routeCost: null,
+                        urgencyScore: null,
+                        urgencyNote: null,
                         ...partial,
                     },
             },

@@ -109,6 +109,17 @@ npm run lint
 | `/drivers` | Driver list and detail drawer |
 | `/settings` | User settings |
 
+## MCP server — AI agent integration
+
+The Python pipeline ([gridtrack-forecasting](https://github.com/LeadstarlingX/gridtrack-forecasting))
+exposes an **MCP server** so AI agents can query live fleet data (active drivers, anomalies,
+deliveries, district status, stalled drivers, activity trends, and peak-hour data) as native tools.
+
+- **URL:** `http://localhost:8000/mcp` (SSE transport — Python service must be running)
+- **Auth:** `Authorization: Bearer <MCP_API_KEY>` — key defined in `.env` at the GridTrack repo root
+
+Full setup instructions and available tools: [gridtrack-forecasting README](https://github.com/LeadstarlingX/gridtrack-forecasting#mcp-server--ai-agent-integration).
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

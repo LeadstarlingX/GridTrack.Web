@@ -81,9 +81,12 @@ export default function DriverPanel() {
                     const resp = await apiClient.get<DeliveryDetailDto>(
                         APP_CONFIG.api.deliveryDetailPath.replace('{id}', activeDelivery.id),
                     )
-                    const route: [number, number][] = (resp.data.routePolyline ?? []).map(
+                    const storedRoute: [number, number][] = (resp.data.routePolyline ?? []).map(
                         (p) => [p.lat, p.lng] as [number, number],
                     )
+                    // Prefer live routeAhead (always current) over stored route (stale in dropoff phase)
+                    const liveRoute = useLiveStore.getState().driverRoutes[driver.id] ?? []
+                    const route = liveRoute.length >= 2 ? liveRoute : storedRoute
                     useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, route)
                 } catch {
                     useFocusStore.getState().enterFocusMode(activeDelivery.id, driver.id, [])
