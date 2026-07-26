@@ -25,31 +25,17 @@ export default function DistrictVolumeChart({ data, isLoading, onBarClick }: Dis
         return <Skeleton className="h-56 w-full" />
     }
 
-    if (data.length === 0) {
-        return (
-            <div className="flex h-56 items-center justify-center">
-                <p className="text-xs text-[hsl(var(--foreground-muted))]">No volume data in selected range</p>
-            </div>
-        )
-    }
-
     return (
         <ChartContainer config={chartConfig} className="h-56 w-full">
             <BarChart data={data} layout="vertical" margin={{ left: 12, right: 12, top: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
-                <XAxis
-                    type="number"
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: 'hsl(var(--foreground-muted))', fontSize: 11 }}
-                />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickLine={false} axisLine={false} />
                 <YAxis
                     dataKey="district"
                     type="category"
                     tickLine={false}
                     axisLine={false}
                     width={90}
-                    tick={{ fill: 'hsl(var(--foreground-muted))', fontSize: 11 }}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Bar

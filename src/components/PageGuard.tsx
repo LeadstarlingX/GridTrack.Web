@@ -18,7 +18,7 @@ function PlaceholderPage({ name }: { name: string }) {
         <div className="flex h-full w-full items-center justify-center">
             <div className="text-center space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))]">Coming Soon</p>
-                <p className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))] capitalize">
+                <p className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))] capitalize">
                     {name.replace(/([A-Z])/g, ' $1').trim()}
                 </p>
                 <p className="text-xs text-[hsl(var(--foreground-subtle))]">This page is not yet enabled.</p>

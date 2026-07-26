@@ -13,8 +13,8 @@ function defaultTargetAt(): string {
 
 function confidenceColor(confidence: 'high' | 'medium' | 'low'): string {
     if (confidence === 'high') return 'hsl(var(--primary))'
-    if (confidence === 'medium') return 'hsl(var(--warning))'
-    return 'hsl(var(--destructive))'
+    if (confidence === 'medium') return '#fbbf24'
+    return '#f87171'
 }
 
 export default function StaffingWidget() {

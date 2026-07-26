@@ -3,7 +3,6 @@ import { Search } from 'lucide-react'
 import { APP_CONFIG } from '@/config/app.config'
 import { useMapStore } from '@/store/mapStore'
 import { getMapRef } from '@/lib/mapRef'
-import { cn } from '@/lib/utils'
 
 function featureBbox(feature: GeoJSON.Feature): [[number, number], [number, number]] | null {
     let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity
@@ -23,34 +22,28 @@ function featureBbox(feature: GeoJSON.Feature): [[number, number], [number, numb
     if (!isFinite(minLng)) return null
     return [[minLng, minLat], [maxLng, maxLat]]
 }
-
 function StaffingBadge({ boundaryId }: { boundaryId: string }) {
     const forecast = useMapStore((s) => s.districtForecasts[boundaryId])
     if (!forecast) return null
 
     const { staffingRatio, forecastedDemand } = forecast
     const isUnder = staffingRatio < 0.7
-    const isOver  = staffingRatio > 1.3
-    const colorClass = isUnder
-        ? 'text-[hsl(var(--destructive))]'
-        : isOver
-            ? 'text-[hsl(var(--warning))]'
-            : 'text-[hsl(var(--success))]'
+    const isOver = staffingRatio > 1.3
+    const color = isUnder ? '#ef4444' : isOver ? '#f59e0b' : '#22c55e'
     const label = isUnder ? 'Under' : isOver ? 'Over' : 'OK'
-
     return (
-        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-[hsl(var(--foreground-muted))]">
-            <span className={cn('font-semibold', colorClass)}>{label}</span>
+        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-white/50">
+            <span style={{ color }} className="font-semibold">{label}</span>
             <span>{forecastedDemand} demand · {staffingRatio.toFixed(2)} ratio</span>
         </div>
     )
 }
 
 export default function NeighborhoodListPanel() {
-    const boundaries        = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
     const selectedDistrictId = useMapStore((s) => s.selectedDistrictId)
-    const selectDistrict    = useMapStore((s) => s.selectDistrict)
-    const setSidePanelMode  = useMapStore((s) => s.setSidePanelMode)
+    const selectDistrict = useMapStore((s) => s.selectDistrict)
+    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
     const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
     const [query, setQuery] = useState('')
 
@@ -58,7 +51,7 @@ export default function NeighborhoodListPanel() {
         const items = boundaries?.features ?? []
         return items
             .map((feature) => {
-                const boundaryId  = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
+                const boundaryId = feature.properties?.boundaryId ?? String(feature.properties?.osm_id ?? '')
                 const displayName = (feature.properties?.displayName ?? feature.properties?.name_fixed ?? feature.properties?.name ?? boundaryId) as string
                 return { boundaryId, displayName, feature }
             })
@@ -73,23 +66,21 @@ export default function NeighborhoodListPanel() {
     return (
         <div className="p-4">
             <div className="mb-4">
-                <div className="text-sm font-semibold text-[hsl(var(--foreground))]">Neighborhoods</div>
-                <div className="text-xs text-[hsl(var(--foreground-muted))]">Select one to highlight it on the map.</div>
+                <div className="text-sm font-semibold text-white">Neighborhoods</div>
+                <div className="text-xs text-white/60">Select one to highlight it on the map.</div>
             </div>
 
             <div className="relative mb-3">
-                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-[hsl(var(--foreground-muted))]" />
+                <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-white/40" />
                 <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search by Arabic name or ID"
-                    className="h-9 w-full rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] pl-9 pr-3 text-sm text-[hsl(var(--foreground))] outline-none placeholder:text-[hsl(var(--foreground-muted))] focus:border-[hsl(var(--primary))] focus:ring-1 focus:ring-[hsl(var(--primary)/0.2)]"
+                    className="h-9 w-full rounded-md border border-white/10 bg-white/5 pl-9 pr-3 text-sm text-white outline-none placeholder:text-white/30"
                 />
             </div>
 
-            <div className="mb-3 text-xs text-[hsl(var(--foreground-muted))]">
-                {neighborhoods.length} neighborhoods
-            </div>
+            <div className="mb-3 text-xs text-white/50">{neighborhoods.length} neighborhoods</div>
 
             <div className="space-y-2">
                 {neighborhoods.map((item) => {
@@ -97,12 +88,7 @@ export default function NeighborhoodListPanel() {
                     return (
                         <div
                             key={item.boundaryId}
-                            className={cn(
-                                'w-full rounded-lg border px-3 py-2 transition-colors duration-100',
-                                active
-                                    ? 'border-[hsl(var(--primary)/0.5)] bg-[hsl(var(--primary)/0.08)]'
-                                    : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] hover:bg-[hsl(var(--surface-raised))] hover:border-[hsl(var(--border-strong))]',
-                            )}
+                            className={`w-full rounded-md border px-3 py-2 transition ${active ? 'border-blue-400 bg-blue-500/15' : 'border-white/10 bg-white/5 hover:bg-white/10'}`}
                         >
                             <button
                                 type="button"
@@ -116,14 +102,14 @@ export default function NeighborhoodListPanel() {
                                     }
                                 }}
                             >
-                                <div className="text-sm font-medium text-[hsl(var(--foreground))]">{item.displayName}</div>
-                                <div className="text-[11px] text-[hsl(var(--foreground-muted))]">{item.boundaryId}</div>
+                                <div className="text-sm font-medium text-white">{item.displayName}</div>
+                                <div className="text-[11px] text-white/45">{item.boundaryId}</div>
                                 <StaffingBadge boundaryId={item.boundaryId} />
                             </button>
                             <div className="mt-2 flex justify-end">
                                 <button
                                     type="button"
-                                    className="rounded-md border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-2 py-1 text-[11px] text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors"
+                                    className="rounded-md border border-white/15 bg-white/5 px-2 py-1 text-[11px] text-white/80 hover:bg-white/10 hover:text-white"
                                     onClick={() => {
                                         selectDistrict(item.boundaryId)
                                         setDistrictPanelView('details')
@@ -144,12 +130,12 @@ export default function NeighborhoodListPanel() {
             </div>
 
             {neighborhoods.length === 0 && (
-                <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] px-3 py-4 text-sm text-[hsl(var(--foreground-muted))]">
+                <div className="rounded-md border border-white/10 bg-white/5 px-3 py-4 text-sm text-white/60">
                     No neighborhoods matched your search.
                 </div>
             )}
 
-            <div className="mt-4 rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))] px-3 py-2 text-xs text-[hsl(var(--foreground-muted))]">
+            <div className="mt-4 rounded-md border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/50">
                 Tip: search by name then tap Details to inspect a district's forecast and staffing stats.
             </div>
         </div>

@@ -14,24 +14,24 @@ export default function SidePanel() {
     if (mode === 'idle') return null
 
     return (
-        <div className="absolute top-0 right-0 bottom-0 w-80 z-[2000] bg-[hsl(var(--map-overlay))] dark:bg-[hsl(var(--map-overlay-dark))] backdrop-blur-md border-l border-[hsl(var(--border))] shadow-lg overflow-y-auto text-[hsl(var(--foreground))]">
+        <div className="absolute top-0 right-0 bottom-0 w-80 z-[2000] bg-gray-950/85 backdrop-blur-sm border-l border-white/10 shadow-lg overflow-y-auto text-white">
             {mode === 'district' && (
                 <div className="flex h-full flex-col">
-                    <div className="flex items-start justify-between gap-2 border-b border-[hsl(var(--border))] px-4 py-3 shrink-0">
+                    <div className="flex items-start justify-between gap-2 border-b border-white/10 px-4 py-3">
                         <div>
-                            <div className="text-sm font-semibold text-[hsl(var(--foreground))]">Districts</div>
-                            <div className="text-xs text-[hsl(var(--foreground-muted))]">
+                            <div className="text-sm font-semibold text-white">Districts</div>
+                            <div className="text-xs text-white/55">
                                 {districtPanelView === 'browse'
                                     ? 'Search and tap a neighborhood to highlight it on the map.'
                                     : 'District details'}
                             </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1">
                             {districtPanelView === 'details' && (
                                 <button
                                     type="button"
                                     onClick={() => setDistrictPanelView('browse')}
-                                    className="rounded-md px-2 py-1 text-[11px] text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors"
+                                    className="rounded-md px-2 py-1 text-[11px] text-white/75 hover:bg-white/10 hover:text-white"
                                     title="Back to district list"
                                 >
                                     Back
@@ -40,7 +40,7 @@ export default function SidePanel() {
                             <button
                                 type="button"
                                 onClick={() => setMode('idle')}
-                                className="rounded-md p-1 text-[hsl(var(--foreground-muted))] hover:bg-[hsl(var(--surface-raised))] hover:text-[hsl(var(--foreground))] transition-colors"
+                                className="rounded-md p-1 text-white/65 hover:bg-white/10 hover:text-white"
                                 aria-label="Close district panel"
                                 title="Close"
                             >
