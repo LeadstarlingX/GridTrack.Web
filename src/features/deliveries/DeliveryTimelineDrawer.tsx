@@ -95,12 +95,12 @@ function TimelineEvent({ event, isLast }: { event: DeliveryTimelineEventDto; isL
 }
 
 const STATUS_BADGE: Record<DeliveryStatus, { label: string; className: string }> = {
-    Created:   { label: 'Created',    className: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
-    Assigned:  { label: 'Assigned',   className: 'bg-violet-500/15 text-violet-400 border-violet-500/30' },
-    PickedUp:  { label: 'Picked Up',  className: 'bg-amber-500/15 text-amber-400 border-amber-500/30' },
-    InTransit: { label: 'In Transit', className: 'bg-sky-500/15 text-sky-400 border-sky-500/30' },
-    Delivered: { label: 'Delivered',  className: 'bg-green-500/15 text-green-400 border-green-500/30' },
-    Cancelled: { label: 'Cancelled',  className: 'bg-red-500/15 text-red-400 border-red-500/30' },
+    Created:   { label: 'Created',    className: 'bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.3)]' },
+    Assigned:  { label: 'Assigned',   className: 'bg-[hsl(var(--warning)/0.12)] text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.3)]' },
+    PickedUp:  { label: 'Picked Up',  className: 'bg-[hsl(var(--warning)/0.12)] text-[hsl(var(--warning))] border-[hsl(var(--warning)/0.3)]' },
+    InTransit: { label: 'In Transit', className: 'bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))] border-[hsl(var(--primary)/0.3)]' },
+    Delivered: { label: 'Delivered',  className: 'bg-[hsl(var(--success)/0.12)] text-[hsl(var(--success))] border-[hsl(var(--success)/0.3)]' },
+    Cancelled: { label: 'Cancelled',  className: 'bg-[hsl(var(--destructive)/0.12)] text-[hsl(var(--destructive))] border-[hsl(var(--destructive)/0.3)]' },
     Anomalous: { label: 'Anomalous',  className: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
 }
 
@@ -319,7 +319,7 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                                 )}
                                 {status === 'Assigned' && (
                                     <Button
-                                        className="w-full bg-amber-500 hover:bg-amber-600 text-white"
+                                        className="w-full bg-[hsl(var(--warning))] hover:opacity-90 text-white"
                                         disabled={pickUp.isPending}
                                         onClick={() => pickUp.mutate()}
                                     >
@@ -331,7 +331,7 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                                 )}
                                 {(status === 'PickedUp' || status === 'InTransit' || status === 'Anomalous') && (
                                     <Button
-                                        className="w-full bg-green-600 hover:bg-green-700 text-white"
+                                        className="w-full bg-[hsl(var(--success))] hover:opacity-90 text-white"
                                         disabled={deliver.isPending}
                                         onClick={() => deliver.mutate()}
                                     >
@@ -504,7 +504,7 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                                     onChange={(e) => setCancelReason(e.target.value)}
                                 />
                                 <Button
-                                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                                    className="w-full bg-[hsl(var(--destructive))] hover:opacity-90 text-white"
                                     disabled={!cancelReason.trim() || cancel.isPending}
                                     onClick={() => cancel.mutate(cancelReason.trim())}
                                 >
@@ -548,7 +548,7 @@ export default function DeliveryTimelineDrawer({ deliveryId, onClose }: Props) {
                                     onChange={(e) => setAnomalyReason(e.target.value)}
                                 />
                                 <Button
-                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                                    className="w-full bg-orange-500/90 hover:bg-orange-500 text-white"
                                     disabled={!anomalyType || !anomalyReason.trim() || flag.isPending}
                                     onClick={() =>
                                         flag.mutate({ type: anomalyType as AnomalyType, reason: anomalyReason.trim() })

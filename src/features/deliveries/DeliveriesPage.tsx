@@ -212,7 +212,7 @@ export default function DeliveriesPage() {
         <div className="flex flex-col gap-6 p-6">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Deliveries</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Deliveries</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Track all delivery activity.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -227,10 +227,10 @@ export default function DeliveriesPage() {
                                     'px-2.5 py-1 rounded-md border text-xs font-medium transition-colors',
                                     statusFilter === status
                                         ? status === 'Anomalous'
-                                            ? 'border-red-500 bg-red-500/10 text-red-400'
+                                            ? 'border-[hsl(var(--destructive)/0.6)] bg-[hsl(var(--destructive)/0.1)] text-[hsl(var(--destructive))]'
                                             : status === 'Delivered'
-                                              ? 'border-green-500 bg-green-500/10 text-green-400'
-                                              : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
+                                                ? 'border-[hsl(var(--success)/0.6)] bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]'
+                                                : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
                                         : 'border-transparent text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]',
                                 )}
                             >
