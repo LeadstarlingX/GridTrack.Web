@@ -153,11 +153,11 @@ function AlertCard({ type, driverName, driverId, deliveryId, districtName, reaso
                 {/* AI note — static (mock) or lazy-fetched (API) */}
                 {aiNote && (
                     <div className="rounded-md px-3 py-2 text-xs leading-relaxed"
-                         style={{
-                             background: `color-mix(in srgb, ${color} 10%, transparent)`,
-                             border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
-                             color,
-                         }}>
+                        style={{
+                            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+                            border: `1px solid color-mix(in srgb, ${color} 25%, transparent)`,
+                            color,
+                        }}>
                         ⚡ {aiNote}
                     </div>
                 )}
@@ -310,7 +310,7 @@ export default function AlertsPage() {
         <div className="flex flex-col gap-4 p-6">
             <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Alerts</h1>
+                    <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Alerts</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">AI-triaged anomaly queue · sorted by urgency</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

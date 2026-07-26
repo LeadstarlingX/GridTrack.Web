@@ -43,7 +43,7 @@ export default function PerformancePage() {
         <div className="flex flex-col gap-6 p-6">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Performance</h1>
+                    <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Performance</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Delivery performance, anomalies, cancellations and utilization.</p>
                 </div>
                 <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
@@ -83,10 +83,10 @@ export default function PerformancePage() {
                                                     style={{
                                                         width: `${(d.onTimeRate * 100).toFixed(0)}%`,
                                                         background: d.onTimeRate >= 0.8
-                                                            ? 'linear-gradient(90deg, hsl(var(--primary)), hsl(var(--success)))'
+                                                            ? 'hsl(var(--primary))'
                                                             : d.onTimeRate >= 0.6
-                                                                ? 'hsl(var(--warning))'
-                                                                : 'hsl(var(--destructive))',
+                                                              ? '#fbbf24'
+                                                              : '#f87171',
                                                     }}
                                                 />
                                             </div>
@@ -148,7 +148,7 @@ export default function PerformancePage() {
                                             </span>
                                             <div className="flex-1 h-1.5 rounded-full bg-[hsl(var(--surface-raised))] overflow-hidden">
                                                 <div
-                                                    className="h-full rounded-full bg-[hsl(var(--destructive))]"
+                                                    className="h-full rounded-full bg-red-500"
                                                     style={{
                                                         width: `${Math.min(100, (d.count / (anomalyBreakdownData.byDistrict[0]?.count || 1)) * 100).toFixed(0)}%`,
                                                     }}

@@ -154,7 +154,7 @@ export default function CancelledOrdersPage() {
         <div className="flex flex-col gap-6 p-6">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Cancelled Orders</h1>
+                    <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Cancelled Orders</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Review and manage cancelled deliveries.</p>
                 </div>
                 <DateRangePicker value={range} onChange={setRange} onApply={setAppliedRange} />
