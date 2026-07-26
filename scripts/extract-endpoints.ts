@@ -7,8 +7,8 @@
 //
 
 import { Project, SyntaxKind, type CallExpression, type InterfaceDeclaration, type TypeAliasDeclaration } from 'ts-morph'
-import * as fs from 'fs'
-import * as path from 'path'
+/*import * as fs from 'fs'
+import * as path from 'path'*/
 
 // ─── Config ────────────────────────────────────────────────────────────────
 const SCAN_PATTERNS = [
