@@ -34,8 +34,7 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
 
     const {
         messages, csvData, isLoading, isCsvLoading,
-        isGeneratingReport, sendMessage, loadCsvForRange,
-        clearConversation, generateReport,
+        sendMessage, loadCsvForRange, clearConversation,
     } = useChatbot()
 
     const rangeLabel = useMemo(() => `${range.from} to ${range.to}`, [range.from, range.to])
@@ -126,15 +125,6 @@ export default function ChatbotPanel({ range, activeDays, hourStart, hourEnd }: 
                     ) : null}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => void generateReport()}
-                        disabled={!messages.length || isGeneratingReport}
-                    >
-                        {isGeneratingReport && <Loader2 size={12} className="animate-spin mr-1" />}
-                        {isGeneratingReport ? 'Generating…' : 'PDF Report'}
-                    </Button>
                     <Button variant="ghost" size="sm" onClick={clearConversation}>
                         Clear
                     </Button>
