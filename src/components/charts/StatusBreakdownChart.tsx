@@ -1,5 +1,5 @@
-import { Cell, Pie, PieChart, Tooltip, Legend, ResponsiveContainer } from 'recharts'
-import { Skeleton } from '@/components/ui'
+import { Cell, Pie, PieChart } from 'recharts'
+import { ChartContainer, ChartTooltip, ChartLegend, ChartLegendContent, Skeleton } from '@/components/ui'
 import type { StatusBreakdownItemDto } from '@/types/api'
 
 interface Props {
@@ -8,14 +8,22 @@ interface Props {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-    Created:   'hsl(215 70% 60%)',
-    Assigned:  'hsl(260 60% 65%)',
-    PickedUp:  'hsl(38 90% 58%)',
+    Created:   'hsl(var(--primary))',
+    Assigned:  'hsl(var(--accent-purple))',
+    PickedUp:  'hsl(var(--warning))',
     InTransit: 'hsl(200 80% 55%)',
-    Delivered: 'hsl(142 70% 50%)',
-    Cancelled: 'hsl(0 72% 60%)',
+    Delivered: 'hsl(var(--success))',
+    Cancelled: 'hsl(var(--destructive))',
     Anomalous: 'hsl(25 90% 55%)',
 }
+
+// Build chartConfig so ChartContainer injects --color-* CSS vars
+const chartConfig = Object.fromEntries(
+    Object.entries(STATUS_COLORS).map(([key, color]) => [
+        key,
+        { label: key, color },
+    ])
+)
 
 function pct(value: number, total: number) {
     return total === 0 ? '0%' : `${((value / total) * 100).toFixed(1)}%`
@@ -28,59 +36,68 @@ export default function StatusBreakdownChart({ data, isLoading }: Props) {
 
     if (total === 0) {
         return (
-            <div className="flex h-56 items-center justify-center text-xs text-[hsl(var(--foreground-muted))]">
-                No deliveries in selected range
+            <div className="flex h-56 items-center justify-center flex-col gap-2">
+                <p className="text-xs text-[hsl(var(--foreground-muted))]">No deliveries in selected range</p>
             </div>
         )
     }
 
     const chartData = data.map((d) => ({
-        name: d.label,
+        name:  d.label,
         value: d.count,
-        color: STATUS_COLORS[d.label] ?? 'hsl(var(--foreground-muted))',
+        fill:  STATUS_COLORS[d.label] ?? 'hsl(var(--foreground-muted))',
     }))
 
     return (
-        <ResponsiveContainer width="100%" height={224}>
+        <ChartContainer config={chartConfig} className="h-56 w-full">
             <PieChart>
+                <ChartTooltip
+                    content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null
+                        const item = payload[0]
+                        return (
+                            <div className="rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--surface))] px-3 py-2 shadow-md text-xs">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span
+                                        className="inline-block h-2 w-2 rounded-full"
+                                        style={{ background: item.payload?.fill }}
+                                    />
+                                    <span className="font-medium text-[hsl(var(--foreground))]">{item.name}</span>
+                                </div>
+                                <p className="text-[hsl(var(--foreground-muted))]">
+                                    {(item.value as number).toLocaleString()} &middot; {pct(item.value as number, total)}
+                                </p>
+                            </div>
+                        )
+                    }}
+                />
                 <Pie
                     data={chartData}
                     cx="50%"
-                    cy="50%"
-                    innerRadius="52%"
-                    outerRadius="78%"
+                    cy="45%"
+                    innerRadius="50%"
+                    outerRadius="72%"
                     paddingAngle={2}
                     dataKey="value"
                     strokeWidth={0}
                 >
                     {chartData.map((entry) => (
-                        <Cell key={entry.name} fill={entry.color} />
+                        <Cell key={entry.name} fill={entry.fill} />
                     ))}
                 </Pie>
-                <Tooltip
-                    formatter={(value, name) => [
-                        typeof value === 'number'
-                            ? `${value.toLocaleString()} (${pct(value, total)})`
-                            : String(value),
-                        name,
-                    ]}
-                    contentStyle={{
-                        background: 'hsl(var(--surface))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                    }}
-                />
-                <Legend
-                    iconType="circle"
-                    iconSize={8}
-                    formatter={(value) => (
-                        <span style={{ fontSize: '11px', color: 'hsl(var(--foreground-muted))' }}>
-                            {value}
-                        </span>
-                    )}
+                <ChartLegend
+                    content={
+                        <ChartLegendContent
+                            payload={chartData.map((d) => ({
+                                value: d.name,
+                                color: d.fill,
+                                dataKey: d.name,
+                                type:  'circle',
+                            }))}
+                        />
+                    }
                 />
             </PieChart>
-        </ResponsiveContainer>
+        </ChartContainer>
     )
 }

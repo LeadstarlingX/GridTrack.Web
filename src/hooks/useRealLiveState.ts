@@ -81,6 +81,8 @@ export function useRealLiveState() {
                         routeDistanceMeters: null,
                         routeDurationSeconds: null,
                         routeCost: null,
+                        urgencyScore: null,
+                        urgencyNote: null,
                     }
                 }
 
