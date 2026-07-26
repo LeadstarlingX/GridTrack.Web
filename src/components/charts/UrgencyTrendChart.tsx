@@ -36,13 +36,24 @@ export default function UrgencyTrendChart({ data, isLoading }: UrgencyTrendChart
             <AreaChart data={data} margin={{ left: 8, right: 12, top: 8, bottom: 0 }}>
                 <defs>
                     <linearGradient id="urgencyGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--color-avgScore)" stopOpacity={0.25} />
-                        <stop offset="95%" stopColor="var(--color-avgScore)" stopOpacity={0} />
+                        <stop offset="5%"  stopColor="var(--color-avgScore)" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="var(--color-avgScore)" stopOpacity={0}    />
                     </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="bucket" tickLine={false} axisLine={false} />
-                <YAxis tickLine={false} axisLine={false} domain={[0, 10]} width={28} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.6} />
+                <XAxis
+                    dataKey="bucket"
+                    tickLine={false}
+                    axisLine={false}
+                    tick={{ fill: 'hsl(var(--foreground-muted))', fontSize: 11 }}
+                />
+                <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    domain={[0, 10]}
+                    width={28}
+                    tick={{ fill: 'hsl(var(--foreground-muted))', fontSize: 11 }}
+                />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area
                     type="monotone"
