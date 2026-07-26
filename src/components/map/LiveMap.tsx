@@ -47,8 +47,8 @@ function loadPinImages(map: ReturnType<MapRef['getMap']>) {
         ctx.fillStyle = 'white'; ctx.fill()
         return c
     }
-    if (!map.hasImage('pickup-pin')) map.addImage('pickup-pin', makePinCanvas('#22c55e'), { pixelRatio: 2 })
-    if (!map.hasImage('drop-pin'))   map.addImage('drop-pin',   makePinCanvas('#f59e0b'), { pixelRatio: 2 })
+    if (!map.hasImage('pickup-pin')) map.addImage('pickup-pin', makePinCanvas('#22c55e') as unknown as HTMLImageElement, { pixelRatio: 2 })
+    if (!map.hasImage('drop-pin'))   map.addImage('drop-pin',   makePinCanvas('#f59e0b') as unknown as HTMLImageElement, { pixelRatio: 2 })
 }
 
 function buildDriversGeoJSON(

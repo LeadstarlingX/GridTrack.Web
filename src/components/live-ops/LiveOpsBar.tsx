@@ -1,8 +1,9 @@
 import { useEffect, useMemo, type ComponentType } from 'react'
-import { AlertTriangle, Search, Thermometer, Users } from 'lucide-react'
+import { AlertTriangle, Bell, Clock, Search, Thermometer, Truck, Users } from 'lucide-react'
 import { useMapStore } from '@/store/mapStore'
 import { useLiveStore } from '@/store/liveStore'
 import { cn } from '@/lib/utils'
+import { Separator } from '@/components/ui/separator'
 
 const LOOKBACK_REFRESH_MS = 2 * 60 * 1000
 
@@ -18,33 +19,46 @@ function computeLookbackRange(lookbackHours: number) {
     return { from: from.toISOString(), to: to.toISOString() }
 }
 
-function KpiChip({ label, value, accent, active, onClick }: {
+interface KpiChipProps {
     label: string
     value: string | number
+    icon?: ComponentType<{ size?: number; className?: string }>
     accent?: string
     active?: boolean
+    warn?: boolean
     onClick?: () => void
-}) {
-    const className = cn(
-        'flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-colors',
-        active
-            ? 'border-orange-500/60 bg-orange-500/15'
-            : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))]',
-        onClick && 'cursor-pointer hover:border-[hsl(var(--border-strong,var(--border)))]',
+}
+
+function KpiChip({ label, value, icon: Icon, accent, active, warn, onClick }: KpiChipProps) {
+    const Wrapper = onClick ? 'button' : 'div'
+    return (
+        <Wrapper
+            {...(onClick ? { type: 'button' as const, onClick } : {})}
+            className={cn(
+                'flex items-center gap-2.5 px-3 py-1.5 rounded-xl border transition-colors duration-150',
+                active
+                    ? 'border-orange-500/60 bg-orange-500/15'
+                    : 'border-[hsl(var(--border))] bg-[hsl(var(--surface-raised))]',
+                onClick && 'cursor-pointer hover:border-[hsl(var(--border-strong,var(--border)))]',
+                warn && 'chip-warn',
+            )}
+        >
+            {Icon && (
+                <Icon
+                    size={13}
+                    className={cn('shrink-0', accent ?? 'text-[hsl(var(--foreground-subtle,var(--foreground-muted)))]')}
+                />
+            )}
+            <div className="flex flex-col leading-none">
+                <span className={cn('text-sm font-bold tabular-nums', accent ?? 'text-[hsl(var(--foreground))]')}>
+                    {value}
+                </span>
+                <span className="text-[9px] text-[hsl(var(--foreground-muted))] uppercase tracking-wide font-medium mt-0.5">
+                    {label}
+                </span>
+            </div>
+        </Wrapper>
     )
-    const inner = (
-        <>
-            <span className="text-[10px] text-[hsl(var(--foreground-muted))] uppercase tracking-wide font-medium whitespace-nowrap">
-                {label}
-            </span>
-            <span className={cn('text-xs font-semibold tabular-nums', accent ?? 'text-[hsl(var(--foreground))]')}>
-                {value}
-            </span>
-        </>
-    )
-    return onClick
-        ? <button type="button" onClick={onClick} className={className}>{inner}</button>
-        : <div className={className}>{inner}</div>
 }
 
 interface GlowBtnProps {
@@ -76,7 +90,7 @@ function GlowBtn({ active, onClick, icon: Icon, label, color = 'primary' }: Glow
                     ? colorClass
                     : 'border-[hsl(var(--border))] bg-[hsl(var(--surface))] text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))]',
             )}
-            style={active ? { boxShadow: `0 0 0 2px ${glowColor}, 0 0 12px ${glowColor}` } : undefined}
+            style={active ? { boxShadow: `0 0 0 2px ${glowColor}, 0 0 10px ${glowColor}` } : undefined}
         >
             <Icon className="h-3.5 w-3.5" />
             <span>{label}</span>
@@ -85,22 +99,22 @@ function GlowBtn({ active, onClick, icon: Icon, label, color = 'primary' }: Glow
 }
 
 export default function LiveOpsBar() {
-    const heatEnabled = useMapStore((s) => s.historicalHeatmapEnabled)
-    const toggleHeat = useMapStore((s) => s.toggleHistoricalHeatmap)
-    const lookbackHours = useMapStore((s) => s.lookbackHours)
-    const setLookbackHours = useMapStore((s) => s.setLookbackHours)
+    const heatEnabled             = useMapStore((s) => s.historicalHeatmapEnabled)
+    const toggleHeat              = useMapStore((s) => s.toggleHistoricalHeatmap)
+    const lookbackHours           = useMapStore((s) => s.lookbackHours)
+    const setLookbackHours        = useMapStore((s) => s.setLookbackHours)
     const setHistoricalHeatmapRange = useMapStore((s) => s.setHistoricalHeatmapRange)
-    const staffingEnabled = useMapStore((s) => s.staffingEnabled)
-    const toggleStaffing = useMapStore((s) => s.toggleStaffing)
-    const stalledOnly = useMapStore((s) => s.stalledOnly)
-    const toggleStalledOnly = useMapStore((s) => s.toggleStalledOnly)
-    const districtPanelView = useMapStore((s) => s.districtPanelView)
-    const sidePanelMode = useMapStore((s) => s.sidePanelMode)
-    const setSidePanelMode = useMapStore((s) => s.setSidePanelMode)
-    const setDistrictPanelView = useMapStore((s) => s.setDistrictPanelView)
+    const staffingEnabled         = useMapStore((s) => s.staffingEnabled)
+    const toggleStaffing          = useMapStore((s) => s.toggleStaffing)
+    const stalledOnly             = useMapStore((s) => s.stalledOnly)
+    const toggleStalledOnly       = useMapStore((s) => s.toggleStalledOnly)
+    const districtPanelView       = useMapStore((s) => s.districtPanelView)
+    const sidePanelMode           = useMapStore((s) => s.sidePanelMode)
+    const setSidePanelMode        = useMapStore((s) => s.setSidePanelMode)
+    const setDistrictPanelView    = useMapStore((s) => s.setDistrictPanelView)
 
-    const drivers = useLiveStore((s) => s.drivers)
-    const deliveries = useLiveStore((s) => s.deliveries)
+    const drivers      = useLiveStore((s) => s.drivers)
+    const deliveries   = useLiveStore((s) => s.deliveries)
     const anomalyQueue = useLiveStore((s) => s.anomalyQueue)
 
     const kpi = useMemo(() => {
@@ -122,8 +136,6 @@ export default function LiveOpsBar() {
         return { active, inTransit, stalled, avgEta, alerts: anomalyQueue.length }
     }, [drivers, deliveries, anomalyQueue])
 
-    // Pickup-density heatmap range: rolling "last N hours" window anchored to now. Recomputed
-    // on toggle/slider change and on an interval so "now" doesn't go stale during a long session.
     useEffect(() => {
         if (!heatEnabled) return
         setHistoricalHeatmapRange(computeLookbackRange(lookbackHours))
@@ -137,30 +149,52 @@ export default function LiveOpsBar() {
     const searchActive = sidePanelMode === 'district' && districtPanelView === 'browse'
 
     return (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(var(--surface))] border-b border-[hsl(var(--border))] flex-wrap">
-            <div className="flex items-center gap-2 flex-1 flex-wrap">
-                <KpiChip label="Active" value={kpi.active} />
-                <KpiChip label="In-transit" value={kpi.inTransit} />
-                <KpiChip label="Avg ETA" value={formatEta(kpi.avgEta)} />
+        <div className="flex items-center gap-2 px-3 py-2 bg-[hsl(var(--surface))] border-b border-[hsl(var(--border))] flex-wrap">
+            {/* KPI chips */}
+            <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+                <KpiChip
+                    label="Active"
+                    value={kpi.active}
+                    icon={Users}
+                />
+                <KpiChip
+                    label="In-transit"
+                    value={kpi.inTransit}
+                    icon={Truck}
+                    accent={kpi.inTransit > 0 ? 'text-[hsl(var(--primary))]' : undefined}
+                />
+                <KpiChip
+                    label="Avg ETA"
+                    value={formatEta(kpi.avgEta)}
+                    icon={Clock}
+                />
                 <KpiChip
                     label="Stalled"
                     value={kpi.stalled}
+                    icon={AlertTriangle}
                     accent={kpi.stalled > 0 ? 'text-orange-500' : undefined}
                     active={stalledOnly}
+                    warn={kpi.stalled > 0}
                     onClick={toggleStalledOnly}
                 />
                 <KpiChip
                     label="Alerts"
                     value={kpi.alerts}
+                    icon={Bell}
                     accent={kpi.alerts > 0 ? 'text-amber-500' : undefined}
+                    warn={kpi.alerts > 0}
                 />
             </div>
-            <div className="flex items-center gap-2">
+
+            <Separator orientation="vertical" className="h-8 mx-1" />
+
+            {/* Toggle buttons */}
+            <div className="flex items-center gap-1.5">
                 <GlowBtn
                     active={stalledOnly}
                     onClick={toggleStalledOnly}
                     icon={AlertTriangle}
-                    label="Stalled only"
+                    label="Stalled"
                     color="warning"
                 />
                 <GlowBtn
@@ -171,7 +205,7 @@ export default function LiveOpsBar() {
                     color="warning"
                 />
                 {heatEnabled && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10">
+                    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10">
                         <span className="text-[10px] text-amber-500 uppercase tracking-wide font-medium whitespace-nowrap">
                             Last {lookbackHours}h
                         </span>
@@ -182,7 +216,7 @@ export default function LiveOpsBar() {
                             step={1}
                             value={lookbackHours}
                             onChange={(e) => setLookbackHours(Number(e.target.value))}
-                            className="w-20 accent-amber-500"
+                            className="w-20 slider-styled slider-amber"
                             aria-label="Heatmap lookback hours"
                         />
                     </div>

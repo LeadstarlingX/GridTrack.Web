@@ -136,7 +136,7 @@ export default function DriversPage() {
         <div className="flex flex-col gap-6 p-6">
             <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <h1 className="text-xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Drivers</h1>
+                    <h1 className="text-2xl font-semibold tracking-tight text-[hsl(var(--foreground))]">Drivers</h1>
                     <p className="text-xs text-[hsl(var(--foreground-muted))]">Manage driver availability.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -175,10 +175,10 @@ export default function DriversPage() {
                                     'px-2.5 py-1 rounded-md border text-xs font-medium transition-colors',
                                     statusFilter === value
                                         ? value === 'available'
-                                            ? 'border-green-500 bg-green-500/10 text-green-400'
+                                            ? 'border-[hsl(var(--success)/0.6)] bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]'
                                             : value === 'offline'
-                                              ? 'border-[hsl(var(--border-strong))] bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground-muted))]'
-                                              : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
+                                                ? 'border-[hsl(var(--border-strong))] bg-[hsl(var(--surface-raised))] text-[hsl(var(--foreground-muted))]'
+                                                : 'border-[hsl(var(--primary))] bg-[hsl(var(--primary)/0.12)] text-[hsl(var(--primary))]'
                                         : 'border-transparent text-[hsl(var(--foreground-muted))] hover:text-[hsl(var(--foreground))] hover:border-[hsl(var(--border))]',
                                 )}
                             >
@@ -215,8 +215,8 @@ export default function DriversPage() {
                     isLoading
                         ? ''
                         : search !== ''
-                          ? `No drivers match “${search}”.`
-                          : 'No drivers are currently available in the system.'
+                            ? `No drivers match “${search}”.`
+                            : 'No drivers are currently available in the system.'
                 }
                 expandedId={expandedId}
                 renderExpanded={(row) => <DriverPerformanceCard driverId={row.id} />}

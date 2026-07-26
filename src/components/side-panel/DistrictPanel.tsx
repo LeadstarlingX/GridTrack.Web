@@ -2,13 +2,21 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart'
 import { useMapStore } from '@/store/mapStore'
 import { useForecast } from '@/lib/api/queries/useForecast'
 import { useDistrictSparkline } from '@/lib/api/queries/useDistrictSparkline'
 import { useDistrictSummary } from '@/lib/api/queries/useDistrictSummary'
 import { useDistrictDemandForecast } from '@/lib/api/queries/useDistrictDemandForecast'
-import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts'
+import { AreaChart, Area, XAxis } from 'recharts'
 import { format } from 'date-fns'
+
+const sparklineConfig = {
+    count: {
+        label: 'Deliveries',
+        color: 'hsl(var(--primary))',
+    },
+}
 
 function SparklineChart({ districtId }: { districtId: string }) {
     const { data, isLoading } = useDistrictSparkline(districtId)
@@ -22,21 +30,25 @@ function SparklineChart({ districtId }: { districtId: string }) {
     }
 
     const chartData = data.map((p) => ({
-        hour: format(new Date(p.hour), 'HH:mm'),
+        hour:  format(new Date(p.hour), 'HH:mm'),
         count: p.count,
     }))
 
     return (
-        <ResponsiveContainer width="100%" height={56}>
+        <ChartContainer config={sparklineConfig} className="h-14 w-full">
             <AreaChart data={chartData} margin={{ top: 4, bottom: 0, left: 0, right: 0 }}>
                 <XAxis dataKey="hour" hide />
-                <Tooltip
-                    contentStyle={{ background: 'hsl(var(--surface))', border: '1px solid hsl(var(--border))', borderRadius: 6, fontSize: 11 }}
-                    formatter={(v) => [`${v} deliveries`, '']}
+                <ChartTooltip content={<ChartTooltipContent formatter={(v) => [`${v} deliveries`, '']} />} />
+                <Area
+                    type="monotone"
+                    dataKey="count"
+                    stroke="hsl(var(--primary))"
+                    fill="hsl(var(--primary) / 0.15)"
+                    strokeWidth={1.5}
+                    dot={false}
                 />
-                <Area type="monotone" dataKey="count" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} dot={false} />
             </AreaChart>
-        </ResponsiveContainer>
+        </ChartContainer>
     )
 }
 
@@ -48,13 +60,13 @@ function formatStaleness(cachedAt: string) {
 }
 
 export default function DistrictPanel() {
-    const boundaryId = useMapStore((s) => s.selectedDistrictId)
-    const boundaries = useMapStore((s) => s.districtBoundariesGeoJSON)
-    const setMode = useMapStore((s) => s.setSidePanelMode)
+    const boundaryId  = useMapStore((s) => s.selectedDistrictId)
+    const boundaries  = useMapStore((s) => s.districtBoundariesGeoJSON)
+    const setMode     = useMapStore((s) => s.setSidePanelMode)
 
-    const { data: forecast, isLoading: forecastLoading } = useForecast(boundaryId)
-    const { data: districtSummary } = useDistrictSummary(boundaryId)
-    const { data: demandForecast, isLoading: demandForecastLoading } = useDistrictDemandForecast({ hoursAhead: 1 })
+    const { data: forecast,       isLoading: forecastLoading }        = useForecast(boundaryId)
+    const { data: districtSummary }                                    = useDistrictSummary(boundaryId)
+    const { data: demandForecast, isLoading: demandForecastLoading }   = useDistrictDemandForecast({ hoursAhead: 1 })
 
     if (!boundaryId) return null
 
@@ -66,38 +78,50 @@ export default function DistrictPanel() {
     })
     const displayName = (
         boundaryMatch?.properties?.displayName ??
-        boundaryMatch?.properties?.name_fixed ??
-        boundaryMatch?.properties?.name ??
+        boundaryMatch?.properties?.name_fixed   ??
+        boundaryMatch?.properties?.name         ??
         boundaryId
     ) as string
 
     return (
         <div className="p-4">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="font-semibold text-lg">{displayName}</h2>
-                <Button variant="ghost" size="icon" onClick={() => setMode('idle')}>
+                <h2 className="font-semibold text-base text-[hsl(var(--foreground))] truncate mr-2">{displayName}</h2>
+                <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setMode('idle')}>
                     <X className="h-4 w-4" />
                 </Button>
             </div>
+
             <div className="space-y-3">
                 <Card>
-                    <CardHeader className="pb-1"><CardTitle className="text-sm">Demand (last 6 h)</CardTitle></CardHeader>
+                    <CardHeader className="pb-1">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))]">
+                            Demand (last 6 h)
+                        </CardTitle>
+                    </CardHeader>
                     <CardContent className="pt-0 pb-3">
                         {forecastLoading ? (
                             <Skeleton className="mb-2 h-8 w-16" />
                         ) : (
-                            <p className="text-2xl font-bold mb-2">{forecast?.forecastedDemand ?? '—'}</p>
+                            <p className="text-2xl font-bold mb-2 text-[hsl(var(--foreground))]">
+                                {forecast?.forecastedDemand ?? '—'}
+                            </p>
                         )}
                         <SparklineChart districtId={boundaryId} />
                     </CardContent>
                 </Card>
+
                 <Card>
-                    <CardHeader className="pb-1"><CardTitle className="text-sm">Predicted (next hour)</CardTitle></CardHeader>
+                    <CardHeader className="pb-1">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))]">
+                            Predicted (next hour)
+                        </CardTitle>
+                    </CardHeader>
                     <CardContent className="pt-0 pb-3">
                         {demandForecastLoading ? (
                             <Skeleton className="h-8 w-16" />
                         ) : (
-                            <p className="text-2xl font-bold">
+                            <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
                                 {nextHourPredicted !== undefined ? nextHourPredicted.toFixed(1) : '—'}
                             </p>
                         )}
@@ -106,36 +130,58 @@ export default function DistrictPanel() {
                         </p>
                     </CardContent>
                 </Card>
+
                 <Card>
-                    <CardHeader className="pb-2"><CardTitle className="text-sm">Boundary ID</CardTitle></CardHeader>
-                    <CardContent><p className="text-2xl font-bold font-mono text-sm">{boundaryId}</p></CardContent>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))]">
+                            Boundary ID
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="font-mono text-sm text-[hsl(var(--foreground))]">{boundaryId}</p>
+                    </CardContent>
                 </Card>
+
                 {(forecast?.staffingRatio !== undefined || forecastLoading) && (
                     <Card>
-                        <CardHeader className="pb-2"><CardTitle className="text-sm">Staffing Ratio</CardTitle></CardHeader>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))]">
+                                Staffing Ratio
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent>
                             {forecastLoading
                                 ? <Skeleton className="h-8 w-16" />
-                                : <p className="text-2xl font-bold">{forecast!.staffingRatio.toFixed(2)}</p>
+                                : <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                                    {forecast!.staffingRatio.toFixed(2)}
+                                </p>
                             }
                         </CardContent>
                     </Card>
                 )}
+
                 {(forecast?.driverRecommendation !== undefined || forecastLoading) && (
                     <Card>
-                        <CardHeader className="pb-2"><CardTitle className="text-sm">Recommended Drivers</CardTitle></CardHeader>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))]">
+                                Recommended Drivers
+                            </CardTitle>
+                        </CardHeader>
                         <CardContent>
                             {forecastLoading
                                 ? <Skeleton className="h-8 w-12" />
-                                : <p className="text-2xl font-bold">{forecast!.driverRecommendation}</p>
+                                : <p className="text-2xl font-bold text-[hsl(var(--foreground))]">
+                                    {forecast!.driverRecommendation}
+                                </p>
                             }
                         </CardContent>
                     </Card>
                 )}
+
                 {districtSummary && (
                     <Card>
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm flex items-center justify-between gap-2">
+                            <CardTitle className="text-xs font-semibold uppercase tracking-wider text-[hsl(var(--foreground-muted))] flex items-center justify-between gap-2">
                                 <span>AI Summary</span>
                                 {districtSummary.cachedAt && (
                                     <span className="text-[10px] font-normal text-[hsl(var(--foreground-muted))] shrink-0">
