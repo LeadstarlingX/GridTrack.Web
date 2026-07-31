@@ -430,6 +430,13 @@ export interface DistrictGroupDto {
     districtIds: string[]
 }
 
+export interface UserDto {
+    userId: string
+    username: string
+    role: string
+    sectorIds: string[]
+}
+
 export type ApiEndpoint =
     | '/api/analytics/drivers'
     | '/api/districts'
