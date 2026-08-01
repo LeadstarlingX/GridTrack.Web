@@ -9,6 +9,8 @@ import { useSettingsStore } from '@/store/settingsStore'
 import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
+import { SectorManagementPanel } from './SectorManagementPanel'
+import { DistrictGroupList } from './DistrictGroupList'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
@@ -309,57 +311,58 @@ export default function SettingsPage() {
 
                     {section === 'sectors' && (
                         <div className="space-y-4">
-                            <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
-                                <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
-                                    {authStore.role === 'GeneralObserver' ? 'All Sectors' : 'Your Sectors'}
-                                </p>
-
-                                {groupsLoading && (
-                                    <p className="text-xs text-[hsl(var(--foreground-muted))]">Loading…</p>
-                                )}
-
-                                {!groupsLoading && districtGroups && (
-                                    <div className="space-y-2">
-                                        {districtGroups
-                                            .filter((g) =>
-                                                authStore.role === 'GeneralObserver' ||
-                                                authStore.sectorIds.includes(g.id)
-                                            )
-                                            .map((group) => (
-                                                <div
-                                                    key={group.id}
-                                                    className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] px-4 py-3"
-                                                >
-                                                    <div>
-                                                        <p className="text-sm font-medium text-[hsl(var(--foreground))]">{group.name}</p>
-                                                        <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
-                                                            {group.districtIds.length} district{group.districtIds.length !== 1 ? 's' : ''}
-                                                        </p>
-                                                    </div>
-                                                    <span className={cn(
-                                                        'text-[10px] font-semibold px-2 py-1 rounded-full',
-                                                        authStore.role === 'GeneralObserver'
-                                                            ? 'bg-[hsl(var(--primary)/0.15)] text-[hsl(var(--primary))]'
-                                                            : 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                                                    )}>
-                                    {authStore.role === 'GeneralObserver' ? 'Full access' : 'Your sector'}
-                                </span>
-                                                </div>
-                                            ))}
-
-                                        {authStore.role !== 'GeneralObserver' && authStore.sectorIds.length === 0 && (
-                                            <p className="text-xs text-[hsl(var(--foreground-muted))]">
-                                                No sectors assigned. Contact your administrator.
-                                            </p>
-                                        )}
+                            {authStore.role === 'GeneralObserver' ? (
+                                <>
+                                    <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                        <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                            Manage Sectors
+                                        </p>
+                                        <DistrictGroupList />
                                     </div>
-                                )}
-                            </div>
-
-                            {authStore.role === 'GeneralObserver' && (
-                                <p className="text-xs text-[hsl(var(--foreground-muted))] px-1">
-                                    As a General Observer you have read access to all sectors. District-to-sector assignment is managed via the API.
-                                </p>
+                                    <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                        <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                            Assign Sectors to Observers
+                                        </p>
+                                        <SectorManagementPanel />
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                    <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                        Your Sectors
+                                    </p>
+                                    {groupsLoading && (
+                                        <p className="text-xs text-[hsl(var(--foreground-muted))]">Loading…</p>
+                                    )}
+                                    {!groupsLoading && districtGroups && (
+                                        <div className="space-y-2">
+                                            {authStore.sectorIds.length === 0 ? (
+                                                <p className="text-xs text-[hsl(var(--foreground-muted))]">
+                                                    No sectors assigned. Contact your administrator.
+                                                </p>
+                                            ) : (
+                                                districtGroups
+                                                    .filter((g) => authStore.sectorIds.includes(g.id))
+                                                    .map((group) => (
+                                                        <div
+                                                            key={group.id}
+                                                            className="flex items-center justify-between rounded-lg border border-[hsl(var(--border))] px-4 py-3"
+                                                        >
+                                                            <div>
+                                                                <p className="text-sm font-medium text-[hsl(var(--foreground))]">{group.name}</p>
+                                                                <p className="text-xs text-[hsl(var(--foreground-muted))] mt-0.5">
+                                                                    {group.districtIds.length} district{group.districtIds.length !== 1 ? 's' : ''}
+                                                                </p>
+                                                            </div>
+                                                            <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                                                Your sector
+                                                            </span>
+                                                        </div>
+                                                    ))
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
                         </div>
                     )}
