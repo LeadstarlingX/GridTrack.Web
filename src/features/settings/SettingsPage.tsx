@@ -10,6 +10,7 @@ import { useMapStore } from '@/store/mapStore'
 import { toast } from '@/components/ui/sonner'
 import { cn } from '@/lib/utils'
 import { SectorManagementPanel } from './SectorManagementPanel'
+import { DistrictGroupList } from './DistrictGroupList'
 
 interface LatencyResult { ok: boolean; ms: number; error?: string }
 interface LatencyResponse { postgres: LatencyResult; redis: LatencyResult; python: LatencyResult; osrm: LatencyResult; rabbit: LatencyResult }
@@ -311,12 +312,20 @@ export default function SettingsPage() {
                     {section === 'sectors' && (
                         <div className="space-y-4">
                             {authStore.role === 'GeneralObserver' ? (
-                                <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
-                                    <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
-                                        Manage Observer Sectors
-                                    </p>
-                                    <SectorManagementPanel />
-                                </div>
+                                <>
+                                    <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                        <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                            Manage Sectors
+                                        </p>
+                                        <DistrictGroupList />
+                                    </div>
+                                    <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
+                                        <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
+                                            Assign Sectors to Observers
+                                        </p>
+                                        <SectorManagementPanel />
+                                    </div>
+                                </>
                             ) : (
                                 <div className="bg-[hsl(var(--surface))] border border-[hsl(var(--border))] rounded-xl p-5">
                                     <p className="text-xs font-semibold uppercase tracking-widest text-[hsl(var(--foreground-muted))] mb-4">
